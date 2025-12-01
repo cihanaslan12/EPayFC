@@ -21,7 +21,7 @@ En développement, donnez les permissions d'écriture aux dossiers uploads et da
 
 * bug 1
 * bug 2
-* ....
+* .....
 
 ### URLs deploiement
 
