@@ -17,20 +17,20 @@
             <hr>
             <form action="user/login" method="post">
                 <input type="email" name="email" placeholder="Mail" value="<?= $mail ?>">
+                <br>
+                <?php if(isset($errors['mail'])) echo $errors['mail'] ?>
+                <br>
                 <input type="password" name="password" placeholder="******" value="<?= $password ?>">
+                <br>
+                <?php if(isset($errors['password'])) echo $errors['password'] ?>
+                <br>
                 <button type="submit" name="login_user">Login</button>
+                <br>
                 <button type="submit" name="login_guest">Continue as guest</button>
             </form>
             <br>
             <a href="user/signup">New here ? Click here to subscribe !</a>
-            <?php if (count($errors) != 0): ?>
-                <p>Please correct the following error(s) :</p>
-                <ul>
-                    <?php foreach ($errors as $error): ?>
-                        <li><?= $error ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
+
             <?php if (Configuration::is_dev()): ?>
                 <hr>
                 <h5>For Debug Purpose</h5>

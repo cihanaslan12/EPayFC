@@ -8,9 +8,13 @@ class ControllerUser extends Controller {
         if ($this->user_logged()) {
             $this->redirect("item", "browse");
         } else {
-//            (new View("login"))->show();
             $this->login();
         }
+    }
+
+    public function logout(): void {
+        parent::logout();
+        $this->redirect("user", "login");
     }
 
     public function login(): void {
@@ -18,21 +22,21 @@ class ControllerUser extends Controller {
             $this->redirect("item", "browse");
         }
 
-        $pseudo = '';
+        $mail = '';
         $password = '';
         $errors = [];
         if (isset($_POST['login_user'])) {
-            if (isset($_POST['pseudo']) && isset($_POST['password'])) {
-                $pseudo = $_POST['pseudo'];
+            if (isset($_POST['email']) && isset($_POST['password'])) {
+                $mail = $_POST['email'];
                 $password = $_POST['password'];
 
-                $errors = User::validate_login($pseudo, $password);
+                $errors = User::validate_login($mail, $password);
                 if (empty($errors)) {
-                    $this->log_user($pseudo);
+                    $this->log_user(User::get_by_mail($mail));
                 }
             }
         }
-        (new View("login"))->show(['pseudo' => $pseudo, 'password' => $password, 'errors' => $errors]);
+        (new View("login"))->show(['mail' => $mail, 'password' => $password, 'errors' => $errors]);
     }
 
     public function signup(): void {
@@ -65,13 +69,13 @@ class ControllerUser extends Controller {
                 case 'boris':
                     $this->log_user(User::get_by_mail('boverhaegen@epfc.eu'), "item", "browse");
                 case "marc":
-                    $this->log_user(User::get_by_mail("mamichel@epfc.eu"), "forms", "view_forms");
+                    $this->log_user(User::get_by_mail("mamichel@epfc.eu"), "item", "browse");
                     break;
                 case 'quentin':
                     $this->log_user(User::get_by_mail('quhouben@epfc.eu'), "item", "browse");
                     break;
                 case "xavier":
-                    $this->log_user(User::get_by_mail("xapigeolet@epfc.eu"), "forms", "view_forms");
+                    $this->log_user(User::get_by_mail("xapigeolet@epfc.eu"), "item", "browse");
                     break;
                 default:
                     $this->redirect();
