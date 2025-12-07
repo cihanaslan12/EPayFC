@@ -1,7 +1,5 @@
 <?php
 
-use Decimal\Decimal;
-
 require_once "framework/Model.php";
 
 class Item extends Model {
@@ -9,11 +7,11 @@ class Item extends Model {
         private string $title,
         private string $description,
         private int $owner,
-        private DateTime $created_at,
+        private string $created_at,
         private int $duration_days,
         private ?int $id = null,
-        private ?Decimal $buy_now_price = null,
-        private ?Decimal $starting_bid = null,
+        private ?string $buy_now_price = null,
+        private ?string $starting_bid = null,
     ) {
     }
 
@@ -33,7 +31,7 @@ class Item extends Model {
         return $this->owner;
     }
 
-    public function get_created_at(): DateTime {
+    public function get_created_at(): string {
         return $this->created_at;
     }
 
@@ -41,11 +39,11 @@ class Item extends Model {
         return $this->duration_days;
     }
 
-    public function get_buy_now_price(): ?Decimal {
+    public function get_buy_now_price(): ?string {
         return $this->buy_now_price;
     }
 
-    public function get_starting_bid(): ?Decimal {
+    public function get_starting_bid(): ?string {
         return $this->starting_bid;
     }
 
@@ -59,7 +57,7 @@ class Item extends Model {
 
     public static function get_participating_items(?int $user_id): array {
         $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
-                    FROM items i JOINS users u ON i.owner = u.id 
+                    FROM items i JOIN users u ON i.owner = u.id 
                     WHERE u.id = :id ";
         $query = self::execute($sql, ["id" => $user_id]
         );
