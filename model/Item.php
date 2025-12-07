@@ -62,7 +62,7 @@ class Item extends Model {
         $query = self::execute($sql, ["id" => $user_id]
         );
         $row = $query->fetchAll();
-        $my_participations= [];
+        $my_participations = [];
         foreach ($row as $item) {
             $my_participations[] = new Item(
                 title: $item['title'],
@@ -76,5 +76,28 @@ class Item extends Model {
             );
         }
         return $my_participations;
+    }
+
+    public static function get_other_available_items(?int $user_id): array {
+        $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
+                    FROM items i JOIN users u on i.owner = u.id
+                    WHERE u.id != :id ";
+        $query = self::execute($sql, ["id" => $user_id]
+        );
+        $row = $query->fetchAll();
+        $other_items = [];
+        foreach ($row as $item) {
+            $other_items[] = new Item(
+                title: $item['title'],
+                description: $item['description'],
+                owner: $item['owner'],
+                created_at: $item['created_at'],
+                duration_days: $item['duration_days'],
+                id: $item['id'],
+                buy_now_price: $item['buy_now_price'],
+                starting_bid: $item['starting_bid']
+            );
+        }
+        return $other_items;
     }
 }
