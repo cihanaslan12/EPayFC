@@ -16,7 +16,7 @@
                 <p><?= count($my_participations) ?></p>
                 <?php foreach ($my_participations as $item): ?>
                     <div class="item-card">
-                        <h5><?= htmlspecialchars($item['title']) ?></h5>
+                        <h5><?= $item->get_title() ?></h5>
                 <?php endforeach;?>
             <?php endif; ?>
 
@@ -25,7 +25,7 @@
                <p><?= count($others_available)?></p>
                 <?php foreach ($others_available as $item): ?>
                     <div class="item-card">
-                        <h5><?= htmlspecialchars($item['title']) ?></h5>
+                        <h5><?= $item->get_title() ?></h5>
                 <?php endforeach;?>
             <?php endif; ?>
 
