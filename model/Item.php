@@ -55,11 +55,11 @@ class Item extends Model {
             buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
     }
 
-    public static function get_participating_items(?int $user_id): array {
+    public static function get_participating_items(User $user): array {
         $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
                     FROM items i JOIN users u ON i.owner = u.id 
                     WHERE u.id = :id ";
-        $query = self::execute($sql, ["id" => $user_id]
+        $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
         $my_participations = [];
@@ -78,11 +78,11 @@ class Item extends Model {
         return $my_participations;
     }
 
-    public static function get_other_available_items(?int $user_id): array {
+    public static function get_other_available_items(User $user): array {
         $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
                     FROM items i JOIN users u on i.owner = u.id
                     WHERE u.id != :id ";
-        $query = self::execute($sql, ["id" => $user_id]
+        $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
         $other_items = [];

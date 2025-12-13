@@ -1,6 +1,7 @@
 <?php
 
 require_once "framework/Model.php";
+require_once "model/Item.php";
 
 class User extends Model {
     public function __construct(
@@ -114,5 +115,15 @@ class User extends Model {
             $errors['mail'] = "Can't find a user with the mail '$mail'. Please sign up.";
         }
         return $errors;
+    }
+
+    public function get_participating_items(): array
+    {
+        return Item::get_participating_items($this);
+    }
+
+    public function get_other_available_items(): array
+    {
+        return Item::get_other_available_items($this);
     }
 }
