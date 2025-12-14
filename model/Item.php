@@ -56,9 +56,12 @@ class Item extends Model {
     }
 
     public static function get_participating_items(User $user): array {
-        $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
-                    FROM items i JOIN users u ON i.owner = u.id 
-                    WHERE u.id = :id ";
+        $sql = "SELECT * 
+                FROM bids b 
+                    JOIN v_items_status vis ON b.item = vis.id
+                    JOIN users u ON b.owner = u.id
+                WHERE u.id = :id
+                AND (vis.end_at > 0 OR vis.buy_now_reached = 0) ";
         $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
