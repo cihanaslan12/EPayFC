@@ -61,7 +61,8 @@ class Item extends Model {
                     JOIN v_items_status vis ON b.item = vis.id
                     JOIN users u ON b.owner = u.id
                 WHERE u.id = :id
-                AND (vis.end_at > 0 OR vis.buy_now_reached = 0) ";
+                AND (vis.end_at > 0 OR vis.buy_now_reached = 0) 
+                ORDER BY vis.end_at DESC ";
         $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
