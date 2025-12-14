@@ -82,9 +82,14 @@ class Item extends Model {
     }
 
     public static function get_other_available_items(User $user): array {
-        $sql = "SELECT DISTINCT i.id, i.title, i.description, i.owner, i.created_at, i.buy_now_price, i.duration_days, i.starting_bid 
-                    FROM items i JOIN users u on i.owner = u.id
-                    WHERE u.id != :id ";
+        $sql = "SELECT *
+                FROM bids b
+                    JOIN v_items_status vis ON b.item = vis.id
+                    JOIN users u ON b.owner = u.id
+                WHERE b.owner != :id
+                AND i.owner != :id
+                AND (vis.end_at > 0 OR vis.buy_now_reached = 0)
+                ORDER BY vis.end_at DESC ";
         $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
