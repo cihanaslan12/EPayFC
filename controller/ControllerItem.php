@@ -25,10 +25,27 @@ class ControllerItem extends Controller {
             return;
         }
 
+        $pictures = Item::get_pictures($id);
+
+        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
+
+        $mainPicture = $pictures[0]["picture_path"] ?? null;
+        if ($selectedPriority > 0) {
+            foreach ($pictures as $pic) {
+                if (intval($pic["priority"]) === $selectedPriority) {
+                    $mainPicture = $pic["picture_path"];
+                    break;
+                }
+            }
+        }
+
+
         $user = $this->get_user_or_false(); // guest autorisé
         (new View("openitem"))->show([
             "item" => $item,
-            "user" => $user
+            "user" => $user,
+            "pictures" => $pictures,
+            "mainPicture" => $mainPicture
         ]);
     }
 

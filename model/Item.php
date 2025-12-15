@@ -122,4 +122,13 @@ class Item extends Model {
         return $row ?: false;
     }
 
+    public static function get_pictures(int $item_id): array {
+        $sql = "SELECT priority, picture_path
+            FROM item_pictures
+            WHERE item = :id
+            ORDER BY priority";
+        $query = self::execute($sql, ["id" => $item_id]);
+        return $query->fetchAll();
+    }
+
 }
