@@ -56,47 +56,38 @@ class Item extends Model {
     }
 
     public static function get_participating_items(User $user): array {
-        $sql = "SELECT * 
-                FROM bids b 
-                    JOIN v_items_status vis ON b.item = vis.id
+        $sql = "SELECT DISTINCT vis.* 
+                FROM v_items_status vis
+                    JOIN bids b ON b.item = vis.id
                     JOIN users u ON b.owner = u.id
-                WHERE u.id = :id
+                WHERE b.owner = :id
                 AND (vis.end_at > 0 OR vis.buy_now_reached = 0) 
-                ORDER BY vis.end_at DESC ";
-        $query = self::execute($sql, ["id" => $user->get_id()]
-        );
-        $row = $query->fetchAll();
-        $my_participations = [];
-        foreach ($row as $item) {
-            $my_participations[] = new Item(
-                title: $item['title'],
-                description: $item['description'],
-                owner: $item['owner'],
-                created_at: $item['created_at'],
-                duration_days: $item['duration_days'],
-                id: $item['id'],
-                buy_now_price: $item['buy_now_price'],
-                starting_bid: $item['starting_bid']
-            );
-        }
-        return $my_participations;
+                ORDER BY vis.end_at ASC ";
+
+        return self::fetchItems($sql, $user);
     }
 
     public static function get_other_available_items(User $user): array {
         $sql = "SELECT DISTINCT vis.*
-                FROM bids b
-                    JOIN v_items_status vis ON b.item = vis.id
-                    JOIN users u ON b.owner = u.id
-                WHERE b.owner != :id
-                AND vis.owner != :id
+                FROM v_items_status vis
+                    JOIN users u ON vis.owner = u.id
+                WHERE vis.owner != :id
+                AND vis.id NOT IN (SELECT item
+                                    FROM bids
+                                    WHERE owner = :id)
                 AND (vis.end_at > 0 OR vis.buy_now_reached = 0)
-                ORDER BY vis.end_at DESC ";
+                ORDER BY vis.end_at ASC ";
+
+        return self::fetchItems($sql, $user);
+    }
+
+    private static function fetchItems(string $sql, User $user): array {
         $query = self::execute($sql, ["id" => $user->get_id()]
         );
         $row = $query->fetchAll();
-        $other_items = [];
+        $items = [];
         foreach ($row as $item) {
-            $other_items[] = new Item(
+            $items[] = new Item(
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
@@ -104,9 +95,9 @@ class Item extends Model {
                 duration_days: $item['duration_days'],
                 id: $item['id'],
                 buy_now_price: $item['buy_now_price'],
-                starting_bid: $item['starting_bid']
+                starting_bid: $item['starting_bid'],
             );
         }
-        return $other_items;
+        return $items;
     }
 }
