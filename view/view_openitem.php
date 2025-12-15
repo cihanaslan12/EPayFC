@@ -8,9 +8,9 @@
 </head>
 <body>
 
-<h1><?= htmlspecialchars($item["title"]) ?></h1>
+<h1><?= $item["title"] ?></h1>
 
-<p><strong>Seller:</strong> <?= htmlspecialchars($item["seller_pseudo"]) ?></p>
+<p><strong>Seller:</strong> <?= $item["seller_pseudo"] ?></p>
 
 <?php
 function thumbnail_path(string $path): string {
@@ -25,7 +25,7 @@ function thumbnail_path(string $path): string {
 <?php if ($mainPicture): ?>
     <div style="max-width: 700px;">
         <img
-                src="<?= htmlspecialchars($mainPicture) ?>"
+                src="<?= $mainPicture ?>"
                 alt="Main picture"
                 style="width: 100%; height: auto; display:block; border:1px solid #ccc;">
 
@@ -38,7 +38,7 @@ function thumbnail_path(string $path): string {
                 ?>
                 <a href="item/open/<?= (int)$item["id"] ?>/<?= $prio ?>">
                 <img
-                            src="<?= htmlspecialchars($thumb) ?>"
+                            src="<?= $thumb ?>"
                             alt="thumbnail <?= $prio ?>"
                             style="width:120px; height:auto; border:1px solid #ccc;">
                 </a>
@@ -51,21 +51,21 @@ function thumbnail_path(string $path): string {
 
 
 <p><strong>Description:</strong><br>
-    <?= nl2br(htmlspecialchars($item["description"] ?? "")) ?>
+    <?= nl2br($item["description"] ?? "") ?>
 </p>
 
 <hr>
 
-<p><strong>Start:</strong> <?= htmlspecialchars($item["created_at"]) ?></p>
-<p><strong>End:</strong> <?= htmlspecialchars($item["end_at"]) ?></p>
+<p><strong>Start:</strong> <?= $item["created_at"] ?></p>
+<p><strong>End:</strong> <?= $item["end_at"] ?></p>
 
 <hr>
 
 <ul>
-    <li><strong>Starting bid:</strong> <?= htmlspecialchars((string)$item["starting_bid"]) ?></li>
-    <li><strong>Buy now price:</strong> <?= htmlspecialchars((string)$item["buy_now_price"]) ?></li>
-    <li><strong>Max bid:</strong> <?= htmlspecialchars((string)$item["max_bid"]) ?></li>
-    <li><strong>Bid count:</strong> <?= htmlspecialchars((string)$item["bid_count"]) ?></li>
+    <li><strong>Starting bid:</strong> <?= (string)$item["starting_bid"] ?></li>
+    <li><strong>Buy now price:</strong> <?= (string)$item["buy_now_price"] ?></li>
+    <li><strong>Max bid:</strong> <?= (string)$item["max_bid"] ?></li>
+    <li><strong>Bid count:</strong> <?= (string)$item["bid_count"] ?></li>
 </ul>
 
 <hr>
