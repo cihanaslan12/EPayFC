@@ -8,17 +8,10 @@
 </head>
 <body>
 
-<h1><?= $item["title"] ?></h1>
+<h1><?= $item->get_title() ?></h1>
 
-<p><strong>Seller:</strong> <?= $item["seller_pseudo"] ?></p>
+<p><strong>Seller:</strong> <?= $item->get_seller_pseudo() ?></p>
 
-<?php
-function thumbnail_path(string $path): string {
-    $dot = strrpos($path, '.');
-    if ($dot === false) return $path;
-    return substr($path, 0, $dot) . "_thumbnail" . substr($path, $dot);
-}
-?>
 
 <h2>Photos</h2>
 
@@ -32,11 +25,10 @@ function thumbnail_path(string $path): string {
         <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
             <?php foreach ($pictures as $pic): ?>
                 <?php
-                $full = $pic["picture_path"];
-                $thumb = thumbnail_path($full);
-                $prio = (int)$pic["priority"];
+                $thumb = $pic->get_thumbnail_path();
+                $prio  = $pic->get_priority();
                 ?>
-                <a href="item/open/<?= (int)$item["id"] ?>/<?= $prio ?>">
+                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>">
                 <img
                             src="<?= $thumb ?>"
                             alt="thumbnail <?= $prio ?>"
@@ -51,21 +43,21 @@ function thumbnail_path(string $path): string {
 
 
 <p><strong>Description:</strong><br>
-    <?= nl2br($item["description"] ?? "") ?>
+    <?= nl2br($item->get_description() ?? "") ?>
 </p>
 
 <hr>
 
-<p><strong>Start:</strong> <?= $item["created_at"] ?></p>
-<p><strong>End:</strong> <?= $item["end_at"] ?></p>
+<p><strong>Start:</strong> <?= $item->get_created_at() ?></p>
+<p><strong>End:</strong> <?= $item->get_end_at() ?></p>
 
 <hr>
 
 <ul>
-    <li><strong>Starting bid:</strong> <?= (string)$item["starting_bid"] ?></li>
-    <li><strong>Buy now price:</strong> <?= (string)$item["buy_now_price"] ?></li>
-    <li><strong>Max bid:</strong> <?= (string)$item["max_bid"] ?></li>
-    <li><strong>Bid count:</strong> <?= (string)$item["bid_count"] ?></li>
+    <li><strong>Starting bid:</strong> <?= (string)$item->get_starting_bid() ?></li>
+    <li><strong>Buy now price:</strong> <?= (string)$item->get_buy_now_price() ?></li>
+    <li><strong>Max bid:</strong> <?= (string)$item->get_max_bid() ?></li>
+    <li><strong>Bid count:</strong> <?= (string)$item->get_bid_count() ?></li>
 </ul>
 
 <hr>

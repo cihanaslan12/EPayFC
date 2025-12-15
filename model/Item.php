@@ -1,6 +1,7 @@
 <?php
 
 require_once "framework/Model.php";
+require_once "model/ItemPicture.php";
 
 class Item extends Model {
     public function __construct(
@@ -12,6 +13,11 @@ class Item extends Model {
         private ?int $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
+        private ?string $end_at = null,
+        private ?int $bid_count = null,
+        private ?string $max_bid = null,
+        private ?string $seller_pseudo = null,
+        private ?string $seller_picture_path = null
     ) {
     }
 
@@ -45,6 +51,22 @@ class Item extends Model {
 
     public function get_starting_bid(): ?string {
         return $this->starting_bid;
+    }
+
+    public function get_end_at(): ?string {
+        return $this->end_at;
+    }
+    public function get_bid_count(): ?int {
+        return $this->bid_count;
+    }
+    public function get_max_bid(): ?string {
+        return $this->max_bid;
+    }
+    public function get_seller_pseudo(): ?string {
+        return $this->seller_pseudo;
+    }
+    public function get_seller_picture_path(): ?string {
+        return $this->seller_picture_path;
     }
 
     public static function get_by_id(?int $id): Item|false {
@@ -110,7 +132,7 @@ class Item extends Model {
         return $other_items;
     }
 
-    public static function get_open_item_with_seller(int $id): array|false {
+    public static function get_open_item_with_seller(int $id): Item|false {
         $sql = "SELECT vis.*, 
                    u.pseudo AS seller_pseudo, 
                    u.picture_path AS seller_picture_path
@@ -119,16 +141,41 @@ class Item extends Model {
             WHERE vis.id = :id";
         $query = self::execute($sql, ["id" => $id]);
         $row = $query->fetch();
-        return $row ?: false;
+        return $row ? new Item(
+            title: $row["title"],
+            description: $row["description"] ?? "",
+            owner: (int)$row["owner"],
+            created_at: $row["created_at"],
+            duration_days: (int)$row["duration_days"],
+            id: (int)$row["id"],
+            buy_now_price: $row["buy_now_price"],
+            starting_bid: $row["starting_bid"],
+            end_at: $row["end_at"],
+            bid_count: isset($row["bid_count"]) ? (int)$row["bid_count"] : null,
+            max_bid: $row["max_bid"],
+            seller_pseudo: $row["seller_pseudo"],
+            seller_picture_path: $row["seller_picture_path"]
+        ) : false;
     }
 
-    public static function get_pictures(int $item_id): array {
+    public static function get_pictures_by_item(int $item_id): array {
         $sql = "SELECT priority, picture_path
             FROM item_pictures
             WHERE item = :id
             ORDER BY priority";
         $query = self::execute($sql, ["id" => $item_id]);
-        return $query->fetchAll();
+        $rows = $query->fetchAll();
+
+        $pics = [];
+        foreach ($rows as $r) {
+            $pics[] = new ItemPicture((int)$r["priority"], $r["picture_path"]);
+        }
+        return $pics;
     }
+
+    public function get_pictures(): array {
+        return self::get_pictures_by_item($this->id);
+    }
+
 
 }

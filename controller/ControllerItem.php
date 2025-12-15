@@ -3,6 +3,7 @@
 require_once "framework/Controller.php";
 require_once "model/User.php";
 require_once "model/Item.php";
+require_once "model/ItemPicture.php";
 
 class ControllerItem extends Controller {
     public function index(): void {
@@ -25,16 +26,15 @@ class ControllerItem extends Controller {
             return;
         }
 
-        $pictures = Item::get_pictures($id);
+        $pictures = $item->get_pictures();
 
         $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
 
-        $mainPicture = $pictures[0]["picture_path"] ?? null;
+        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : null;
         if ($selectedPriority > 0) {
             foreach ($pictures as $pic) {
-                if (intval($pic["priority"]) === $selectedPriority) {
-                    $mainPicture = $pic["picture_path"];
-                    break;
+                if ($pic->get_priority() === $selectedPriority) {
+                    $mainPicture = $pic->get_picture_path();
                 }
             }
         }
