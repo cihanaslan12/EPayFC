@@ -9,9 +9,29 @@ class ControllerItem extends Controller {
         $this->browse();
     }
 
-    public function open() : void{
+    public function open(): void {
+        $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
 
+        if ($id <= 0) {
+            http_response_code(404);
+            (new View("error"))->show(["error" => "Item not found."]);
+            return;
+        }
+
+        $item = Item::get_open_item_with_seller($id);
+        if (!$item) {
+            http_response_code(404);
+            (new View("error"))->show(["error" => "Item not found."]);
+            return;
+        }
+
+        $user = $this->get_user_or_false(); // guest autorisé
+        (new View("openitem"))->show([
+            "item" => $item,
+            "user" => $user
+        ]);
     }
+
     public function browse(): void {
         $user = $this->get_user_or_redirect();
         $my_participations = $user->get_participating_items();

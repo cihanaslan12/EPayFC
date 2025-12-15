@@ -109,4 +109,17 @@ class Item extends Model {
         }
         return $other_items;
     }
+
+    public static function get_open_item_with_seller(int $id): array|false {
+        $sql = "SELECT vis.*, 
+                   u.pseudo AS seller_pseudo, 
+                   u.picture_path AS seller_picture_path
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.id = :id";
+        $query = self::execute($sql, ["id" => $id]);
+        $row = $query->fetch();
+        return $row ?: false;
+    }
+
 }
