@@ -55,6 +55,24 @@ class Item extends Model {
             buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
     }
 
+    public function get_pictures(): array {
+        $sql = "SELECT *
+                FROM item_pictures
+                WHERE item = :id 
+                ORDER BY priority ASC ";
+        $query = self::execute($sql, ['id' => $this->get_id()]);
+        $rows = $query->fetchAll();
+
+        $pictures = [];
+        foreach($rows as $picture)
+            $pictures[] = new ItemPicture(
+                item: $picture['item'],
+                priority: $picture['priority'],
+                picture_path: $picture['picture_path'],
+            );
+        return $pictures;
+    }
+
     public static function get_participating_items(User $user): array {
         $sql = "SELECT DISTINCT vis.* 
                 FROM v_items_status vis
