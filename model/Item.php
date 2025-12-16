@@ -1,5 +1,7 @@
 <?php
 
+use Decimal\Decimal;
+
 require_once "framework/Model.php";
 
 class Item extends Model {
@@ -9,9 +11,11 @@ class Item extends Model {
         private int $owner,
         private string $created_at,
         private int $duration_days,
+        private string $end_at,
         private ?int $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
+        private ?decimal $max_bid = null,
     ) {
     }
 
@@ -39,12 +43,22 @@ class Item extends Model {
         return $this->duration_days;
     }
 
+    public function get_end_at(): string
+    {
+        return $this->end_at;
+    }
+
     public function get_buy_now_price(): ?string {
         return $this->buy_now_price;
     }
 
     public function get_starting_bid(): ?string {
         return $this->starting_bid;
+    }
+
+    public function get_max_bid(): ?decimal
+    {
+        return $this->max_bid;
     }
 
     public static function get_by_id(?int $id): Item|false {
@@ -106,14 +120,21 @@ class Item extends Model {
         $items = [];
         foreach ($row as $item) {
             $items[] = new Item(
+                /* vignette non récupérer */
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
+                end_at: $item['end_at'],  /* à changer en temps restant */
                 id: $item['id'],
                 buy_now_price: $item['buy_now_price'],
                 starting_bid: $item['starting_bid'],
+                max_bid: $item['max_bid'],  /* si has_bids */
+                /* nombre d'image du item */
+                /* is_direct_sale or is_auction or 2 */
+                /* has_bids && || best */
+
             );
         }
         return $items;
