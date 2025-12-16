@@ -5,11 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Browse items</title>
         <base href="<?= Configuration::get("web_root") ?>">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     </head>
 
     <body>
-
-        <div class="header-navbar">include(menu.php)</div>
+        <?php require 'header_menu.php'; ?>
 
         <h2>Items I'm Participating In</h2>
             <?php if(isset($my_participations)): ?>
