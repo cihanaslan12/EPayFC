@@ -2,6 +2,7 @@
 
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
+require_once "model/Bid.php";
 
 class Item extends Model {
     public function __construct(
@@ -175,6 +176,10 @@ class Item extends Model {
 
     public function get_pictures(): array {
         return self::get_pictures_by_item($this->id);
+    }
+
+    public function get_bids(): array {
+        return Bid::get_by_item($this->id);
     }
 
 

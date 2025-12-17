@@ -26,6 +26,8 @@ class ControllerItem extends Controller {
             return;
         }
 
+        $bids = $item->get_bids();
+
         $pictures = $item->get_pictures();
 
         $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
@@ -45,7 +47,8 @@ class ControllerItem extends Controller {
             "item" => $item,
             "user" => $user,
             "pictures" => $pictures,
-            "mainPicture" => $mainPicture
+            "mainPicture" => $mainPicture,
+            "bids" => $bids
         ]);
     }
 

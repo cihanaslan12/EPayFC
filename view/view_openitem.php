@@ -62,5 +62,31 @@
 
 <hr>
 
+<h2>Bid history</h2>
+
+<?php if (!empty($bids)): ?>
+    <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+        <tr>
+            <th>Bidder</th>
+            <th>Date/Time</th>
+            <th>Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($bids as $bid): ?>
+            <tr>
+                <td><?= $bid->get_owner_pseudo() ?></td>
+                <td><?= $bid->get_created_at() ?></td>
+                <td><?= $bid->get_amount() ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php else: ?>
+    <p><em>No bids yet.</em></p>
+<?php endif; ?>
+
+
 </body>
 </html>
