@@ -1,23 +1,19 @@
-<nav class="navbar">
-    <div class="navbar-left">
-        <?php if (isset($show_back) && $show_back): ?>
-            <a href="<?= $backUrl ?? '#' ?>" class="back-button">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
-        <?php endif; ?>
-    </div>
+<nav class="navbar fixed-top p-3 mb-2 bg-dark">
+    <div class="container-fluid">
+            <?php if (isset($show_back) && $show_back): ?>
+                <a href="<?= $backUrl ?? '#' ?>" class="btn back-btn">
+                    <i class="bi bi-arrow-left text-primary"></i>
+                </a>
+            <?php endif; ?>
 
-    <div class="navbar-center">
-        <span class="page-title">
-            <?= $page_title ?? "EPayFC" ?>
+        <span class="navbar-brand mx-auto mb-0 h1 text-primary">
+            <?= $page_title ?? "EPayFC" ?> <i class="bi bi-cart4 text-light"></i>
         </span>
-    </div>
 
-    <div class="navbar-right">
         <?php if (isset($show_save) && $show_save): ?>
-            <button type="submit" form="main-form" class="save-button">
-                <i class="fa-regular fa-floppy-disk"></i>
-            </button>
-        <?php endif; ?>
+            <button type="submit" form="form" class="btn save-btn">
+                    <i class="bi bi-airplane text-primary"></i>
+                </button>
+            <?php endif; ?>
     </div>
 </nav>
