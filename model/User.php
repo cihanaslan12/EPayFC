@@ -60,6 +60,13 @@ class User extends Model {
         return $row ? new User(id: $row['id'], mail: $row['email'], fullName: $row['full_name'], pseudo: $row['pseudo'], hashedPassword: $row['password'], picturePath: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
     }
 
+    public static function get_pseudo_by_owner_id(int $id): string {
+        $sql = "SELECT pseudo FROM users WHERE id = :id" ;
+        $query = self::execute($sql, ["id" => $id]);
+        $user = $query->fetch(PDO::FETCH_ASSOC);
+        return $user['pseudo'];
+    }
+
     public static function get_by_pseudo(string $pseudo): User|false {
         $query = self::execute("SELECT * FROM users WHERE pseudo = :pseudo", array("pseudo" => $pseudo));
         $row = $query->fetch();

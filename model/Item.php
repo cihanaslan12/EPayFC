@@ -9,13 +9,14 @@ class Item extends Model {
         private string $title,
         private string $description,
         private int $owner,
+        private string $owner_pseudo,
         private string $created_at,
         private int $duration_days,
         private string $end_at,
         private ?int $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
-        private ?decimal $max_bid = null,
+        private ?string $max_bid = null,
     ) {
     }
 
@@ -33,6 +34,10 @@ class Item extends Model {
 
     public function get_owner(): int {
         return $this->owner;
+    }
+
+    public function get_owner_pseudo(): string {
+        return $this->owner_pseudo;
     }
 
     public function get_created_at(): string {
@@ -56,7 +61,7 @@ class Item extends Model {
         return $this->starting_bid;
     }
 
-    public function get_max_bid(): ?decimal
+    public function get_max_bid(): ?string
     {
         return $this->max_bid;
     }
@@ -119,11 +124,13 @@ class Item extends Model {
         $row = $query->fetchAll();
         $items = [];
         foreach ($row as $item) {
+            $owner_pseudo = User::get_pseudo_by_owner_id($item['owner']);
             $items[] = new Item(
                 /* vignette non récupérer */
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
+                owner_pseudo: $owner_pseudo,
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
                 end_at: $item['end_at'],  /* à changer en temps restant */

@@ -24,7 +24,7 @@
                                 <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
                             <div class="card-body">
                                 <h6 class="card-title"><?= $item->get_title() ?></h6>
-                                <p class="card-owner">by <?= $item->get_owner() ?></p>
+                                <p class="card-owner">by <?= $item->get_owner_pseudo() ?></p>
                             <div class="row row-cols-md-2 border border-danger">
                                 <?php if(isset($get_buy_now_price)) : ?>
                                     <p class="card-price">€ <?= $item->get_buy_now_price() ?></p>
