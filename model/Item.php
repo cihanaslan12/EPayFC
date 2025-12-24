@@ -1,8 +1,7 @@
 <?php
 
-use Decimal\Decimal;
-
 require_once "framework/Model.php";
+require_once "model/ItemPicture.php";
 
 class Item extends Model {
     public function __construct(
@@ -80,7 +79,7 @@ class Item extends Model {
             buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
     }
 
-    public function get_pictures(): array {
+    public function get_item_pictures(): array {
         $sql = "SELECT *
                 FROM item_pictures
                 WHERE item = :id 
