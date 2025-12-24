@@ -13,6 +13,7 @@ class Item extends Model {
         private string $created_at,
         private int $duration_days,
         private string $end_at,
+        private int $has_bids,
         private ?int $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
@@ -51,6 +52,11 @@ class Item extends Model {
     public function get_end_at(): string
     {
         return $this->end_at;
+    }
+
+    public function get_has_bids(): int
+    {
+        return $this->has_bids;
     }
 
     public function get_buy_now_price(): ?string {
@@ -124,16 +130,16 @@ class Item extends Model {
         $row = $query->fetchAll();
         $items = [];
         foreach ($row as $item) {
-            $owner_pseudo = User::get_pseudo_by_owner_id($item['owner']);
             $items[] = new Item(
                 /* vignette non récupérer */
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
-                owner_pseudo: $owner_pseudo,
+                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
                 end_at: $item['end_at'],  /* à changer en temps restant */
+                has_bids: $item['has_bids'],
                 id: $item['id'],
                 buy_now_price: $item['buy_now_price'],
                 starting_bid: $item['starting_bid'],

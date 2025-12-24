@@ -12,7 +12,7 @@
     <body>
         <header>
             <?php require 'header_menu.php';?>
-        </header>
+        </header>²
 
         <main class="p-3 m-3">
             <h2 class="pt-5">Items I'm Participating In</h2>
@@ -25,16 +25,18 @@
                             <div class="card-body">
                                 <h6 class="card-title"><?= $item->get_title() ?></h6>
                                 <p class="card-owner">by <?= $item->get_owner_pseudo() ?></p>
-                            <div class="row row-cols-md-2 border border-danger">
-                                <?php if(isset($get_buy_now_price)) : ?>
-                                    <p class="card-price">€ <?= $item->get_buy_now_price() ?></p>
+                            <div class="row row-cols-md-2">
+                                <?php if(($item->get_buy_now_price() != null)) : ?>
+                                    <p class="card-price text-primary ">€ <?= $item->get_buy_now_price() ?></p>
                                 <?php else : ?>
-                                    <p class="card-price">€ <?= $item->get_starting_bid() ?></p>
+                                    <p class="card-price text-warning">€ <?= $item->get_starting_bid() ?></p>
                                 <?php endif; ?>
-                                L'enchère la plus élevée, s'il y a au moins une offre d'achat.
-                                <?php if($has_bids == 1): ?>
-                                    <p class="card-price">Current bid € <?= $item->get_max_bid() ?></p>
-                                <?php endif; ?>
+                                <div>
+                                    <?php if($item->get_has_bids() == 1): ?>
+                                        <label for="current-bid">Current bid</label>
+                                        <p class="card-price text-success" id="current-bid">€ <?= $item->get_max_bid() ?></p>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                                 <p class="card-left_time"><i class="bi bi-clock"></i> <?= $item->get_end_at() ?> left</p>
                             </div>
@@ -52,11 +54,21 @@
                                 <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
                             <div class="card-body">
                                 <h6 class="card-title"><?= $item->get_title() ?></h6>
-                                <p class="card-owner">by <?= $item->get_owner() ?></p>
-                                <p class="card-price">€ <?= $item->get_buy_now_price() ?></p>
-                                <p class="card-current_bid">Current bid</p>
-                                <p class="card-price">€ <?= $item->get_max_bid() ?></p>
-                                <p class="card-left_time"><i class="bi bi-clock"></i><?= $item->get_end_at() ?> left</p>
+                                <p class="card-owner">by <?= $item->get_owner_pseudo() ?></p>
+                                <div class="row row-cols-md-2 border border-danger">
+                                    <?php if(($item->get_buy_now_price() != null)) : ?>
+                                        <p class="card-price text-primary ">€ <?= $item->get_buy_now_price() ?></p>
+                                    <?php else : ?>
+                                        <p class="card-price text-warning">€ <?= $item->get_starting_bid() ?></p>
+                                    <?php endif; ?>
+                                    <div>
+                                        <?php if($item->get_has_bids() == 1): ?>
+                                            <label for="current-bid">Current bid</label>
+                                            <p class="card-price text-success" id="current-bid">€ <?= $item->get_max_bid() ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <p class="card-left_time"><i class="bi bi-clock"></i> <?= $item->get_end_at() ?> left</p>
                             </div>
                         </div>
                     <?php endforeach;?>
