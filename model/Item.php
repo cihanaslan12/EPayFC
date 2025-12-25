@@ -13,6 +13,8 @@ class Item extends Model {
         private int $duration_days,
         private string $end_at,
         private int $has_bids,
+        private int $is_direct_sale,
+        private int $is_auction,
         private ?int $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
@@ -56,6 +58,16 @@ class Item extends Model {
     public function get_has_bids(): int
     {
         return $this->has_bids;
+    }
+
+    public function get_is_direct_sale(): int
+    {
+        return $this->is_direct_sale;
+    }
+
+    public function get_is_auction(): int
+    {
+        return $this->is_auction;
     }
 
     public function get_buy_now_price(): ?string {
@@ -139,12 +151,13 @@ class Item extends Model {
                 duration_days: $item['duration_days'],
                 end_at: $item['end_at'],  /* à changer en temps restant */
                 has_bids: $item['has_bids'],
+                /* is_direct_sale or is_auction or 2 */
+                is_direct_sale: $item['is_direct_sale'],
+                is_auction: $item['is_auction'],
                 id: $item['id'],
                 buy_now_price: $item['buy_now_price'],
                 starting_bid: $item['starting_bid'],
-                max_bid: $item['max_bid'],  /* si has_bids */
-                /* nombre d'image du item */
-                /* is_direct_sale or is_auction or 2 */
+                max_bid: $item['max_bid'],
                 /* has_bids && || best */
 
             );
