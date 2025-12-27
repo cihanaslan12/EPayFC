@@ -32,7 +32,7 @@
                                 </label>
                             <?php endif; ?>
                             <div class="card-body">
-                            <?php if($item->get_is_direct_sale() == 1): ?>
+                            <?php if(($item->get_buy_now_price() !== null)): ?>
                                 <label class="badge rounded-pill text-bg-primary">
                                     <i class="bi bi-bag"></i> Buy Now
                                 </label>
