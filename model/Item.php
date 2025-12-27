@@ -19,6 +19,7 @@ class Item extends Model {
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
         private ?string $max_bid = null,
+        private ?string $thumbnail = null,
     ) {
     }
 
@@ -81,6 +82,11 @@ class Item extends Model {
     public function get_max_bid(): ?string
     {
         return $this->max_bid;
+    }
+
+    public function get_thumbnail(): ?string
+    {
+        return $this->thumbnail;
     }
 
     public static function get_by_id(?int $id): Item|false {
@@ -158,6 +164,7 @@ class Item extends Model {
                 buy_now_price: $item['buy_now_price'],
                 starting_bid: $item['starting_bid'],
                 max_bid: $item['max_bid'],
+                thumbnail: ItemPicture::get_item_thumbnail($item['id']),
                 /* has_bids && || best */
 
             );

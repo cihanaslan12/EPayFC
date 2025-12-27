@@ -12,7 +12,7 @@
     <body>
         <header>
             <?php require 'header_menu.php';?>
-        </header>²
+        </header>
 
         <main class="p-3 m-3">
             <h2 class="pt-5">Items I'm Participating In</h2>
@@ -20,8 +20,12 @@
                 <?php if(isset($my_participations)): ?>
                     <?php foreach ($my_participations as $item): ?>
                         <div class="card">
-                            <svg aria-label="Placeholder: Image cap" class="bd-placeholder-img card-img-top" height="140" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-                                <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
+                            <?php if(!empty($item->get_thumbnail()) && ($item->get_thumbnail() !== "")): ?>
+                                <img src="<?= $item->get_thumbnail() ?>" alt="item_thumbnail">
+                            <?php else: ?>
+                                <svg aria-label="Placeholder: Image cap" class="bd-placeholder-img card-img-top" height="140" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
+                                    <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
+                            <?php endif; ?>
                             <?php if(count($item->get_item_pictures()) > 1): ?>
                                 <label class="badge rounded-pill text-bg-dark opacity-75" for="nb-pics">
                                     <i class="bi bi-images" id="nb-pics"></i> <?= count($item->get_item_pictures()) ?> images
@@ -65,8 +69,12 @@
                 <?php if(isset($others_available)): ?>
                     <?php foreach ($others_available as $item): ?>
                         <div class="card">
-                            <svg aria-label="Placeholder: Image cap" class="bd-placeholder-img card-img-top" height="140" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-                                <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
+                            <?php if(!empty($item->get_thumbnail()) && ($item->get_thumbnail() !== "")): ?>
+                                <img src="<?= $item->get_thumbnail() ?>" alt="item_thumbnail">
+                            <?php else: ?>
+                                <svg aria-label="Placeholder: Image cap" class="bd-placeholder-img card-img-top" height="140" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
+                                    <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
+                            <?php endif; ?>
                             <?php if(count($item->get_item_pictures()) > 1): ?>
                                 <label class="badge rounded-pill text-bg-dark opacity-75" for="nb-pics">
                                     <i class="bi bi-images" id="nb-pics"></i> <?= count($item->get_item_pictures()) ?> images
