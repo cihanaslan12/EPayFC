@@ -67,6 +67,33 @@ class User extends Model {
         return $user['pseudo'];
     }
 
+    public static function am_i_bidder(int $user_id, int $item_id): bool {
+        $sql = "SELECT * 
+                FROM bids b
+                    JOIN v_items_status vis ON b.item = vis.id
+                    JOIN users u ON b.owner = u.id
+                WHERE b.owner = :bidder_id
+                    AND b.item = :item_id
+                    AND (vis.end_at > :now OR vis.buy_now_reached = 0) ";
+        $query = self::execute($sql, ["bidder_id" => $user_id, "item_id" => $item_id, "now" => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return (bool)$res;
+    }
+
+    public static function am_i_highest_bidder(int $user_id, int $item_id): bool {
+        $sql = "SELECT owner
+                FROM bids
+                WHERE item = :item_id
+                ORDER BY amount DESC
+                LIMIT 1";
+        $query = self::execute($sql, ["item_id" => $item_id]);
+        $res = $query->fetch();
+        if ($res)
+            return (int)$res['owner'] == $user_id;
+        else
+            return false;
+    }
+
     public static function get_by_pseudo(string $pseudo): User|false {
         $query = self::execute("SELECT * FROM users WHERE pseudo = :pseudo", array("pseudo" => $pseudo));
         $row = $query->fetch();

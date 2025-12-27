@@ -4,51 +4,62 @@ require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
 
-class Item extends Model {
+class Item extends Model
+{
     public function __construct(
-        private string $title,
-        private string $description,
-        private int $owner,
-        private string $owner_pseudo,
-        private string $created_at,
-        private int $duration_days,
-        private string $end_at,
-        private int $has_bids,
-        private int $is_direct_sale,
-        private int $is_auction,
-        private ?int $id = null,
+        private string  $title,
+        private string  $description,
+        private int     $owner,
+        private string  $owner_pseudo,
+        private string  $created_at,
+        private int     $duration_days,
+        private string  $end_at,
+        private int     $has_bids,
+        private int     $is_direct_sale,
+        private int     $is_auction,
+        private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
         private ?string $max_bid = null,
         private ?string $thumbnail = null,
-    ) {
+        private ?bool   $bidder = null,
+        private ?bool   $highest_bidder = null,
+    )
+    {
     }
 
-    public function get_id(): ?int {
+    public function get_id(): ?int
+    {
         return $this->id;
     }
 
-    public function get_title(): string {
+    public function get_title(): string
+    {
         return $this->title;
     }
 
-    public function get_description(): string {
+    public function get_description(): string
+    {
         return $this->description;
     }
 
-    public function get_owner(): int {
+    public function get_owner(): int
+    {
         return $this->owner;
     }
 
-    public function get_owner_pseudo(): string {
+    public function get_owner_pseudo(): string
+    {
         return $this->owner_pseudo;
     }
 
-    public function get_created_at(): string {
+    public function get_created_at(): string
+    {
         return $this->created_at;
     }
 
-    public function get_duration_days(): int {
+    public function get_duration_days(): int
+    {
         return $this->duration_days;
     }
 
@@ -88,6 +99,16 @@ class Item extends Model {
     public function get_thumbnail(): ?string
     {
         return $this->thumbnail;
+    }
+
+    public function get_bidder(): ?bool
+    {
+        return $this->bidder;
+    }
+
+    public function get_highest_bidder(): ?bool
+    {
+        return $this->highest_bidder;
     }
 
     public static function get_by_id(?int $id): Item|false {
@@ -164,8 +185,8 @@ class Item extends Model {
                 starting_bid: $item['starting_bid'],
                 max_bid: $item['max_bid'],
                 thumbnail: ItemPicture::get_item_thumbnail($item['id']),
-                /* has_bids && || best */
-
+                bidder: User::am_i_bidder($user->get_id(), $item['id']),
+                highest_bidder: User::am_i_highest_bidder($user->get_id(), $item['id']),
             );
         }
         return $items;

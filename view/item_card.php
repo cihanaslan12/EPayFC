@@ -1,4 +1,13 @@
 <div class="card">
+    <?php if ($item->get_highest_bidder()): ?>
+        <label class="badge rounded-pill text-bg-success text-white">
+            <i class="bi bi-trophy"></i> Highest Bidder
+        </label>
+    <?php elseif($item->get_bidder()): ?>
+        <label class="badge rounded-pill text-bg-secondary text-white">
+            <i class="bi bi-hammer"></i> Bidder
+        </label>
+    <?php endif; ?>
     <?php if(!empty($item->get_thumbnail()) && ($item->get_thumbnail() !== "")): ?>
         <img src="<?= $item->get_thumbnail() ?>" alt="item_thumbnail">
     <?php else: ?>
