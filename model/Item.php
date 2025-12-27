@@ -121,7 +121,7 @@ class Item extends Model {
                     JOIN bids b ON b.item = vis.id
                     JOIN users u ON b.owner = u.id
                 WHERE b.owner = :id
-                AND (vis.end_at > 0 OR vis.buy_now_reached = 0) 
+                AND (vis.end_at > :now OR vis.buy_now_reached = 0) 
                 ORDER BY vis.end_at ASC ";
 
         return self::fetchItems($sql, $user);
@@ -135,20 +135,19 @@ class Item extends Model {
                 AND vis.id NOT IN (SELECT item
                                     FROM bids
                                     WHERE owner = :id)
-                AND (vis.end_at > 0 OR vis.buy_now_reached = 0)
+                AND (vis.end_at > :now OR vis.buy_now_reached = 0)
                 ORDER BY vis.end_at ASC ";
 
         return self::fetchItems($sql, $user);
     }
 
     private static function fetchItems(string $sql, User $user): array {
-        $query = self::execute($sql, ["id" => $user->get_id()]
+        $query = self::execute($sql, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
         $items = [];
         foreach ($row as $item) {
             $items[] = new Item(
-                /* vignette non récupérer */
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
@@ -157,7 +156,6 @@ class Item extends Model {
                 duration_days: $item['duration_days'],
                 end_at: $item['end_at'],  /* à changer en temps restant */
                 has_bids: $item['has_bids'],
-                /* is_direct_sale or is_auction or 2 */
                 is_direct_sale: $item['is_direct_sale'],
                 is_auction: $item['is_auction'],
                 id: $item['id'],
