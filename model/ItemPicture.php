@@ -33,11 +33,13 @@ class ItemPicture extends Model {
         $query = self::execute($sql, ['id' => $int]);
         $picture_path = $query->fetch();
 
-        if($picture_path['picture_path'] !== "" && !empty($picture_path['picture_path'])) {
-            $p_p_explode = explode(".", $picture_path['picture_path']);
-            return $p_p_explode[0] . '_thumbnail.' . $p_p_explode[1];
-        } else {
-            return null;
-        }
+        if ($picture_path)
+            if($picture_path['picture_path'] !== "" && !empty($picture_path['picture_path'])) {
+                $p_p_explode = explode(".", $picture_path['picture_path']);
+                return $p_p_explode[0] . '_thumbnail.' . $p_p_explode[1];
+            } else {
+                return null;
+            }
+        return false;
     }
 }
