@@ -14,6 +14,7 @@ class Item extends Model
         private string  $created_at,
         private int     $duration_days,
         private string  $end_at,
+        private string  $time_left,
         private int     $has_bids,
         private int     $is_direct_sale,
         private int     $is_auction,
@@ -66,6 +67,11 @@ class Item extends Model
     public function get_end_at(): string
     {
         return $this->end_at;
+    }
+
+    public function get_time_left(): string
+    {
+        return $this->time_left;
     }
 
     public function get_has_bids(): int
@@ -137,11 +143,28 @@ class Item extends Model
         return $pictures;
     }
 
+    public static function get_time_left_string(int $secs_left): string {
+        $d_left = (int)($secs_left / 86400);
+        $h_left = (int)(($secs_left % 86400) / 3600);
+        $m_left = (int)(($secs_left % 3600) / 60);
+        $s_left = ($secs_left % 60);
+
+        if ($d_left > 0)
+            return $d_left . "d " . $h_left . "h left";
+        else if ($h_left > 0)
+            return $h_left . "h " . $m_left . "m left";
+        else if ($m_left > 0)
+            return $m_left . "m" . $s_left . "s left";
+        else if ($s_left > 0)
+            return $s_left . "s left";
+        else
+            return "closed";
+    }
+
     public static function get_participating_items(User $user): array {
-        $sql = "SELECT DISTINCT vis.* 
+        $sql = "SELECT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
                 FROM v_items_status vis
                     JOIN bids b ON b.item = vis.id
-                    JOIN users u ON b.owner = u.id
                 WHERE b.owner = :id
                 AND (vis.end_at > :now OR vis.buy_now_reached = 0) 
                 ORDER BY vis.end_at ASC ";
@@ -150,14 +173,17 @@ class Item extends Model
     }
 
     public static function get_other_available_items(User $user): array {
-        $sql = "SELECT DISTINCT vis.*
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
                 FROM v_items_status vis
                     JOIN users u ON vis.owner = u.id
                 WHERE vis.owner != :id
                 AND vis.id NOT IN (SELECT item
                                     FROM bids
                                     WHERE owner = :id)
-                AND (vis.end_at > :now OR vis.buy_now_reached = 0)
+                AND vis.not_purchased_direct_sale
+                    OR (vis.is_auction
+                        AND vis.end_at > :now
+                        AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
                 ORDER BY vis.end_at ASC ";
 
         return self::fetchItems($sql, $user);
@@ -176,7 +202,8 @@ class Item extends Model
                 owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
-                end_at: $item['end_at'],  /* à changer en temps restant */
+                end_at: $item['end_at'],
+                time_left: self::get_time_left_string($item['secs_left']),
                 has_bids: $item['has_bids'],
                 is_direct_sale: $item['is_direct_sale'],
                 is_auction: $item['is_auction'],

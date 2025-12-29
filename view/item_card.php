@@ -45,6 +45,6 @@
             <?php endif; ?>
         </div>
     </div>
-        <p class="card-left_time"><i class="bi bi-clock"></i> <?= $item->get_end_at() ?> left</p>
+        <p class="card-left_time"><i class="bi bi-clock"></i> <?= $item->get_time_left() ?></p>
     </div>
 </div>
