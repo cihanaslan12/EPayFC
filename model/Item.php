@@ -162,11 +162,11 @@ class Item extends Model
     }
 
     public static function get_participating_items(User $user): array {
-        $sql = "SELECT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
                 FROM v_items_status vis
                     JOIN bids b ON b.item = vis.id
                 WHERE b.owner = :id
-                AND (vis.end_at > :now OR vis.buy_now_reached = 0) 
+                AND vis.end_at > :now
                 ORDER BY vis.end_at ASC ";
 
         return self::fetchItems($sql, $user);
@@ -175,15 +175,11 @@ class Item extends Model
     public static function get_other_available_items(User $user): array {
         $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
                 FROM v_items_status vis
-                    JOIN users u ON vis.owner = u.id
                 WHERE vis.owner != :id
                 AND vis.id NOT IN (SELECT item
                                     FROM bids
                                     WHERE owner = :id)
-                AND vis.not_purchased_direct_sale
-                    OR (vis.is_auction
-                        AND vis.end_at > :now
-                        AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+                AND vis.end_at > :now
                 ORDER BY vis.end_at ASC ";
 
         return self::fetchItems($sql, $user);
