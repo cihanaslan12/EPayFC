@@ -35,6 +35,7 @@
 
         <footer>
             <?php require 'footer_menu.php'; ?>
+            <?php if (Configuration::is_dev()) :?> <?php require 'footer_time.php'; ?> <?php endif; ?>
         </footer>
     </body>
 </html>
