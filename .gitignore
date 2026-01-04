@@ -63,6 +63,6 @@ cookies.txt
 
 # ignore database private dumps and private image backup dirs (files/dirs ending with these suffixes)
 database/**/*private_dump.sql
-database/**/*private_image_backup/
+database/**/*private_images_backup/
 
 
