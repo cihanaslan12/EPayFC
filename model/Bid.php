@@ -36,4 +36,17 @@ class Bid extends Model {
         }
         return $bids;
     }
+
+    public static function get_highest_for_item(int $item_id): ?Bid {
+        $sql = "SELECT b.owner, u.pseudo, b.item, b.created_at, b.amount
+            FROM bids b
+            JOIN users u ON u.id = b.owner
+            WHERE b.item = :item_id
+            ORDER BY b.amount DESC, b.created_at ASC
+            LIMIT 1";
+        $q = self::execute($sql, ["item_id" => $item_id]);
+        $r = $q->fetch();
+        return $r ? new Bid((int)$r["owner"], $r["pseudo"], (int)$r["item"], $r["created_at"], $r["amount"]) : null;
+    }
+
 }

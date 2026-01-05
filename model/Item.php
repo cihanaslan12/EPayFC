@@ -18,7 +18,13 @@ class Item extends Model {
         private ?int $bid_count = null,
         private ?string $max_bid = null,
         private ?string $seller_pseudo = null,
-        private ?string $seller_picture_path = null
+        private ?string $seller_picture_path = null,
+        private ?int $is_direct_sale = null,
+        private ?int $is_auction = null,
+        private ?int $has_buy_now = null,
+        private ?int $has_bids = null,
+        private ?int $buy_now_reached = null,
+        private ?int $not_purchased_direct_sale = null
     ) {
     }
 
@@ -69,6 +75,26 @@ class Item extends Model {
     public function get_seller_picture_path(): ?string {
         return $this->seller_picture_path;
     }
+
+    public function get_is_direct_sale(): ?int {
+        return $this->is_direct_sale;
+    }
+    public function get_is_auction(): ?int {
+        return $this->is_auction;
+    }
+    public function get_has_buy_now(): ?int {
+        return $this->has_buy_now;
+    }
+    public function get_has_bids(): ?int {
+        return $this->has_bids;
+    }
+    public function get_buy_now_reached(): ?int {
+        return $this->buy_now_reached;
+    }
+    public function get_not_purchased_direct_sale(): ?int {
+        return $this->not_purchased_direct_sale;
+    }
+
 
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
@@ -155,7 +181,14 @@ class Item extends Model {
             bid_count: isset($row["bid_count"]) ? (int)$row["bid_count"] : null,
             max_bid: $row["max_bid"],
             seller_pseudo: $row["seller_pseudo"],
-            seller_picture_path: $row["seller_picture_path"]
+            seller_picture_path: $row["seller_picture_path"],
+            is_direct_sale: isset($row["is_direct_sale"]) ? (int)$row["is_direct_sale"] : null,
+            is_auction: isset($row["is_auction"]) ? (int)$row["is_auction"] : null,
+            has_buy_now: isset($row["has_buy_now"]) ? (int)$row["has_buy_now"] : null,
+            has_bids: isset($row["has_bids"]) ? (int)$row["has_bids"] : null,
+            buy_now_reached: isset($row["buy_now_reached"]) ? (int)$row["buy_now_reached"] : null,
+            not_purchased_direct_sale: isset($row["not_purchased_direct_sale"]) ? (int)$row["not_purchased_direct_sale"] : null
+
         ) : false;
     }
 
@@ -181,6 +214,22 @@ class Item extends Model {
     public function get_bids(): array {
         return Bid::get_by_item($this->id);
     }
+
+    public function is_open(string $now): bool {
+        // Si l'item est une vente directe et pas encore acheté
+        if ($this->not_purchased_direct_sale === 1) {
+            return true;
+        }
+
+        // Si l'item est une enchère active
+        if ($this->is_auction === 1 && $this->end_at !== null) {
+            $buyNowBlocks = ($this->has_buy_now === 1 && $this->buy_now_reached === 1);
+            return ($this->end_at > $now) && !$buyNowBlocks;
+        }
+
+        return false;
+    }
+
 
 
 }

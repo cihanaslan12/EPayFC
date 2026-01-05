@@ -4,6 +4,7 @@ require_once "framework/Controller.php";
 require_once "model/User.php";
 require_once "model/Item.php";
 require_once "model/ItemPicture.php";
+require_once "utils/AppTime.php";
 
 class ControllerItem extends Controller {
     public function index(): void {
@@ -41,14 +42,32 @@ class ControllerItem extends Controller {
             }
         }
 
-
         $user = $this->get_user_or_false(); // guest autorisé
+
+        $now = AppTime::get_current_datetime();
+        $isOpen = $item->is_open($now);
+
+        $isOwner = $user && $user->get_id() === $item->get_owner();
+
+        $defaultBid = null;
+        if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
+            if ($item->get_max_bid() !== null) {
+                $defaultBid = (string)((float)$item->get_max_bid() + 1);
+            } else {
+                $defaultBid = $item->get_starting_bid();
+            }
+        }
+
         (new View("openitem"))->show([
             "item" => $item,
             "user" => $user,
             "pictures" => $pictures,
             "mainPicture" => $mainPicture,
-            "bids" => $bids
+            "bids" => $bids,
+            "now" => $now,
+            "isOpen" => $isOpen,
+            "isOwner" => $isOwner,
+            "defaultBid" => $defaultBid
         ]);
     }
 
