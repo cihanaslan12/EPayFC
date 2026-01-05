@@ -41,6 +41,41 @@
     <p><em>No pictures for this item.</em></p>
 <?php endif; ?>
 
+<h2>Pricing</h2>
+
+<?php if (!$isOpen): ?>
+    <p><strong>Status:</strong> Closed</p>
+
+    <?php if ($item->get_is_auction() === 1): ?>
+        <?php if ($item->get_bid_count() !== null && $item->get_bid_count() > 0): ?>
+            <p>This auction is closed.</p>
+            <p>Final price: <?= (string)$item->get_max_bid() ?></p>
+        <?php else: ?>
+            <p>This auction ended with no bids.</p>
+        <?php endif; ?>
+    <?php else: ?>
+        <p>This item is no longer available.</p>
+    <?php endif; ?>
+
+<?php else: ?>
+    <p><strong>Status:</strong> Open</p>
+
+    <?php if ($isOwner): ?>
+        <p>You are the owner of this item.</p>
+
+    <?php else: ?>
+        <?php if ($item->get_is_auction() === 1): ?>
+            <p>Current highest bid: <?= (string)$item->get_max_bid() ?></p>
+            <p>Your bid:</p>
+            <input type="text" value="<?= (string)$defaultBid ?>" readonly>
+        <?php endif; ?>
+
+        <?php if ($item->get_has_buy_now() === 1): ?>
+            <p>Buy now price: <?= (string)$item->get_buy_now_price() ?></p>
+            <button disabled>Buy now </button>
+        <?php endif; ?>
+    <?php endif; ?>
+<?php endif; ?>
 
 <p><strong>Description:</strong><br>
     <?= nl2br($item->get_description() ?? "") ?>
