@@ -190,7 +190,18 @@ class Item extends Model
         return self::fetchItems($sql, $user);
     }
 
-    private static function fetchItems(string $sql, User $user): array {
+    public static function get_all_available_items_for_guest(): array {
+        $sql = "SELECT DISTINC vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+                FROM v_items_status vis
+                WHERE vis.not_purchased_direct_sale
+                    OR (vis.is_auction AND vis.end_at > :now
+                            AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+                ORDER BY vis.end_at ASC ";
+
+        return self::fetchItems($sql, null);
+    }
+
+    private static function fetchItems(string $sql, ?User $user): array {
         $query = self::execute($sql, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
