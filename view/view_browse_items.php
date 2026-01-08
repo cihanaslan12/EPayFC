@@ -15,22 +15,33 @@
         </header>
 
         <main class="p-3 m-3">
-            <h2 class="pt-5">Items I'm Participating In</h2>
-                <div class="row row-cols-md-4 g-4">
-                    <?php if(isset($my_participations)): ?>
-                        <?php foreach ($my_participations as $item): ?>
-                            <?php require 'item_card.php'; ?>
-                        <?php endforeach;?>
-                    <?php endif; ?>
-                </div>
-            <h2 class="p-3">Other Available Items</h2>
-                <div class="row row-cols-md-4 g-4">
-                    <?php if(isset($others_available)): ?>
-                        <?php foreach ($others_available as $item): ?>
-                            <?php require 'item_card.php'; ?>
-                        <?php endforeach;?>
-                    <?php endif; ?>
-                </div>
+            <?php if(isset($user)): ?>
+                <?php if(isset($my_participations) && count($my_participations) > 0): ?>
+                    <h2 class="pt-5">Items I'm Participating In</h2>
+                        <div class="row row-cols-md-4 g-4">
+                            <?php foreach ($my_participations as $item): ?>
+                                <?php require 'item_card.php'; ?>
+                            <?php endforeach;?>
+                        </div>
+                <?php endif; ?>
+                <?php if(isset($others_available) && count($others_available) > 0): ?>
+                    <h2 class="pt-3">Other Available Items</h2>
+                        <div class="row row-cols-md-4 g-4 pb-5">
+                            <?php foreach ($others_available as $item): ?>
+                                <?php require 'item_card.php'; ?>
+                            <?php endforeach;?>
+                        </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <?php if(isset($all_available_items) && count($all_available_items) > 0): ?>
+                    <h2 class="pt-5">Available Items</h2>
+                        <div class="row row-cols-md-4 g-4">
+                            <?php foreach ($all_available_items as $item): ?>
+                                <?php require 'item_card.php'; ?>
+                            <?php endforeach;?>
+                        </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </main>
 
         <footer>

@@ -190,8 +190,21 @@ class Item extends Model
         return self::fetchItems($sql, $user);
     }
 
-    private static function fetchItems(string $sql, User $user): array {
-        $query = self::execute($sql, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]
+    public static function get_all_available_items_for_guest(): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+                FROM v_items_status vis
+                WHERE vis.end_at > :now
+                    AND (vis.not_purchased_direct_sale
+                        OR (vis.is_auction
+                            AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached)))
+                ORDER BY vis.end_at ASC ";
+
+        return self::fetchItems($sql, null);
+    }
+
+    private static function fetchItems(string $sql, ?User $user): array {
+        $user_id = $user ? $user->get_id() : null;
+        $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
         $items = [];
@@ -213,8 +226,8 @@ class Item extends Model
                 starting_bid: $item['starting_bid'],
                 max_bid: $item['max_bid'],
                 thumbnail: ItemPicture::get_item_thumbnail($item['id']),
-                bidder: User::am_i_bidder($user->get_id(), $item['id']),
-                highest_bidder: User::am_i_highest_bidder($user->get_id(), $item['id']),
+                bidder: $user_id ? User::am_i_bidder($user->get_id(), $item['id']) : null,
+                highest_bidder: $user_id ? User::am_i_highest_bidder($user->get_id(), $item['id']) : null,
             );
         }
         return $items;

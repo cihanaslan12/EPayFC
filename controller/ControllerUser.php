@@ -35,6 +35,9 @@ class ControllerUser extends Controller {
                     $this->log_user(User::get_by_mail($mail));
                 }
             }
+        } else if (isset($_POST['login_guest'])) {
+            $this->redirect("item", "browse");
+            return;
         }
         (new View("login"))->show(['mail' => $mail, 'password' => $password, 'errors' => $errors]);
     }
