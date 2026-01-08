@@ -5,13 +5,14 @@ require_once "model/Item.php";
 
 class User extends Model {
     public function __construct(
-        private string $mail,
-        private string $fullName,
-        private string $pseudo,
-        private string $hashedPassword,
+        private ?string $mail,
+        private ?string $fullName,
+        private ?string $pseudo,
+        private ?string $hashedPassword,
+        private ?bool $is_guest = false,
         private ?string $iban = null,
         private ?string $picturePath = null,
-        private string $role = "user",
+        private ?string $role = "user",
         private ?int $id = null,
     ) {
     }
@@ -20,31 +21,35 @@ class User extends Model {
         return $this->id;
     }
 
-    public function get_mail(): string {
+    public function get_mail(): ?string {
         return $this->mail;
     }
 
-    public function get_full_name(): string {
+    public function get_full_name(): ?string {
         return $this->fullName;
     }
 
-    public function get_pseudo(): string {
+    public function get_pseudo(): ?string {
         return $this->pseudo;
     }
 
-    public function get_hashedPassword(): string {
+    public function get_hashedPassword(): ?string {
         return $this->hashedPassword;
     }
 
-    public function get_picture_path(): string {
+    public function is_guest(): ?bool {
+        return $this->is_guest;
+    }
+
+    public function get_picture_path(): ?string {
         return $this->picturePath;
     }
 
-    public function get_iban(): string {
+    public function get_iban(): ?string {
         return $this->iban;
     }
 
-    public function get_role(): string {
+    public function get_role(): ?string {
         return $this->role;
     }
 
@@ -159,5 +164,10 @@ class User extends Model {
     public function get_other_available_items(): array
     {
         return Item::get_other_available_items($this);
+    }
+
+    public function get_all_available_items_for_guest(): array
+    {
+        return Item::get_all_available_items_for_guest();
     }
 }

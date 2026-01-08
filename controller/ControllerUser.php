@@ -37,6 +37,7 @@ class ControllerUser extends Controller {
             }
         } else if (isset($_POST['login_guest'])) {
             $this->redirect("item", "browse");
+            return;
         }
         (new View("login"))->show(['mail' => $mail, 'password' => $password, 'errors' => $errors]);
     }
