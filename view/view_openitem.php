@@ -47,9 +47,18 @@
     <p><strong>Status:</strong> Closed</p>
 
     <?php if ($item->get_is_auction() === 1): ?>
-        <?php if ($item->get_bid_count() !== null && $item->get_bid_count() > 0): ?>
-            <p>This auction is closed.</p>
-            <p>Final price: <?= (string)$item->get_max_bid() ?></p>
+        <?php if ($highestBid !== null): ?>
+            <p>Final price: <?= $highestBid->get_amount() ?></p>
+
+            <?php if ($user && $highestBid->get_owner_id() === $user->get_id()): ?>
+                <p><strong>You won this auction.</strong></p>
+
+            <?php elseif ($isOwner): ?>
+                <p>Sold to: <?= $highestBid->get_owner_pseudo() ?></p>
+
+            <?php else: ?>
+                <p>Winner: <?= $highestBid->get_owner_pseudo() ?></p>
+            <?php endif; ?>
         <?php else: ?>
             <p>This auction ended with no bids.</p>
         <?php endif; ?>
