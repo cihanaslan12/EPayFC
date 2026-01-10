@@ -49,6 +49,8 @@ class ControllerItem extends Controller {
 
         $isOwner = $user && $user->get_id() === $item->get_owner();
 
+        $highestBid = Bid::get_highest_for_item($item->get_id());
+
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
             if ($item->get_max_bid() !== null) {
@@ -67,7 +69,8 @@ class ControllerItem extends Controller {
             "now" => $now,
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
-            "defaultBid" => $defaultBid
+            "defaultBid" => $defaultBid,
+            "highestBid" => $highestBid
         ]);
     }
 

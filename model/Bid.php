@@ -14,6 +14,8 @@ class Bid extends Model {
     public function get_owner_pseudo(): string { return $this->owner_pseudo; }
     public function get_created_at(): string { return $this->created_at; }
     public function get_amount(): string { return $this->amount; }
+    public function get_owner_id(): int { return $this->owner_id; }
+
 
     public static function get_by_item(int $item_id): array {
         $sql = "SELECT b.owner, u.pseudo, b.item, b.created_at, b.amount
