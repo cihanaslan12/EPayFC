@@ -1,4 +1,4 @@
-<nav class="navbar fixed-top p-3 mb-2 bg-dark">
+<nav class="navbar fixed-top p-3 mb-2" id="navbar">
     <div class="container-fluid">
             <?php if (isset($show_back) && $show_back): ?>
                 <a href="<?= $backUrl ?? '#' ?>" class="btn back-btn">
@@ -6,7 +6,7 @@
                 </a>
             <?php endif; ?>
 
-        <span class="navbar-brand mx-auto mb-0 h1 text-primary">
+        <span class="navbar-brand mx-auto mb-0 h1" id="page-title">
             <?= $page_title ?? "EPayFC" ?> <i class="bi bi-cart4 text-light"></i>
         </span>
 
