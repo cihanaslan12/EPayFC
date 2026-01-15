@@ -35,14 +35,14 @@
             <p class="card-owner">by <?= $item->get_owner_pseudo() ?></p>
         <div class="row row-cols-md-2">
             <?php if(($item->get_buy_now_price() != null)) : ?>
-                <p class="card-price text-primary">€ <?= $item->get_buy_now_price() ?></p>
+                <p class="get-buy-now-price">€ <?= $item->get_buy_now_price() ?></p>
             <?php else : ?>
-                <p class="card-price text-warning">€ <?= $item->get_starting_bid() ?></p>
+                <p class="starting-bid">€ <?= $item->get_starting_bid() ?></p>
             <?php endif; ?>
             <div>
                 <?php if($item->get_has_bids() == 1): ?>
-                    <label for="current-bid">Current bid</label>
-                    <p class="card-price text-success" id="current-bid">€ <?= $item->get_max_bid() ?></p>
+                    <label class="current-bid-label" for="current-bid">Current bid</label>
+                    <p class="card-price" id="current-bid">€ <?= $item->get_max_bid() ?></p>
                 <?php endif; ?>
             </div>
         </div>
