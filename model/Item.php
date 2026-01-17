@@ -8,16 +8,16 @@ class Item extends Model
 {
     public function __construct(
         private string  $title,
-        private string  $description,
-        private int     $owner,
-        private string  $owner_pseudo,
-        private string  $created_at,
-        private int     $duration_days,
-        private string  $end_at,
-        private string  $time_left,
-        private int     $has_bids,
-        private int     $is_direct_sale,
-        private int     $is_auction,
+        private ?string $description,
+        private ?int    $owner,
+        private ?string $owner_pseudo,
+        private ?string $created_at,
+        private ?int    $duration_days,
+        private ?string $end_at,
+        private ?string $time_left,
+        private ?int    $has_bids,
+        private ?int    $is_direct_sale,
+        private ?int    $is_auction,
         private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
@@ -120,9 +120,26 @@ class Item extends Model
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
-        return $row ? new Item(title: $row['title'], description: $row['description'], owner: $row['owner'],
-            created_at: $row['created_at'], duration_days: $row['duration_days'], id: $row['id'],
-            buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
+        return $row ? new Item(
+            title: $row['title'],
+            description: $row['description'],
+            owner: $row['owner'],
+            owner_pseudo: null,
+            created_at: $row['created_at'],
+            duration_days: $row['duration_days'],
+            end_at: null,
+            time_left: null,
+            has_bids: null,
+            is_direct_sale: null,
+            is_auction: null,
+            id: $row['id'],
+            buy_now_price: $row['buy_now_price'],
+            starting_bid: $row['starting_bid'],
+            max_bid: null,
+            thumbnail: null,
+            bidder: null,
+            highest_bidder: null
+        ) : false;
     }
 
     public function get_item_pictures(): array {

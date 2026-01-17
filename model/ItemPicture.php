@@ -25,6 +25,12 @@ class ItemPicture extends Model {
         return $this->picture_path;
     }
 
+    public function get_picture_thumbnail(): string {
+        $picture_path = $this->get_picture_path();
+        $thumbnail = explode('.', $picture_path);
+        return $thumbnail[0] . '_thumbnail.' . $thumbnail[1];
+    }
+
     public static function get_item_thumbnail(int $int): ?string {
         $sql = "SELECT picture_path
                 FROM item_pictures

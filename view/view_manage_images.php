@@ -38,7 +38,7 @@
                                 <div class="card-header">
                                     Current Images
                                     <div class="card-body">
-                                        <img src="<?= $item->get_thumbnail() ?>" alt="item_thumbnail">
+                                        <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
                                         <button class="arrow-btn"><i class="bi bi-arrow-left"></i></button>
                                         <button class="arrow-btn"><i class="bi bi-arrow-right"></i></button>
                                         <button class="delete-btn"><i class="bi bi-x"></i></button>
