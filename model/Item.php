@@ -2,10 +2,10 @@
 
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
+require_once "model/Bid.php";
 require_once "utils/AppTime.php";
 
-class Item extends Model
-{
+class Item extends Model {
     public function __construct(
         private string  $title,
         private string  $description,
@@ -21,31 +21,33 @@ class Item extends Model
         private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
+        private ?int $bid_count = null,
         private ?string $max_bid = null,
+        private ?string $seller_pseudo = null,
+        private ?string $seller_picture_path = null,
+        private ?int $has_buy_now = null,
+        private ?int $buy_now_reached = null,
+        private ?int $not_purchased_direct_sale = null,
         private ?string $thumbnail = null,
         private ?bool   $bidder = null,
-        private ?bool   $highest_bidder = null,
+        private ?bool   $highest_bidder = null
     )
     {
     }
 
-    public function get_id(): ?int
-    {
+    public function get_id(): ?int {
         return $this->id;
     }
 
-    public function get_title(): string
-    {
+    public function get_title(): string {
         return $this->title;
     }
 
-    public function get_description(): string
-    {
+    public function get_description(): string {
         return $this->description;
     }
 
-    public function get_owner(): int
-    {
+    public function get_owner(): int {
         return $this->owner;
     }
 
@@ -59,8 +61,7 @@ class Item extends Model
         return $this->created_at;
     }
 
-    public function get_duration_days(): int
-    {
+    public function get_duration_days(): int {
         return $this->duration_days;
     }
 
@@ -116,6 +117,29 @@ class Item extends Model
     {
         return $this->highest_bidder;
     }
+
+    public function get_bid_count(): ?int {
+        return $this->bid_count;
+    }
+
+    public function get_seller_pseudo(): ?string {
+        return $this->seller_pseudo;
+    }
+    public function get_seller_picture_path(): ?string {
+        return $this->seller_picture_path;
+    }
+
+    public function get_has_buy_now(): ?int {
+        return $this->has_buy_now;
+    }
+
+    public function get_buy_now_reached(): ?int {
+        return $this->buy_now_reached;
+    }
+    public function get_not_purchased_direct_sale(): ?int {
+        return $this->not_purchased_direct_sale;
+    }
+
 
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
@@ -207,9 +231,9 @@ class Item extends Model
         $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
-        $items = [];
+        $other_items = [];
         foreach ($row as $item) {
-            $items[] = new Item(
+            $other_items[] = new Item(
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
@@ -230,6 +254,80 @@ class Item extends Model
                 highest_bidder: $user_id ? User::am_i_highest_bidder($user->get_id(), $item['id']) : null,
             );
         }
-        return $items;
+        return $other_items;
     }
+
+    public static function get_open_item_with_seller(int $id): Item|false {
+        $sql = "SELECT vis.*, 
+                   u.pseudo AS seller_pseudo, 
+                   u.picture_path AS seller_picture_path
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.id = :id";
+        $query = self::execute($sql, ["id" => $id]);
+        $row = $query->fetch();
+        return $row ? new Item(
+            title: $row["title"],
+            description: $row["description"] ?? "",
+            owner: (int)$row["owner"],
+            created_at: $row["created_at"],
+            duration_days: (int)$row["duration_days"],
+            id: (int)$row["id"],
+            buy_now_price: $row["buy_now_price"],
+            starting_bid: $row["starting_bid"],
+            end_at: $row["end_at"],
+            bid_count: isset($row["bid_count"]) ? (int)$row["bid_count"] : null,
+            max_bid: $row["max_bid"],
+            seller_pseudo: $row["seller_pseudo"],
+            seller_picture_path: $row["seller_picture_path"],
+            is_direct_sale: isset($row["is_direct_sale"]) ? (int)$row["is_direct_sale"] : null,
+            is_auction: isset($row["is_auction"]) ? (int)$row["is_auction"] : null,
+            has_buy_now: isset($row["has_buy_now"]) ? (int)$row["has_buy_now"] : null,
+            has_bids: isset($row["has_bids"]) ? (int)$row["has_bids"] : null,
+            buy_now_reached: isset($row["buy_now_reached"]) ? (int)$row["buy_now_reached"] : null,
+            not_purchased_direct_sale: isset($row["not_purchased_direct_sale"]) ? (int)$row["not_purchased_direct_sale"] : null
+
+        ) : false;
+    }
+
+    public static function get_pictures_by_item(int $item_id): array {
+        $sql = "SELECT priority, picture_path
+            FROM item_pictures
+            WHERE item = :id
+            ORDER BY priority";
+        $query = self::execute($sql, ["id" => $item_id]);
+        $rows = $query->fetchAll();
+
+        $pics = [];
+        foreach ($rows as $r) {
+            $pics[] = new ItemPicture((int)$r["priority"], $r["picture_path"]);
+        }
+        return $pics;
+    }
+
+    public function get_pictures(): array {
+        return self::get_pictures_by_item($this->id);
+    }
+
+    public function get_bids(): array {
+        return Bid::get_by_item($this->id);
+    }
+
+    public function is_open(string $now): bool {
+        // Si l'item est une vente directe et pas encore acheté
+        if ($this->not_purchased_direct_sale === 1) {
+            return true;
+        }
+
+        // Si l'item est une enchère active
+        if ($this->is_auction === 1 && $this->end_at !== null) {
+            $buyNowBlocks = ($this->has_buy_now === 1 && $this->buy_now_reached === 1);
+            return ($this->end_at > $now) && !$buyNowBlocks;
+        }
+
+        return false;
+    }
+
+
+
 }
