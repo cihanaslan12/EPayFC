@@ -10,30 +10,32 @@ class Item extends Model {
         private string  $title,
         private string  $description,
         private int     $owner,
-        private string  $owner_pseudo,
         private string  $created_at,
         private int     $duration_days,
-        private string  $end_at,
-        private string  $time_left,
-        private int     $has_bids,
-        private int     $is_direct_sale,
-        private int     $is_auction,
         private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
-        private ?int $bid_count = null,
-        private ?string $max_bid = null,
+
         private ?string $seller_pseudo = null,
         private ?string $seller_picture_path = null,
-        private ?int $has_buy_now = null,
-        private ?int $buy_now_reached = null,
-        private ?int $not_purchased_direct_sale = null,
+        private ?int    $bid_count = null,
+        private ?string $max_bid = null,
+
+        private ?string $owner_pseudo = null,
+        private ?string $end_at = null,
+        private ?string $time_left = null,
+        private ?int    $has_bids = null,
+        private ?int    $is_direct_sale = null,
+        private ?int    $is_auction = null,
+        private ?int    $has_buy_now = null,
+        private ?int    $buy_now_reached = null,
+        private ?int    $not_purchased_direct_sale = null,
+        
         private ?string $thumbnail = null,
         private ?bool   $bidder = null,
         private ?bool   $highest_bidder = null
-    )
-    {
-    }
+    ) {}
+
 
     public function get_id(): ?int {
         return $this->id;
@@ -51,7 +53,7 @@ class Item extends Model {
         return $this->owner;
     }
 
-    public function get_owner_pseudo(): string
+    public function get_owner_pseudo(): ?string
     {
         return $this->owner_pseudo;
     }
@@ -65,27 +67,27 @@ class Item extends Model {
         return $this->duration_days;
     }
 
-    public function get_end_at(): string
+    public function get_end_at(): ?string
     {
         return $this->end_at;
     }
 
-    public function get_time_left(): string
+    public function get_time_left(): ?string
     {
         return $this->time_left;
     }
 
-    public function get_has_bids(): int
+    public function get_has_bids(): ?int
     {
         return $this->has_bids;
     }
 
-    public function get_is_direct_sale(): int
+    public function get_is_direct_sale(): ?int
     {
         return $this->is_direct_sale;
     }
 
-    public function get_is_auction(): int
+    public function get_is_auction(): ?int
     {
         return $this->is_auction;
     }
@@ -280,18 +282,18 @@ class Item extends Model {
             max_bid: $row["max_bid"],
             seller_pseudo: $row["seller_pseudo"],
             seller_picture_path: $row["seller_picture_path"],
-            is_direct_sale: isset($row["is_direct_sale"]) ? (int)$row["is_direct_sale"] : null,
-            is_auction: isset($row["is_auction"]) ? (int)$row["is_auction"] : null,
-            has_buy_now: isset($row["has_buy_now"]) ? (int)$row["has_buy_now"] : null,
-            has_bids: isset($row["has_bids"]) ? (int)$row["has_bids"] : null,
-            buy_now_reached: isset($row["buy_now_reached"]) ? (int)$row["buy_now_reached"] : null,
-            not_purchased_direct_sale: isset($row["not_purchased_direct_sale"]) ? (int)$row["not_purchased_direct_sale"] : null
+            is_direct_sale: (int)$row["is_direct_sale"],
+            is_auction: (int)$row["is_auction"],
+            has_buy_now: (int)$row["has_buy_now"],
+            has_bids: (int)$row["has_bids"],
+            buy_now_reached: (int)$row["buy_now_reached"],
+            not_purchased_direct_sale: (int)$row["not_purchased_direct_sale"]
 
         ) : false;
     }
 
     public static function get_pictures_by_item(int $item_id): array {
-        $sql = "SELECT priority, picture_path
+        $sql = "SELECT item, priority, picture_path
             FROM item_pictures
             WHERE item = :id
             ORDER BY priority";
@@ -300,7 +302,11 @@ class Item extends Model {
 
         $pics = [];
         foreach ($rows as $r) {
-            $pics[] = new ItemPicture((int)$r["priority"], $r["picture_path"]);
+            $pics[] = new ItemPicture(
+                item: (int)$r["item"],
+                priority: (int)$r["priority"],
+                picture_path: $r["picture_path"]
+            );
         }
         return $pics;
     }
