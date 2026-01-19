@@ -12,6 +12,10 @@
 
 <p><strong>Seller:</strong> <?= $item->get_seller_pseudo() ?></p>
 
+<?php
+$errors = $errors ?? [];
+$postedAmount = $postedAmount ?? null;
+?>
 
 <h2>Photos</h2>
 
@@ -75,13 +79,38 @@
     <?php else: ?>
         <?php if ($item->get_is_auction() === 1): ?>
             <p>Current highest bid: <?= (string)$item->get_max_bid() ?></p>
-            <p>Your bid:</p>
-            <input type="text" value="<?= (string)$defaultBid ?>" readonly>
+
+            <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                <label for="amount"><strong>Your bid:</strong></label><br>
+
+                <input
+                        type="text"
+                        id="amount"
+                        name="amount"
+                        value="<?= $postedAmount !== null ? $postedAmount : (string)$defaultBid ?>">
+
+                <?php if (isset($errors["amount"])): ?>
+                    <p style="color:red;"><?= $errors["amount"] ?></p>
+                <?php endif; ?>
+
+                <?php if (isset($errors["bid"])): ?>
+                    <p style="color:red;"><?= $errors["bid"] ?></p>
+                <?php endif; ?>
+
+                <button type="submit">Place bid</button>
+            </form>
         <?php endif; ?>
 
         <?php if ($item->get_has_buy_now() === 1): ?>
             <p>Buy now price: <?= (string)$item->get_buy_now_price() ?></p>
-            <button disabled>Buy now </button>
+
+            <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                <?php if (isset($errors["buy_now"])): ?>
+                    <p style="color:red;"><?= $errors["buy_now"] ?></p>
+                <?php endif; ?>
+
+                <button type="submit">Buy now</button>
+            </form>
         <?php endif; ?>
     <?php endif; ?>
 <?php endif; ?>

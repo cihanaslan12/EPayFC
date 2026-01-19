@@ -51,4 +51,63 @@ class Bid extends Model {
         return $r ? new Bid((int)$r["owner"], $r["pseudo"], (int)$r["item"], $r["created_at"], $r["amount"]) : null;
     }
 
+    public static function place_bid(User $user, Item $item, string $amount, string $now, array &$errors): bool {
+        if (!$item->is_open($now)) {
+            $errors["bid"] = "This item is closed.";
+            return false;
+        }
+        if ($user->get_id() === $item->get_owner()) {
+            $errors["bid"] = "You cannot bid on your own item.";
+            return false;
+        }
+        if ($item->get_is_auction() !== 1) {
+            $errors["bid"] = "Bidding is not allowed on this item.";
+            return false;
+        }
+
+        if (!is_numeric($amount)) {
+            $errors["amount"] = "Invalid amount.";
+            return false;
+        }
+        $amountF = (float)$amount;
+        if ($amountF <= 0) {
+            $errors["amount"] = "Amount must be > 0.";
+            return false;
+        }
+
+        $min = null;
+        if ($item->get_max_bid() !== null) {
+            $min = (float)$item->get_max_bid();
+        } else if ($item->get_starting_bid() !== null) {
+            $min = (float)$item->get_starting_bid();
+        } else {
+            $errors["bid"] = "This item has no starting bid.";
+            return false;
+        }
+
+        if ($item->get_max_bid() !== null) {
+            if ($amountF <= $min) {
+                $errors["amount"] = "Your bid must be greater than " . number_format($min, 2, '.', '');
+                return false;
+            }
+        } else {
+            if ($amountF < $min) {
+                $errors["amount"] = "Your bid must be at least " . number_format($min, 2, '.', '');
+                return false;
+            }
+        }
+
+        $sql = "INSERT INTO bids(owner, item, created_at, amount)
+            VALUES(:owner, :item, :created_at, :amount)";
+        self::execute($sql, [
+            "owner" => $user->get_id(),
+            "item" => $item->get_id(),
+            "created_at" => $now,
+            "amount" => number_format($amountF, 2, '.', '')
+        ]);
+
+        return true;
+    }
+
+
 }

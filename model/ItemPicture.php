@@ -1,6 +1,8 @@
 <?php
 
-class ItemPicture {
+require_once "framework/Model.php";
+
+class ItemPicture extends Model{
     public function __construct(
         private int $priority,
         private string $picture_path
