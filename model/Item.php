@@ -3,6 +3,7 @@
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
+require_once "utils/Uploader.php";
 
 class Item extends Model
 {
@@ -140,6 +141,26 @@ class Item extends Model
             bidder: null,
             highest_bidder: null
         ) : false;
+    }
+
+    public function add_pictures(array $upload_images): array {
+        $images = [];
+        foreach ($upload_images['tmp_name'] as $index => $upload_image) {
+            $ext = Uploader::get_extension($upload_image);
+            $original_image = Uploader::create_image_from($ext);
+            $original_width = imagesx($original_image);
+            $original_height = imagesy($original_image);
+            $new_image = imagecreatetruecolor(1080, 1080);
+            $new_thumbnail = imagecreatetruecolor(360, 360);
+            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, 1080, 1080, $original_width, $original_height);
+            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, 360, 360, $original_width, $original_height);
+            imagejpeg($new_image, 'test'.$ext);
+            imagejpeg($new_thumbnail, 'test'.'_thumbnail'.$ext);
+            imagedestroy($original_image);
+            imagedestroy($new_image);
+            imagedestroy($new_thumbnail);
+        }
+        return $images;
     }
 
     public function get_item_pictures(): array {

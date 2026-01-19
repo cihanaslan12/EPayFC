@@ -13,4 +13,28 @@ class Uploader {
         return $file_size <= $max_size;
     }
 
+    public static function get_extension(string $file): string {
+        return strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    }
+
+    public static function create_image_from(string $extension): GdImage|false {
+        switch($extension) {
+            case 'jpg':
+                $image = imagecreatefromjpeg($extension);
+                break;
+            case 'png':
+                $image = imagecreatefrompng($extension);
+                break;
+            case 'gif':
+                $image = imagecreatefromgif($extension);
+                break;
+            case 'webp':
+                $image = imagecreatefromwebp($extension);
+                break;
+            default:
+                return false;
+        }
+        return $image;
+    }
+
 }

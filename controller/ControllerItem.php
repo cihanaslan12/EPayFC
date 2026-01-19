@@ -40,19 +40,20 @@ class ControllerItem extends Controller {
         $item = Item::get_by_id($_GET['param1']);
         $images = $item->get_item_pictures();
         $error = null;
-//        if(isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-//            $extension = Uploader::check_extension($_FILES['image']['name']);
-//            $size = Uploader::check_size($_FILES['image']['size']);
-//            if (!$extension) {
-//                $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
-//            } else if (!$size) {
-//                $error = "Image size is max 5MB";
-//            } else {
-//                add_pictures();
-//            }
-//        } else {
-//            $error = "Error while uploading file.";
-//        }
+        if(isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
+            $images = $_FILES['image'];
+            $extension = Uploader::check_extension($images['name']);
+            $size = Uploader::check_size($images['size']);
+            if (!$extension) {
+                $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+            } else if (!$size) {
+                $error = "Image size is max 5MB";
+            } else {
+                $item->add_pictures($images);
+            }
+        } else {
+            $error = "Error while uploading file.";
+        }
         $manage_images = [
             'item' => $item,
             'error' => $error,

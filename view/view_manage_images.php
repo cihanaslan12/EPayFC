@@ -28,7 +28,7 @@
                                     <input type="file" class="form-control" id="formFileMultiple" multiple>
                                     <p>You can select multiple images (JPG, PNG, GIF, WebP). Images will be added to the end of your current list</p>
                                 </div>
-                                <a href="#" class="btn btn-primary">Upload Images</a>
+                                <button class="btn btn-primary" id="image">Upload Images</button>
                             </div>
                         </div>
                     </div>
