@@ -87,17 +87,33 @@ class ItemPicture extends Model {
             $original_width = imagesx($original_image);
             $original_height = imagesy($original_image);
 
-            $new_image = imagecreatetruecolor($config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT']);
-            $new_thumbnail = imagecreatetruecolor($config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT']);
+            $max_img_width = $config['MAX_IMG_WIDTH'];
+            $max_img_height = $config['MAX_IMG_HEIGHT'];
+            $max_thumb_width = $config['MAX_THUMB_WIDTH'];
+            $max_thumb_height = $config['MAX_THUMB_HEIGHT'];
 
-            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT'], $original_width, $original_height);
-            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT'], $original_width, $original_height);
+            $calculate_img_ratio = min($max_img_width / $original_width, $max_img_height / $original_height);
+            $calculate_thumb_ratio = min($max_thumb_width / $original_width, $max_thumb_height / $original_height);
+
+            $img_ratio = ($calculate_img_ratio < 1) ? $calculate_img_ratio : 1;
+            $thumb_ratio = ($calculate_thumb_ratio < 1) ? $calculate_thumb_ratio : 1;
+
+            $new_img_width = round($original_width * $img_ratio);
+            $new_img_height = round($original_height * $img_ratio);
+            $new_thumb_width = round($original_width * $thumb_ratio);
+            $new_thumb_height = round($original_height * $thumb_ratio);
+
+            $new_image = imagecreatetruecolor($new_img_width, $new_img_height);
+            $new_thumbnail = imagecreatetruecolor($new_thumb_width, $new_thumb_height);
+
+            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $new_img_width, $new_img_height, $original_width, $original_height);
+            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $new_thumb_width, $new_thumb_height, $original_width, $original_height);
 
             $img_path = self::create_new_picture_name($item_id);
             $thumb_path = self::create_new_thumbnail_name($item_id);
 
-            imagejpeg($new_image, $img_path);
-            imagejpeg($new_thumbnail, $thumb_path);
+            imagejpeg($new_image, $img_path, 90);
+            imagejpeg($new_thumbnail, $thumb_path, 75);
 
             self::insert_new_images($img_path, $item_id);
 
