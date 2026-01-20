@@ -93,8 +93,13 @@ class ItemPicture extends Model {
             imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT'], $original_width, $original_height);
             imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT'], $original_width, $original_height);
 
-            imagejpeg($new_image, self::create_new_picture_name($item_id));
-            imagejpeg($new_thumbnail, self::create_new_thumbnail_name($item_id));
+            $img_path = self::create_new_picture_name($item_id);
+            $thumb_path = self::create_new_thumbnail_name($item_id);
+
+            imagejpeg($new_image, $img_path);
+            imagejpeg($new_thumbnail, $thumb_path);
+
+            self::insert_new_images($img_path, $item_id);
 
             imagedestroy($original_image);
             imagedestroy($new_image);
@@ -102,4 +107,10 @@ class ItemPicture extends Model {
         }
     }
 
+    public static function insert_new_images(string $path, int $item_id): void {
+        $pos = self::get_pictures_priority_max($item_id) + 1;
+        $sql = "INSERT INTO items_pictures (item, priority, picture_path) 
+                    VALUES (:item_id, :priority, :path) ";
+        self::execute($sql, ['item_id' => $item_id, 'priority' => $pos, 'path' => $path]);
+    }
 }
