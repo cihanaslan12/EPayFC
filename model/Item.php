@@ -143,24 +143,28 @@ class Item extends Model
         ) : false;
     }
 
-    public function add_pictures(array $upload_images): array {
-        $images = [];
-        foreach ($upload_images['tmp_name'] as $index => $upload_image) {
-            $ext = Uploader::get_extension($upload_image);
-            $original_image = Uploader::create_image_from($ext);
+    public function add_pictures(array $upload_images): void {
+        $config = parse_ini_file(__DIR__.'/../config/dev.ini');
+
+        foreach ($upload_images['tmp_name'] as $upload_image) {
+            $original_image = Uploader::create_image_from($upload_image);
+
             $original_width = imagesx($original_image);
             $original_height = imagesy($original_image);
-            $new_image = imagecreatetruecolor(1080, 1080);
-            $new_thumbnail = imagecreatetruecolor(360, 360);
-            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, 1080, 1080, $original_width, $original_height);
-            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, 360, 360, $original_width, $original_height);
-            imagejpeg($new_image, 'test'.$ext);
-            imagejpeg($new_thumbnail, 'test'.'_thumbnail'.$ext);
+
+            $new_image = imagecreatetruecolor($config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT']);
+            $new_thumbnail = imagecreatetruecolor($config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT']);
+
+            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT'], $original_width, $original_height);
+            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT'], $original_width, $original_height);
+
+            imagejpeg($new_image, $this->create_new_picture_name());
+            imagejpeg($new_thumbnail, $this->create_new_thumbnail_name());
+
             imagedestroy($original_image);
             imagedestroy($new_image);
             imagedestroy($new_thumbnail);
         }
-        return $images;
     }
 
     public function get_item_pictures(): array {

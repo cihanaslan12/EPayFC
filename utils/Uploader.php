@@ -17,19 +17,20 @@ class Uploader {
         return strtolower(pathinfo($file, PATHINFO_EXTENSION));
     }
 
-    public static function create_image_from(string $extension): GdImage|false {
+    public static function create_image_from(string $original_image): GdImage|false {
+        $extension = self::get_extension($original_image);
         switch($extension) {
             case 'jpg':
-                $image = imagecreatefromjpeg($extension);
+                $image = imagecreatefromjpeg($original_image);
                 break;
             case 'png':
-                $image = imagecreatefrompng($extension);
+                $image = imagecreatefrompng($original_image);
                 break;
             case 'gif':
-                $image = imagecreatefromgif($extension);
+                $image = imagecreatefromgif($original_image);
                 break;
             case 'webp':
-                $image = imagecreatefromwebp($extension);
+                $image = imagecreatefromwebp($original_image);
                 break;
             default:
                 return false;
