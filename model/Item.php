@@ -1,5 +1,6 @@
 <?php
 
+require_once "config/dev.ini";
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
@@ -144,27 +145,8 @@ class Item extends Model
     }
 
     public function add_pictures(array $upload_images): void {
-        $config = parse_ini_file(__DIR__.'/../config/dev.ini');
-
-        foreach ($upload_images['tmp_name'] as $upload_image) {
-            $original_image = Uploader::create_image_from($upload_image);
-
-            $original_width = imagesx($original_image);
-            $original_height = imagesy($original_image);
-
-            $new_image = imagecreatetruecolor($config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT']);
-            $new_thumbnail = imagecreatetruecolor($config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT']);
-
-            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT'], $original_width, $original_height);
-            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT'], $original_width, $original_height);
-
-            imagejpeg($new_image, $this->create_new_picture_name());
-            imagejpeg($new_thumbnail, $this->create_new_thumbnail_name());
-
-            imagedestroy($original_image);
-            imagedestroy($new_image);
-            imagedestroy($new_thumbnail);
-        }
+        $item = $this->get_id();
+        ItemPicture::add_pictures($upload_images, $item);
     }
 
     public function get_item_pictures(): array {

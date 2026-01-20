@@ -48,4 +48,58 @@ class ItemPicture extends Model {
             }
         return false;
     }
+
+    public static function create_new_picture_name(int $item_id): string {
+        $pictures_priority = self::get_pictures_priority_max($item_id) + 1;
+
+        $save_dir = "uploads/items/$item_id/";
+        if (!file_exists($save_dir)) {
+            mkdir($save_dir, 0777, true);
+        }
+
+        $uniq_id = uniqid("{$item_id}_{$pictures_priority}_", true);
+
+        return $save_dir . $uniq_id . 'jpg';
+    }
+
+    public static function create_new_thumbnail_name(int $item_id): string {
+        $name = explode('.', self::create_new_picture_name($item_id));
+        return $name[0] . '_thumbnail.jpg';
+    }
+
+    public static function get_pictures_priority_max(int $item_id): int {
+        $sql = "SELECT MAX(priority)
+                FROM items_pictures
+                WHERE item = :id ";
+        $query = self::execute($sql, ['id' => $item_id]);
+        $prior_max = $query->fetch();
+        if ($prior_max == null)
+            return 0;
+        return $prior_max;
+    }
+
+    public static function add_pictures(array $upload_images, int $item_id): void {
+        $config = parse_ini_file(__DIR__.'/../config/dev.ini');
+
+        foreach ($upload_images['tmp_name'] as $upload_image) {
+            $original_image = Uploader::create_image_from($upload_image);
+
+            $original_width = imagesx($original_image);
+            $original_height = imagesy($original_image);
+
+            $new_image = imagecreatetruecolor($config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT']);
+            $new_thumbnail = imagecreatetruecolor($config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT']);
+
+            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $config['MAX_IMG_WIDTH'], $config['MAX_IMG_HEIGHT'], $original_width, $original_height);
+            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $config['MAX_THUMB_WIDTH'], $config['MAX_THUMB_HEIGHT'], $original_width, $original_height);
+
+            imagejpeg($new_image, self::create_new_picture_name($item_id));
+            imagejpeg($new_thumbnail, self::create_new_thumbnail_name($item_id));
+
+            imagedestroy($original_image);
+            imagedestroy($new_image);
+            imagedestroy($new_thumbnail);
+        }
+    }
+
 }
