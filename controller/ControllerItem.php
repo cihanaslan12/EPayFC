@@ -67,6 +67,10 @@ class ControllerItem extends Controller {
         }
 
         $manage_images = [
+            'show_back' => true,
+            'backUrl' => 'item/openitem',
+            'page_title' => "Manage Images",
+            'show_save' => false,
             'item' => $item,
             'error' => $error,
             'images' => $images,

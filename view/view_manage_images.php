@@ -14,40 +14,46 @@
             <?php require 'header_menu.php'; ?>
         </header>
 
-        <main>
+        <main class="p-3 m-3">
             <h2>Manage images for "<?= $item->get_title(); ?>"</h2>
 
             <div>
-                <form action="item/manage_images" method="POST">
+                <form action="item/manage_images/<?= $item->get_id() ?>" method="POST" enctype="multipart/form-data">
                     <div class="card-upload">
                         <div class="card-header">
                             Add New Images
                             <div class="card-body">
                                 <div class="file mb-3">
                                     <label for="formFileMultiple" class="form-label">Select Images</label>
-                                    <input type="file" class="form-control" id="formFileMultiple" multiple>
+                                    <input type="file" name="image[]" class="form-control" id="formFileMultiple" multiple>
                                     <p>You can select multiple images (JPG, PNG, GIF, WebP). Images will be added to the end of your current list</p>
+                                    <?php if(isset($error)): ?>
+                                        <p class="text-danger"><?= $error ?></p>
+                                    <?php endif; ?>
                                 </div>
-                                <button class="btn btn-primary" id="image">Upload Images</button>
+                                <button type="submit" class="btn btn-primary" id="image">Upload Images</button>
                             </div>
                         </div>
                     </div>
-                    <div class="card-current-images">
+                    <div class="card-current-images card border-primary m-2">
+                        <div class="card-header card border-success m-2">Current Images</div>
                         <?php if(isset($images) && count($images) > 0): ?>
+                            <div class="row row-cols-md-4 card border-danger m-2">
                             <?php foreach ($images as $image): ?>
-                                <div class="card-header">
-                                    Current Images
-                                    <div class="card-body">
-                                        <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
+                                <div class="card-thumb card border-warning m-2 p-2">
+                                    <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
+                                    <div class="card-btn card border-info m-2 p-2">
                                         <button class="arrow-btn"><i class="bi bi-arrow-left"></i></button>
                                         <button class="arrow-btn"><i class="bi bi-arrow-right"></i></button>
                                         <button class="delete-btn"><i class="bi bi-x"></i></button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                            </div>
                         <?php else: ?>
                             <p>No images yet for this item. Upload some images above to get started.</p>
                         <?php endif; ?>
+                        </div>
                     </div>
                 </form>
             </div>
