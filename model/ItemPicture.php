@@ -69,63 +69,64 @@ class ItemPicture extends Model {
 
     public static function get_pictures_priority_max(int $item_id): int {
         $sql = "SELECT MAX(priority)
-                FROM items_pictures
+                FROM item_pictures
                 WHERE item = :id ";
         $query = self::execute($sql, ['id' => $item_id]);
-        $prior_max = $query->fetch();
+        $prior_max = (int)$query->fetch();
         if ($prior_max == null)
             return 0;
         return $prior_max;
     }
 
-    public static function add_pictures(array $upload_images, int $item_id): void {
+    public static function add_pictures(string $upload_image, string $name, int $item_id): void {
         $config = parse_ini_file(__DIR__.'/../config/dev.ini');
 
-        foreach ($upload_images['tmp_name'] as $upload_image) {
-            $original_image = Uploader::create_image_from($upload_image);
-
-            $original_width = imagesx($original_image);
-            $original_height = imagesy($original_image);
-
-            $max_img_width = $config['MAX_IMG_WIDTH'];
-            $max_img_height = $config['MAX_IMG_HEIGHT'];
-            $max_thumb_width = $config['MAX_THUMB_WIDTH'];
-            $max_thumb_height = $config['MAX_THUMB_HEIGHT'];
-
-            $calculate_img_ratio = min($max_img_width / $original_width, $max_img_height / $original_height);
-            $calculate_thumb_ratio = min($max_thumb_width / $original_width, $max_thumb_height / $original_height);
-
-            $img_ratio = ($calculate_img_ratio < 1) ? $calculate_img_ratio : 1;
-            $thumb_ratio = ($calculate_thumb_ratio < 1) ? $calculate_thumb_ratio : 1;
-
-            $new_img_width = round($original_width * $img_ratio);
-            $new_img_height = round($original_height * $img_ratio);
-            $new_thumb_width = round($original_width * $thumb_ratio);
-            $new_thumb_height = round($original_height * $thumb_ratio);
-
-            $new_image = imagecreatetruecolor($new_img_width, $new_img_height);
-            $new_thumbnail = imagecreatetruecolor($new_thumb_width, $new_thumb_height);
-
-            imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $new_img_width, $new_img_height, $original_width, $original_height);
-            imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $new_thumb_width, $new_thumb_height, $original_width, $original_height);
-
-            $img_path = self::create_new_picture_name($item_id);
-            $thumb_path = self::create_new_thumbnail_name($item_id);
-
-            imagejpeg($new_image, $img_path, 90);
-            imagejpeg($new_thumbnail, $thumb_path, 75);
-
-            self::insert_new_images($img_path, $item_id);
-
-            imagedestroy($original_image);
-            imagedestroy($new_image);
-            imagedestroy($new_thumbnail);
+        $original_image = Uploader::create_image_from($upload_image, $name);
+        if(!$original_image) {
+            return;
         }
+
+        $original_width = imagesx($original_image);
+        $original_height = imagesy($original_image);
+
+        $max_img_width = $config['MAX_IMG_WIDTH'];
+        $max_img_height = $config['MAX_IMG_HEIGHT'];
+        $max_thumb_width = $config['MAX_THUMB_WIDTH'];
+        $max_thumb_height = $config['MAX_THUMB_HEIGHT'];
+
+        $calculate_img_ratio = min($max_img_width / $original_width, $max_img_height / $original_height);
+        $calculate_thumb_ratio = min($max_thumb_width / $original_width, $max_thumb_height / $original_height);
+
+        $img_ratio = ($calculate_img_ratio < 1) ? $calculate_img_ratio : 1;
+        $thumb_ratio = ($calculate_thumb_ratio < 1) ? $calculate_thumb_ratio : 1;
+
+        $new_img_width = round($original_width * $img_ratio);
+        $new_img_height = round($original_height * $img_ratio);
+        $new_thumb_width = round($original_width * $thumb_ratio);
+        $new_thumb_height = round($original_height * $thumb_ratio);
+
+        $new_image = imagecreatetruecolor($new_img_width, $new_img_height);
+        $new_thumbnail = imagecreatetruecolor($new_thumb_width, $new_thumb_height);
+
+        imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $new_img_width, $new_img_height, $original_width, $original_height);
+        imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $new_thumb_width, $new_thumb_height, $original_width, $original_height);
+
+        $img_path = self::create_new_picture_name($item_id);
+        $thumb_path = self::create_new_thumbnail_name($item_id);
+
+        imagejpeg($new_image, $img_path, 90);
+        imagejpeg($new_thumbnail, $thumb_path, 75);
+
+        self::insert_new_images($img_path, $item_id);
+
+        imagedestroy($original_image);
+        imagedestroy($new_image);
+        imagedestroy($new_thumbnail);
     }
 
     public static function insert_new_images(string $path, int $item_id): void {
         $pos = self::get_pictures_priority_max($item_id) + 1;
-        $sql = "INSERT INTO items_pictures (item, priority, picture_path) 
+        $sql = "INSERT INTO item_pictures (item, priority, picture_path) 
                     VALUES (:item_id, :priority, :path) ";
         self::execute($sql, ['item_id' => $item_id, 'priority' => $pos, 'path' => $path]);
     }

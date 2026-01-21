@@ -37,23 +37,35 @@ class ControllerItem extends Controller {
     }
 
     public function manage_images(): void {
-        $item = Item::get_by_id($_GET['param1']);
+        $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
         $images = $item->get_item_pictures();
         $error = null;
-        if(isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-            $images = $_FILES['image'];
-            $extension = Uploader::check_extension($images['name']);
-            $size = Uploader::check_size($images['size']);
-            if (!$extension) {
-                $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
-            } else if (!$size) {
-                $error = "Image size is max 5MB";
-            } else {
-                $item->add_pictures($images);
+
+        if(isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
+            $files = $_FILES['image']['name'];
+
+            foreach ($files as $index => $name) {
+                $file_name = $_FILES['image']['name'][$index];
+                $tmp_name = $_FILES['image']['tmp_name'][$index];
+                $size = $_FILES['image']['size'][$index];
+                $file_error = $_FILES['image']['error'][$index];
+
+                if ($file_error === 0) {
+                    $extension = Uploader::check_extension($file_name);
+                    $size = Uploader::check_size($size);
+                    if (!$extension) {
+                        $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+                    } else if (!$size) {
+                        $error = "Image size is max 5MB";
+                    } else {
+                        $item->add_pictures($tmp_name, $file_name);
+                    }
+                }
             }
         } else {
             $error = "Error while uploading file.";
         }
+
         $manage_images = [
             'item' => $item,
             'error' => $error,

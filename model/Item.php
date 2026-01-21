@@ -1,6 +1,5 @@
 <?php
 
-require_once "config/dev.ini";
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
@@ -144,9 +143,9 @@ class Item extends Model
         ) : false;
     }
 
-    public function add_pictures(array $upload_images): void {
+    public function add_pictures(string $upload_images, string $name): void {
         $item = $this->get_id();
-        ItemPicture::add_pictures($upload_images, $item);
+        ItemPicture::add_pictures($upload_images, $name, $item);
     }
 
     public function get_item_pictures(): array {

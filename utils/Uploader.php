@@ -8,7 +8,7 @@ class Uploader {
     }
 
     public static function check_size(int $file_size): bool {
-        $dev_ini = parse_ini_file(__DIR__ . "../config/dev.ini");
+        $dev_ini = parse_ini_file(__DIR__ . "/../config/dev.ini");
         $max_size = $dev_ini['UPLOAD_MAX_FILESIZE'];
         return $file_size <= $max_size;
     }
@@ -17,8 +17,8 @@ class Uploader {
         return strtolower(pathinfo($file, PATHINFO_EXTENSION));
     }
 
-    public static function create_image_from(string $original_image): GdImage|false {
-        $extension = self::get_extension($original_image);
+    public static function create_image_from(string $original_image, string $name): GdImage|false {
+        $extension = self::get_extension($name);
         switch($extension) {
             case 'jpg':
                 $image = imagecreatefromjpeg($original_image);
