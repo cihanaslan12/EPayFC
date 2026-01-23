@@ -72,10 +72,11 @@ class ItemPicture extends Model {
                 FROM item_pictures
                 WHERE item = :id ";
         $query = self::execute($sql, ['id' => $item_id]);
-        $prior_max = (int)$query->fetch();
+        $res = $query->fetch();
+        $prior_max = $res[0];
         if ($prior_max == null)
             return 0;
-        return $prior_max;
+        return (int)$prior_max;
     }
 
     public static function add_pictures(string $upload_image, string $name, int $item_id): void {
@@ -131,9 +132,29 @@ class ItemPicture extends Model {
         self::execute($sql, ['item_id' => $item_id, 'priority' => $pos, 'path' => $path]);
     }
 
-    public static function get_by_id(int $id): ItemPicture|false {
-        $sql = "SELECT * FROM item_pictures WHERE id = :id ";
-        $query = self::execute($sql, ['id' => $id]);
+    public static function get_item_pictures(int $item_id): array {
+        $sql = "SELECT *
+                FROM item_pictures
+                WHERE item = :item_id 
+                ORDER BY priority ASC ";
+        $query = self::execute($sql, ['item_id' => $item_id]);
+        $rows = $query->fetchAll();
+
+        $pictures = [];
+        foreach($rows as $picture)
+            $pictures[] = new ItemPicture(
+                item: $picture['item'],
+                priority: $picture['priority'],
+                picture_path: $picture['picture_path'],
+            );
+        return $pictures;
+    }
+
+    public static function get_by_id(int $picture_id): ItemPicture|false {
+        $picture = ItemPicture::get_by_id($picture_id);
+        $item_id = $picture['item'];
+        $sql = "SELECT * FROM item_pictures WHERE priority = :picture_id AND item = :item_id ";
+        $query = self::execute($sql, ['priority' => $picture_id, 'id' => $item_id]);
         $row = $query->fetch();
         return $row ? new ItemPicture(
             item: $row['item'],

@@ -43,10 +43,15 @@
                                 <div class="card-thumb card border-warning m-2 p-2">
                                     <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
                                     <div class="card-btn card border-info m-2 p-2">
-                                        <form action="item/move_picture" method="POST">
-                                            <input type="hidden" name="image_id" value="<?= $image->get_id() ?>">
-                                            <button type="submit" class="arrow-btn" name="btn-left"><i class="bi bi-arrow-left"></i></button>
-                                            <button type="submit" class="arrow-btn" name="btn-right"><i class="bi bi-arrow-right"></i></button>
+                                        <form action="item/move_picture/<?php $image->get_item() ?>" method="POST">
+                                            <input type="hidden" name="item" value="<?= $image->get_item() ?>">
+                                            <input type="hidden" name="image_id" value="<?= $image->get_priority() ?>">
+                                            <button type="submit" class="arrow-btn" name="btn-left" <?php if($image->get_priority() == 1): ?>disabled<?php endif; ?>>
+                                                <i class="bi bi-arrow-left"></i>
+                                            </button>
+                                            <button type="submit" class="arrow-btn" name="btn-right" <?php if($image->get_priority() == ItemPicture::get_pictures_priority_max($item->get_id())): ?>disabled<?php endif; ?>>
+                                                <i class="bi bi-arrow-right"></i>
+                                            </button>
                                             <button type="submit" class="delete-btn" name="btn-delete"><i class="bi bi-x"></i></button>
                                         </form>
                                     </div>

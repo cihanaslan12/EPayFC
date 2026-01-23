@@ -149,21 +149,7 @@ class Item extends Model
     }
 
     public function get_item_pictures(): array {
-        $sql = "SELECT *
-                FROM item_pictures
-                WHERE item = :id 
-                ORDER BY priority ASC ";
-        $query = self::execute($sql, ['id' => $this->get_id()]);
-        $rows = $query->fetchAll();
-
-        $pictures = [];
-        foreach($rows as $picture)
-            $pictures[] = new ItemPicture(
-                item: $picture['item'],
-                priority: $picture['priority'],
-                picture_path: $picture['picture_path'],
-            );
-        return $pictures;
+        return ItemPicture::get_item_pictures($this->get_id());
     }
 
     public static function get_time_left_string(int $secs_left): string {

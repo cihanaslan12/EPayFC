@@ -80,8 +80,8 @@ class ControllerItem extends Controller {
 
     public function move_picture(): void {
         $picture_id = $_POST['image_id'];
+        $item_id = $_POST['item'];
         $picture = ItemPicture::get_by_id($picture_id);
-        $item = $picture['item'];
         if (isset($_POST['btn-left'])) {
             $picture->priority_minus();
         } else if (isset($_POST['btn-right'])) {
@@ -89,6 +89,6 @@ class ControllerItem extends Controller {
         } else if (isset($_POST['btn-delete'])) {
             $picture->delete_picture();
         }
-        $this->redirect("item", "manage_images", $item);
+        $this->redirect("item", "manage_images", $item_id);
     }
 }
