@@ -77,4 +77,18 @@ class ControllerItem extends Controller {
         ];
         (new View("manage_images"))->show($manage_images);
     }
+
+    public function move_picture(): void {
+        $picture_id = $_POST['image_id'];
+        $picture = ItemPicture::get_by_id($picture_id);
+        $item = $picture['item'];
+        if (isset($_POST['btn-left'])) {
+            $picture->priority_minus();
+        } else if (isset($_POST['btn-right'])) {
+            $picture->priority_plus();
+        } else if (isset($_POST['btn-delete'])) {
+            $picture->delete_picture();
+        }
+        $this->redirect("item", "manage_images", $item);
+    }
 }

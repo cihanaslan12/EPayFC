@@ -130,4 +130,53 @@ class ItemPicture extends Model {
                     VALUES (:item_id, :priority, :path) ";
         self::execute($sql, ['item_id' => $item_id, 'priority' => $pos, 'path' => $path]);
     }
+
+    public static function get_by_id(int $id): ItemPicture|false {
+        $sql = "SELECT * FROM item_pictures WHERE id = :id ";
+        $query = self::execute($sql, ['id' => $id]);
+        $row = $query->fetch();
+        return $row ? new ItemPicture(
+            item: $row['item'],
+            priority: $row['priority'],
+            picture_path: $row['picture_path']
+        ) : false;
+    }
+
+    public function priority_minus(): void {
+        $item = $this->get_item();
+        $current_priority = $this->get_priority();
+        if($current_priority > 1) {
+            $previous_priority = $current_priority - 1;
+
+            $sql = "UPDATE item_pictures SET priority = -1 WHERE priority = :current AND item = :item ";
+            self::execute($sql, ['current' => $current_priority, 'item' => $item]);
+
+            $sql = "UPDATE item_pictures SET priority = :current WHERE priority = :previous AND item = :item  ";
+            self::execute($sql, ['current' => $current_priority, 'previous' => $previous_priority, 'item' => $item]);
+
+            $sql = "UPDATE item_pictures SET priority = :previous WHERE priority = -1 AND item = :item  ";
+            self::execute($sql, ['previous' => $previous_priority, 'item' => $item]);
+        }
+    }
+
+    public function priority_plus(): void {
+        $item = $this->get_item();
+        $current_priority = $this->get_priority();
+        if ($current_priority < self::get_pictures_priority_max($item)) {
+            $next_priority = $current_priority + 1;
+
+            $sql = "UPDATE item_pictures SET priority = -1 WHERE priority = :current AND item = :item  ";
+            self::execute($sql, ['current' => $current_priority, 'item' => $item]);
+
+            $sql = "UPDATE item_pictures SET priority = :current WHERE priority = :next AND item = :item  ";
+            self::execute($sql, ['current' => $current_priority, 'next' => $next_priority, 'item' => $item]);
+
+            $sql = "UPDATE item_pictures SET priority = :next WHERE priority = -1 AND item = :item  ";
+            self::execute($sql, ['next' => $next_priority, 'item' => $item]);
+        }
+    }
+
+    public function delete_picture(): void {
+
+    }
 }

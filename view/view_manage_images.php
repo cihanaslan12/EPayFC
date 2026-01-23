@@ -43,9 +43,12 @@
                                 <div class="card-thumb card border-warning m-2 p-2">
                                     <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
                                     <div class="card-btn card border-info m-2 p-2">
-                                        <button class="arrow-btn"><i class="bi bi-arrow-left"></i></button>
-                                        <button class="arrow-btn"><i class="bi bi-arrow-right"></i></button>
-                                        <button class="delete-btn"><i class="bi bi-x"></i></button>
+                                        <form action="item/move_picture" method="POST">
+                                            <input type="hidden" name="image_id" value="<?= $image->get_id() ?>">
+                                            <button type="submit" class="arrow-btn" name="btn-left"><i class="bi bi-arrow-left"></i></button>
+                                            <button type="submit" class="arrow-btn" name="btn-right"><i class="bi bi-arrow-right"></i></button>
+                                            <button type="submit" class="delete-btn" name="btn-delete"><i class="bi bi-x"></i></button>
+                                        </form>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
