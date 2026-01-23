@@ -79,15 +79,18 @@ class ControllerItem extends Controller {
     }
 
     public function move_picture(): void {
-        $picture_id = $_POST['image_id'];
         $item_id = $_POST['item'];
-        $picture = ItemPicture::get_by_id($picture_id);
-        if (isset($_POST['btn-left'])) {
-            $picture->priority_minus();
-        } else if (isset($_POST['btn-right'])) {
-            $picture->priority_plus();
-        } else if (isset($_POST['btn-delete'])) {
-            $picture->delete_picture();
+        $priority = $_POST['priority'];
+        $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+
+        if($picture) {
+            if (isset($_POST['btn-left'])) {
+                $picture->priority_minus();
+            } else if (isset($_POST['btn-right'])) {
+                $picture->priority_plus();
+            } else if (isset($_POST['btn-delete'])) {
+                $picture->delete_picture();
+            }
         }
         $this->redirect("item", "manage_images", $item_id);
     }

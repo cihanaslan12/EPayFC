@@ -18,52 +18,51 @@
             <h2>Manage images for "<?= $item->get_title(); ?>"</h2>
 
             <div>
-                <form action="item/manage_images/<?= $item->get_id() ?>" method="POST" enctype="multipart/form-data">
-                    <div class="card-upload">
-                        <div class="card-header">
-                            Add New Images
-                            <div class="card-body">
-                                <div class="file mb-3">
+                <div class="card-upload">
+                    <div class="card-header">
+                        Add New Images
+                        <div class="card-body">
+                            <div class="file mb-3">
+                                <form action="item/manage_images/<?= $item->get_id() ?>" method="POST" enctype="multipart/form-data">
                                     <label for="formFileMultiple" class="form-label">Select Images</label>
                                     <input type="file" name="image[]" class="form-control" id="formFileMultiple" multiple>
                                     <p>You can select multiple images (JPG, PNG, GIF, WebP). Images will be added to the end of your current list</p>
                                     <?php if(isset($error)): ?>
                                         <p class="text-danger"><?= $error ?></p>
                                     <?php endif; ?>
-                                </div>
-                                <button type="submit" class="btn btn-primary" id="image">Upload Images</button>
+                                    <button type="submit" class="btn btn-primary" id="image">Upload Images</button>
+                                </form>
                             </div>
                         </div>
                     </div>
-                    <div class="card-current-images card border-primary m-2">
-                        <div class="card-header card border-success m-2">Current Images</div>
-                        <?php if(isset($images) && count($images) > 0): ?>
-                            <div class="row row-cols-md-4 card border-danger m-2">
-                            <?php foreach ($images as $image): ?>
-                                <div class="card-thumb card border-warning m-2 p-2">
-                                    <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
-                                    <div class="card-btn card border-info m-2 p-2">
-                                        <form action="item/move_picture/<?php $image->get_item() ?>" method="POST">
-                                            <input type="hidden" name="item" value="<?= $image->get_item() ?>">
-                                            <input type="hidden" name="image_id" value="<?= $image->get_priority() ?>">
-                                            <button type="submit" class="arrow-btn" name="btn-left" <?php if($image->get_priority() == 1): ?>disabled<?php endif; ?>>
-                                                <i class="bi bi-arrow-left"></i>
-                                            </button>
-                                            <button type="submit" class="arrow-btn" name="btn-right" <?php if($image->get_priority() == ItemPicture::get_pictures_priority_max($item->get_id())): ?>disabled<?php endif; ?>>
-                                                <i class="bi bi-arrow-right"></i>
-                                            </button>
-                                            <button type="submit" class="delete-btn" name="btn-delete"><i class="bi bi-x"></i></button>
-                                        </form>
-                                    </div>
+                </div>
+                <div class="card-current-images card border-primary m-2">
+                    <div class="card-header card border-success m-2">Current Images</div>
+                    <?php if(isset($images) && count($images) > 0): ?>
+                        <div class="row row-cols-md-4 card border-danger m-2">
+                        <?php foreach ($images as $image): ?>
+                            <div class="card-thumb card border-warning m-2 p-2">
+                                <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
+                                <div class="card-btn card border-info m-2 p-2">
+                                    <form action="item/move_picture" method="POST">
+                                        <input type="hidden" name="item" value="<?= $image->get_item() ?>">
+                                        <input type="hidden" name="priority" value="<?= $image->get_priority() ?>">
+                                        <button type="submit" class="arrow-btn" name="btn-left" <?php if($image->get_priority() == 1): ?>disabled<?php endif; ?>>
+                                            <i class="bi bi-arrow-left"></i>
+                                        </button>
+                                        <button type="submit" class="arrow-btn" name="btn-right" <?php if($image->get_priority() == ItemPicture::get_pictures_priority_max($item->get_id())): ?>disabled<?php endif; ?>>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
+                                        <button type="submit" class="delete-btn" name="btn-delete"><i class="bi bi-x"></i></button>
+                                    </form>
                                 </div>
-                            <?php endforeach; ?>
                             </div>
-                        <?php else: ?>
-                            <p>No images yet for this item. Upload some images above to get started.</p>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
                         </div>
-                    </div>
-                </form>
+                    <?php else: ?>
+                        <p>No images yet for this item. Upload some images above to get started.</p>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </body>

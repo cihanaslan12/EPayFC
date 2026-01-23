@@ -150,11 +150,9 @@ class ItemPicture extends Model {
         return $pictures;
     }
 
-    public static function get_by_id(int $picture_id): ItemPicture|false {
-        $picture = ItemPicture::get_by_id($picture_id);
-        $item_id = $picture['item'];
-        $sql = "SELECT * FROM item_pictures WHERE priority = :picture_id AND item = :item_id ";
-        $query = self::execute($sql, ['priority' => $picture_id, 'id' => $item_id]);
+    public static function get_by_item_and_priority(int $item_id, int $priority): ItemPicture|false {
+        $sql = "SELECT * FROM item_pictures WHERE item = :item_id AND priority = :priority ";
+        $query = self::execute($sql, ['item_id' => $item_id, 'priority' => $priority]);
         $row = $query->fetch();
         return $row ? new ItemPicture(
             item: $row['item'],
