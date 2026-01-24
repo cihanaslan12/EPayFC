@@ -271,4 +271,28 @@ class ControllerItem extends Controller {
         }
         (new View("browse_items"))->show($browse_view);
     }
+
+    public function my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("main", "login");
+            return;
+        }
+
+        $active_items = Item::get_my_active_items($user);
+        $closed_unsold_items = Item::get_my_closed_unsold_items($user);
+        $sold_items = Item::get_my_sold_items($user);
+
+        (new View("my_items"))->show([
+            "user" => $user,
+            "active_items" => $active_items,
+            "closed_unsold_items" => $closed_unsold_items,
+            "sold_items" => $sold_items,
+
+            "show_back" => false,
+            "page_title" => "My Items",
+            "show_save" => false
+        ]);
+    }
+
 }

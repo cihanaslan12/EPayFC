@@ -334,6 +334,42 @@ class Item extends Model {
         return false;
     }
 
+    public static function get_my_active_items(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            WHERE vis.owner = :id
+              AND (vis.not_purchased_direct_sale
+                   OR (vis.is_auction AND vis.end_at > :now
+                       AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached)))
+            ORDER BY vis.end_at DESC";
+        return self::fetchItems($sql, $user);
+    }
+
+    public static function get_my_closed_unsold_items(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
+                 OR (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
+                  )
+            ORDER BY vis.end_at DESC";
+        return self::fetchItems($sql, $user);
+    }
+
+    public static function get_my_sold_items(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1 AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
+                  )
+            ORDER BY vis.end_at DESC";
+        return self::fetchItems($sql, $user);
+    }
+
+
 
 
 }
