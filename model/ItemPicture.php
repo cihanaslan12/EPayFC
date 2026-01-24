@@ -196,6 +196,10 @@ class ItemPicture extends Model {
     }
 
     public function delete_picture(): void {
+        $priority = $this->get_priority();
+        $item = $this->get_item();
 
+        $sql = "DELETE FROM item_pictures WHERE item = :item AND priority = :priority ";
+        self::execute($sql, ['item' => $item, 'priority' => $priority]);
     }
 }
