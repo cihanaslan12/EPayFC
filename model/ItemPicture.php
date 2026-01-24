@@ -199,6 +199,10 @@ class ItemPicture extends Model {
         $priority = $this->get_priority();
         $item = $this->get_item();
 
+        if (file_exists($this->get_picture_path())) {
+            unlink($this->get_picture_path());
+            unlink($this->get_picture_thumbnail());
+        }
         $sql = "DELETE FROM item_pictures WHERE item = :item AND priority = :priority ";
         self::execute($sql, ['item' => $item, 'priority' => $priority]);
     }
