@@ -59,11 +59,11 @@ class ItemPicture extends Model {
 
         $uniq_id = uniqid("{$item_id}_{$pictures_priority}_", true);
 
-        return $save_dir . $uniq_id . 'jpg';
+        return $save_dir . $uniq_id . '.jpg';
     }
 
-    public static function create_new_thumbnail_name(int $item_id): string {
-        $name = explode('.', self::create_new_picture_name($item_id));
+    public static function create_new_thumbnail_name(string $picture_name): string {
+        $name = explode('.jpg', $picture_name);
         return $name[0] . '_thumbnail.jpg';
     }
 
@@ -113,7 +113,7 @@ class ItemPicture extends Model {
         imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $new_thumb_width, $new_thumb_height, $original_width, $original_height);
 
         $img_path = self::create_new_picture_name($item_id);
-        $thumb_path = self::create_new_thumbnail_name($item_id);
+        $thumb_path = self::create_new_thumbnail_name($img_path);
 
         imagejpeg($new_image, $img_path, 90);
         imagejpeg($new_thumbnail, $thumb_path, 75);
