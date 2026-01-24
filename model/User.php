@@ -5,13 +5,14 @@ require_once "model/Item.php";
 
 class User extends Model {
     public function __construct(
-        private string $mail,
-        private string $fullName,
-        private string $pseudo,
-        private string $hashedPassword,
+        private ?string $mail,
+        private ?string $fullName,
+        private ?string $pseudo,
+        private ?string $hashedPassword,
+        private ?bool $is_guest = false,
         private ?string $iban = null,
         private ?string $picturePath = null,
-        private string $role = "user",
+        private ?string $role = "user",
         private ?int $id = null,
     ) {
     }
@@ -20,31 +21,35 @@ class User extends Model {
         return $this->id;
     }
 
-    public function get_mail(): string {
+    public function get_mail(): ?string {
         return $this->mail;
     }
 
-    public function get_full_name(): string {
+    public function get_full_name(): ?string {
         return $this->fullName;
     }
 
-    public function get_pseudo(): string {
+    public function get_pseudo(): ?string {
         return $this->pseudo;
     }
 
-    public function get_hashedPassword(): string {
+    public function get_hashedPassword(): ?string {
         return $this->hashedPassword;
     }
 
-    public function get_picture_path(): string {
+    public function is_guest(): ?bool {
+        return $this->is_guest;
+    }
+
+    public function get_picture_path(): ?string {
         return $this->picturePath;
     }
 
-    public function get_iban(): string {
+    public function get_iban(): ?string {
         return $this->iban;
     }
 
-    public function get_role(): string {
+    public function get_role(): ?string {
         return $this->role;
     }
 
@@ -58,6 +63,40 @@ class User extends Model {
         $query = self::execute("SELECT * FROM users WHERE email = :mail", array("mail" => $mail));
         $row = $query->fetch();
         return $row ? new User(id: $row['id'], mail: $row['email'], fullName: $row['full_name'], pseudo: $row['pseudo'], hashedPassword: $row['password'], picturePath: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
+    }
+
+    public static function get_pseudo_by_owner_id(int $id): string {
+        $sql = "SELECT pseudo FROM users WHERE id = :id" ;
+        $query = self::execute($sql, ["id" => $id]);
+        $user = $query->fetch(PDO::FETCH_ASSOC);
+        return $user['pseudo'];
+    }
+
+    public static function am_i_bidder(int $user_id, int $item_id): bool {
+        $sql = "SELECT * 
+                FROM bids b
+                    JOIN v_items_status vis ON b.item = vis.id
+                    JOIN users u ON b.owner = u.id
+                WHERE b.owner = :bidder_id
+                    AND b.item = :item_id
+                    AND (vis.end_at > :now OR vis.buy_now_reached = 0) ";
+        $query = self::execute($sql, ["bidder_id" => $user_id, "item_id" => $item_id, "now" => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return (bool)$res;
+    }
+
+    public static function am_i_highest_bidder(int $user_id, int $item_id): bool {
+        $sql = "SELECT owner
+                FROM bids
+                WHERE item = :item_id
+                ORDER BY amount DESC
+                LIMIT 1";
+        $query = self::execute($sql, ["item_id" => $item_id]);
+        $res = $query->fetch();
+        if ($res)
+            return (int)$res['owner'] == $user_id;
+        else
+            return false;
     }
 
     public static function get_by_pseudo(string $pseudo): User|false {
@@ -125,5 +164,10 @@ class User extends Model {
     public function get_other_available_items(): array
     {
         return Item::get_other_available_items($this);
+    }
+
+    public function get_all_available_items_for_guest(): array
+    {
+        return Item::get_all_available_items_for_guest();
     }
 }
