@@ -320,9 +320,8 @@ class Item extends Model {
     }
 
     public function is_open(string $now): bool {
-        // Si l'item est une vente directe et pas encore acheté
-        if ($this->not_purchased_direct_sale === 1) {
-            return true;
+        if ($this->is_direct_sale === 1 && $this->not_purchased_direct_sale === 1) {
+            return $this->end_at !== null && $this->end_at > $now;
         }
 
         // Si l'item est une enchère active
@@ -338,9 +337,11 @@ class Item extends Model {
         $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
             FROM v_items_status vis
             WHERE vis.owner = :id
-              AND (vis.not_purchased_direct_sale
-                   OR (vis.is_auction AND vis.end_at > :now
-                       AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached)))
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+                 OR (vis.is_auction = 1 AND vis.end_at > :now
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+                  )
             ORDER BY vis.end_at DESC";
         return self::fetchItems($sql, $user);
     }
@@ -350,26 +351,24 @@ class Item extends Model {
             FROM v_items_status vis
             WHERE vis.owner = :id
               AND (
-                    (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
-                 OR (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
+                 OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
                   )
             ORDER BY vis.end_at DESC";
         return self::fetchItems($sql, $user);
     }
 
     public static function get_my_sold_items(User $user): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        $sql = "SELECT DISTINCT vis.*, 0 as secs_left
             FROM v_items_status vis
             WHERE vis.owner = :id
               AND (
                     (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
-                 OR (vis.is_auction = 1 AND vis.has_bids = 1 AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
                   )
             ORDER BY vis.end_at DESC";
         return self::fetchItems($sql, $user);
     }
-
-
-
 
 }
