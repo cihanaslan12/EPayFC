@@ -115,6 +115,21 @@ $postedAmount = $postedAmount ?? null;
     <?php endif; ?>
 <?php endif; ?>
 
+<?php if ($isOwner): ?>
+    <h2>Manage your item</h2>
+
+    <?php if ($canManage): ?>
+        <ul>
+            <li><a href="item/add_edit_item/<?= $item->get_id() ?>">Edit item details</a></li>
+            <li><a href="item/manage_images/<?= $item->get_id() ?>">Manage images</a></li>
+            <li><a href="item/delete_confirm/<?= $item->get_id() ?>">Delete item</a></li>
+        </ul>
+    <?php else: ?>
+        <p><em>This item can no longer be modified or deleted because bids have been placed.</em></p>
+    <?php endif; ?>
+<?php endif; ?>
+
+
 <p><strong>Description:</strong><br>
     <?= nl2br($item->get_description() ?? "") ?>
 </p>

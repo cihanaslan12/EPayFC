@@ -49,6 +49,8 @@ class ControllerItem extends Controller {
 
         $isOwner = $user && $user->get_id() === $item->get_owner();
 
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
         $highestBid = Bid::get_highest_for_item($item->get_id());
 
         $defaultBid = null;
@@ -70,7 +72,8 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
-            "highestBid" => $highestBid
+            "highestBid" => $highestBid,
+            "canManage" => $canManage
         ]);
     }
 
@@ -125,6 +128,8 @@ class ControllerItem extends Controller {
 
         $isOpen = $item->is_open($now);
         $isOwner = $user->get_id() === $item->get_owner();
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -146,6 +151,7 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
+            "canManage" => $canManage,
 
             "errors" => $errors,
             "postedAmount" => $amount
@@ -208,6 +214,8 @@ class ControllerItem extends Controller {
 
         $isOpen = $item->is_open($now);
         $isOwner = $user->get_id() === $item->get_owner();
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -229,6 +237,7 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
+            "canManage" => $canManage,
 
             // erreurs buy now
             "errors" => $errors,
