@@ -195,7 +195,8 @@ class ItemPicture extends Model {
         }
     }
 
-    public function delete_picture(): void {
+    public function delete_picture(): void
+    {
         $priority = $this->get_priority();
         $item = $this->get_item();
 
@@ -203,7 +204,21 @@ class ItemPicture extends Model {
             unlink($this->get_picture_path());
             unlink($this->get_picture_thumbnail());
         }
+        //if (empty(dossier) {
+        // -> delete rmdir
+        //}
+
         $sql = "DELETE FROM item_pictures WHERE item = :item AND priority = :priority ";
+        self::execute($sql, ['item' => $item, 'priority' => $priority]);
+
+        self::update_priority($item, $priority);
+    }
+
+    private static function update_priority(int $item,int $priority): void {
+        $sql = "UPDATE item_pictures 
+                SET priority = priority - 1
+                WHERE item = :item
+                AND priority > :priority ";
         self::execute($sql, ['item' => $item, 'priority' => $priority]);
     }
 }
