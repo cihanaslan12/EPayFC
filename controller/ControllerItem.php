@@ -38,7 +38,6 @@ class ControllerItem extends Controller {
 
     public function manage_images(): void {
         $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
-        $images = $item->get_item_pictures();
         $error = null;
 
         if(isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
@@ -65,6 +64,8 @@ class ControllerItem extends Controller {
         } else {
             $error = "Error while uploading file.";
         }
+
+        $images = $item->get_item_pictures();
 
         $manage_images = [
             'show_back' => true,

@@ -27,8 +27,8 @@ class ItemPicture extends Model {
 
     public function get_picture_thumbnail(): string {
         $picture_path = $this->get_picture_path();
-        $thumbnail = explode('.', $picture_path);
-        return $thumbnail[0] . '_thumbnail.' . $thumbnail[1];
+        $thumbnail = explode('.jpg', $picture_path);
+        return $thumbnail[0] . '_thumbnail.jpg';
     }
 
     public static function get_item_thumbnail(int $int): ?string {
@@ -204,9 +204,6 @@ class ItemPicture extends Model {
             unlink($this->get_picture_path());
             unlink($this->get_picture_thumbnail());
         }
-        //if (empty(dossier) {
-        // -> delete rmdir
-        //}
 
         $sql = "DELETE FROM item_pictures WHERE item = :item AND priority = :priority ";
         self::execute($sql, ['item' => $item, 'priority' => $priority]);
