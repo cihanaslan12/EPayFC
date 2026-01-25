@@ -331,7 +331,7 @@ class ControllerItem extends Controller {
 
         $manage_images = [
             'show_back' => true,
-            'backUrl' => 'item/openitem',
+            'backUrl' => 'item/open/' . $item->get_id(),
             'page_title' => "Manage Images",
             'show_save' => false,
             'item' => $item,
