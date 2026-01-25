@@ -40,29 +40,31 @@ class ControllerItem extends Controller {
         $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
         $error = null;
 
-        if(isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
-            $files = $_FILES['image']['name'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
+                $files = $_FILES['image']['name'];
 
-            foreach ($files as $index => $name) {
-                $file_name = $_FILES['image']['name'][$index];
-                $tmp_name = $_FILES['image']['tmp_name'][$index];
-                $size = $_FILES['image']['size'][$index];
-                $file_error = $_FILES['image']['error'][$index];
+                foreach ($files as $index => $name) {
+                    $file_name = $_FILES['image']['name'][$index];
+                    $tmp_name = $_FILES['image']['tmp_name'][$index];
+                    $size = $_FILES['image']['size'][$index];
+                    $file_error = $_FILES['image']['error'][$index];
 
-                if ($file_error === 0) {
-                    $extension = Uploader::check_extension($file_name);
-                    $size = Uploader::check_size($size);
-                    if (!$extension) {
-                        $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
-                    } else if (!$size) {
-                        $error = "Image size is max 5MB";
-                    } else {
-                        $item->add_pictures($tmp_name, $file_name);
+                    if ($file_error === 0) {
+                        $extension = Uploader::check_extension($file_name);
+                        $size = Uploader::check_size($size);
+                        if (!$extension) {
+                            $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+                        } else if (!$size) {
+                            $error = "Image size is max 5MB";
+                        } else {
+                            $item->add_pictures($tmp_name, $file_name);
+                        }
                     }
                 }
+            } else {
+                $error = "Error while uploading file.";
             }
-        } else {
-            $error = "Error while uploading file.";
         }
 
         $images = $item->get_item_pictures();

@@ -36,14 +36,14 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-current-images card border-primary m-2">
-                    <div class="card-header card border-success m-2">Current Images</div>
+                <div class="card-current-images m-2">
+                    <div class="card-header m-2">Current Images</div>
                     <?php if(isset($images) && count($images) > 0): ?>
-                        <div class="row row-cols-md-4 card border-danger m-2">
+                        <div class="row row-cols-md-4 m-2">
                         <?php foreach ($images as $image): ?>
-                            <div class="card-thumb card border-warning m-2 p-2">
+                            <div class="card-thumb card border-light m-2 p-2">
                                 <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
-                                <div class="card-btn card border-info m-2 p-2">
+                                <div class="card-btn m-2 p-2">
                                     <form action="item/move_picture" method="POST">
                                         <input type="hidden" name="item" value="<?= $image->get_item() ?>">
                                         <input type="hidden" name="priority" value="<?= $image->get_priority() ?>">
