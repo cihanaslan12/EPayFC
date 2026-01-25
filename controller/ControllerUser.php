@@ -88,4 +88,20 @@ class ControllerUser extends Controller {
             $this->redirect();
         }
     }
+
+    public function profile(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("user", "login");
+            return;
+        }
+
+        (new View("profile"))->show([
+            "user" => $user,
+            "show_back" => false,
+            "page_title" => "Profile",
+            "show_save" => false
+        ]);
+    }
+
 }
