@@ -4,14 +4,22 @@ require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
 require_once "utils/AppTime.php";
+require_once "utils/Uploader.php";
 
-class Item extends Model {
+class Item extends Model
+{
     public function __construct(
         private string  $title,
-        private string  $description,
-        private int     $owner,
-        private string  $created_at,
-        private int     $duration_days,
+        private ?string $description,
+        private ?int    $owner,
+        private ?string $owner_pseudo = null,
+        private ?string $created_at,
+        private ?int    $duration_days,
+        private ?string $end_at = null,
+        private ?string $time_left = null,
+        private ?int    $has_bids = null,
+        private ?int    $is_direct_sale = null,
+        private ?int    $is_auction = null,
         private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
@@ -21,23 +29,19 @@ class Item extends Model {
         private ?int    $bid_count = null,
         private ?string $max_bid = null,
 
-        private ?string $owner_pseudo = null,
-        private ?string $end_at = null,
-        private ?string $time_left = null,
-        private ?int    $has_bids = null,
-        private ?int    $is_direct_sale = null,
-        private ?int    $is_auction = null,
         private ?int    $has_buy_now = null,
         private ?int    $buy_now_reached = null,
         private ?int    $not_purchased_direct_sale = null,
-        
+
         private ?string $thumbnail = null,
         private ?bool   $bidder = null,
-        private ?bool   $highest_bidder = null
-    ) {}
+        private ?bool   $highest_bidder = null,
+    )
+    {
+    }
 
-
-    public function get_id(): ?int {
+    public function get_id(): ?int
+    {
         return $this->id;
     }
 
@@ -146,27 +150,35 @@ class Item extends Model {
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
-        return $row ? new Item(title: $row['title'], description: $row['description'], owner: $row['owner'],
-            created_at: $row['created_at'], duration_days: $row['duration_days'], id: $row['id'],
-            buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
+        return $row ? new Item(
+            title: $row['title'],
+            description: $row['description'],
+            owner: $row['owner'],
+            owner_pseudo: null,
+            created_at: $row['created_at'],
+            duration_days: $row['duration_days'],
+            end_at: null,
+            time_left: null,
+            has_bids: null,
+            is_direct_sale: null,
+            is_auction: null,
+            id: $row['id'],
+            buy_now_price: $row['buy_now_price'],
+            starting_bid: $row['starting_bid'],
+            max_bid: null,
+            thumbnail: null,
+            bidder: null,
+            highest_bidder: null
+        ) : false;
+    }
+
+    public function add_pictures(string $upload_images, string $name): void {
+        $item = $this->get_id();
+        ItemPicture::add_pictures($upload_images, $name, $item);
     }
 
     public function get_item_pictures(): array {
-        $sql = "SELECT *
-                FROM item_pictures
-                WHERE item = :id 
-                ORDER BY priority ASC ";
-        $query = self::execute($sql, ['id' => $this->get_id()]);
-        $rows = $query->fetchAll();
-
-        $pictures = [];
-        foreach($rows as $picture)
-            $pictures[] = new ItemPicture(
-                item: $picture['item'],
-                priority: $picture['priority'],
-                picture_path: $picture['picture_path'],
-            );
-        return $pictures;
+        return ItemPicture::get_item_pictures($this->get_id());
     }
 
     public static function get_time_left_string(int $secs_left): string {
@@ -233,9 +245,9 @@ class Item extends Model {
         $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
-        $other_items = [];
+        $items = [];
         foreach ($row as $item) {
-            $other_items[] = new Item(
+            $items[] = new Item(
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
@@ -256,7 +268,7 @@ class Item extends Model {
                 highest_bidder: $user_id ? User::am_i_highest_bidder($user->get_id(), $item['id']) : null,
             );
         }
-        return $other_items;
+        return $items;
     }
 
     public static function get_open_item_with_seller(int $id): Item|false {
