@@ -5,7 +5,6 @@ require_once "model/User.php";
 require_once "model/Item.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
-require_once "utils/Uploader.php";
 
 class ControllerItem extends Controller {
     public function index(): void {
@@ -50,6 +49,8 @@ class ControllerItem extends Controller {
 
         $isOwner = $user && $user->get_id() === $item->get_owner();
 
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
         $highestBid = Bid::get_highest_for_item($item->get_id());
 
         $defaultBid = null;
@@ -71,7 +72,8 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
-            "highestBid" => $highestBid
+            "highestBid" => $highestBid,
+            "canManage" => $canManage
         ]);
     }
 
@@ -126,6 +128,8 @@ class ControllerItem extends Controller {
 
         $isOpen = $item->is_open($now);
         $isOwner = $user->get_id() === $item->get_owner();
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -147,6 +151,7 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
+            "canManage" => $canManage,
 
             "errors" => $errors,
             "postedAmount" => $amount
@@ -209,6 +214,8 @@ class ControllerItem extends Controller {
 
         $isOpen = $item->is_open($now);
         $isOwner = $user->get_id() === $item->get_owner();
+        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
+
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -230,6 +237,7 @@ class ControllerItem extends Controller {
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
             "defaultBid" => $defaultBid,
+            "canManage" => $canManage,
 
             // erreurs buy now
             "errors" => $errors,
@@ -263,6 +271,30 @@ class ControllerItem extends Controller {
         }
         (new View("browse_items"))->show($browse_view);
     }
+
+    public function my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("main", "login");
+            return;
+        }
+
+        $active_items = Item::get_my_active_items($user);
+        $closed_unsold_items = Item::get_my_closed_unsold_items($user);
+        $sold_items = Item::get_my_sold_items($user);
+
+        (new View("my_items"))->show([
+            "user" => $user,
+            "active_items" => $active_items,
+            "closed_unsold_items" => $closed_unsold_items,
+            "sold_items" => $sold_items,
+
+            "show_back" => false,
+            "page_title" => "My Items",
+            "show_save" => false
+        ]);
+    }
+
 
     public function manage_images(): void {
         $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
