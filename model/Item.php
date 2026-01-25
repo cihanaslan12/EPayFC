@@ -5,6 +5,7 @@ require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
 require_once "utils/AppTime.php";
 require_once "utils/Uploader.php";
+require_once "utils/Functions.php";
 
 class Item extends Model
 {
@@ -154,9 +155,9 @@ class Item extends Model
             title: $row['title'],
             description: $row['description'],
             owner: $row['owner'],
-            owner_pseudo: null,
             created_at: $row['created_at'],
             duration_days: $row['duration_days'],
+            owner_pseudo: null,
             end_at: null,
             time_left: null,
             has_bids: null,
@@ -251,9 +252,9 @@ class Item extends Model
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
-                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
+                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 end_at: $item['end_at'],
                 time_left: self::get_time_left_string($item['secs_left']),
                 has_bids: $item['has_bids'],
@@ -383,4 +384,36 @@ class Item extends Model
         return self::fetchItems($sql, $user);
     }
 
+    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchased_price, float $direct_sale_price): array {
+        $errors = [];
+
+        $title_min = Configuration::get('TITLE_MIN_LENGHT');
+        $title_max = Configuration::get('TITLE_MAX_LENGHT');
+
+        $desc_min = Configuration::get('DESCR_MIN_LENGHT');
+
+        $title_error = Functions::title_lenght($title, $title_min, $title_max);
+        $desc_error = Functions::description_lenght($description, $desc_min);
+
+        $price_error = Functions::auction_or_direct($starting_bid, $instant_purchased_price, $direct_sale_price);
+        if ($title_error) {
+            $errors[] = $title_error;
+        }
+        if ($desc_error) {
+            $errors[] = $desc_error;
+        }
+        if ($price_error) {
+            $errors[] = $price_error;
+        }
+        return $errors;
+    }
+
+    public static function insert_into_db(string $title, string $description, int $duration, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): void {
+        $sql = "INSERT INTO items (title, description, duration, 
+                   starting_bid, instant_purchased_price, direct_sale_price) 
+                VALUES (:title, :description, :duration,
+                        :starting_bid, :instant_purchased_price, :direct_sale_price)" ;
+        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration,
+            'starting_bid' => $starting_bid, 'instant_purchased_price' => $instant_purchase_price, 'direct_sale_price' => $direct_sale_price]);
+    }
 }
