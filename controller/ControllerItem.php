@@ -80,7 +80,7 @@ class ControllerItem extends Controller {
     public function place_bid(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -162,7 +162,7 @@ class ControllerItem extends Controller {
     public function buy_now(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -275,7 +275,7 @@ class ControllerItem extends Controller {
     public function my_items(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
