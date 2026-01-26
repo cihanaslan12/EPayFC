@@ -109,5 +109,56 @@ class Bid extends Model {
         return true;
     }
 
+    public static function buy_now(User $user, Item $item, string $now, array &$errors): bool {
+        if ($item->get_has_buy_now() !== 1 || $item->get_buy_now_price() === null) {
+            $errors["buy_now"] = "Buy now is not available for this item.";
+            return false;
+        }
+
+        if (!$item->is_open($now)) {
+            $errors["buy_now"] = "This item is closed.";
+            return false;
+        }
+
+        if ($user->get_id() === $item->get_owner()) {
+            $errors["buy_now"] = "You cannot buy your own item.";
+            return false;
+        }
+
+        $amountF = (float)$item->get_buy_now_price();
+        if ($amountF <= 0) {
+            $errors["buy_now"] = "Invalid buy now price.";
+            return false;
+        }
+
+        $amount = number_format($amountF, 2, '.', '');
+
+
+        if ($item->get_is_auction() === 1) {
+            $tmp = [];
+            if (self::place_bid($user, $item, $amount, $now, $tmp)) {
+                return true;
+            }
+            $errors["buy_now"] = $tmp["amount"] ?? $tmp["bid"] ?? "Buy now failed.";
+            return false;
+        }
+
+        if ($item->get_is_direct_sale() !== 1) {
+            $errors["buy_now"] = "Buy now is not available for this item.";
+            return false;
+        }
+
+        $sql = "INSERT INTO bids(owner, item, created_at, amount)
+            VALUES(:owner, :item, :created_at, :amount)";
+        self::execute($sql, [
+            "owner" => $user->get_id(),
+            "item" => $item->get_id(),
+            "created_at" => $now,
+            "amount" => $amount
+        ]);
+
+        return true;
+    }
+
 
 }
