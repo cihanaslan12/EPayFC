@@ -362,26 +362,29 @@ class ControllerItem extends Controller {
         $title = '';
         $description = '';
         $duration = 7;
-        $starting_bid = '';
-        $instant_purchase_price = '';
-        $direct_sale_price = '';
+        $starting_bid = 0.0;
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
         $errors = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = $_POST['title'];
             $description = $_POST['description'];
             $duration = $_POST['duration'];
-            $starting_bid = $_POST['start_bid'];
-            $instant_purchase_price = $_POST['inst_purch_price'];
-            $direct_sale_price = $_POST['dir_sale_price'];
-        }
-        $errors[] = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $starting_bid = (float)$_POST['start_bid'];
+            $instant_purchase_price = (float)$_POST['inst_purch_price'];
+            $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-        if (!$errors) {
-            Item::insert_into_db($title, $description, $duration,
-                $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+        }
+
+        if (empty($errors)) {
+            Item::insert_into_db($title, $description, $duration, $starting_bid, $instant_purchase_price);
         }
         $this->redirect("item", "open");
     }
 
+    public function edit(): void {
+
+    }
 }

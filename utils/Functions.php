@@ -17,14 +17,14 @@ class Functions {
     }
 
     public static function description_lenght(string $description, int $min): string {
-        if (!empty($description) && $description < $min) {
+        if (!empty($description) && strlen($description) < $min) {
             return 'Empty or min 3 characters !';
         }
         return '';
     }
 
     public static function auction_or_direct(float $starting_bid, float $instant_purchased_price, float $direct_sale_price): string {
-        if((!empty($starting_bid) || !empty($instant_purchased_price)) && !empty($direct_sale_price) ) {
+        if(($starting_bid > 0 || $instant_purchased_price > 0) && $direct_sale_price > 0) {
             return 'Cannot create both auction and direct sale.';
         }
         return '';

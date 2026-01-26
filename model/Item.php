@@ -389,31 +389,25 @@ class Item extends Model
 
         $title_min = Configuration::get('TITLE_MIN_LENGHT');
         $title_max = Configuration::get('TITLE_MAX_LENGHT');
-
         $desc_min = Configuration::get('DESCR_MIN_LENGHT');
 
-        $title_error = Functions::title_lenght($title, $title_min, $title_max);
-        $desc_error = Functions::description_lenght($description, $desc_min);
-
-        $price_error = Functions::auction_or_direct($starting_bid, $instant_purchased_price, $direct_sale_price);
-        if ($title_error) {
-            $errors[] = $title_error;
+        if ($title_error = Functions::title_lenght($title, $title_min, $title_max)) {
+            $errors['title'] = $title_error;
         }
-        if ($desc_error) {
-            $errors[] = $desc_error;
+        if ($desc_error = Functions::description_lenght($description, $desc_min)) {
+            $errors['description'] = $desc_error;
         }
-        if ($price_error) {
-            $errors[] = $price_error;
+        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchased_price, $direct_sale_price)) {
+            $errors['price'] = $price_error;
         }
         return $errors;
     }
 
-    public static function insert_into_db(string $title, string $description, int $duration, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): void {
-        $sql = "INSERT INTO items (title, description, duration, 
-                   starting_bid, instant_purchased_price, direct_sale_price) 
-                VALUES (:title, :description, :duration,
-                        :starting_bid, :instant_purchased_price, :direct_sale_price)" ;
-        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration,
-            'starting_bid' => $starting_bid, 'instant_purchased_price' => $instant_purchase_price, 'direct_sale_price' => $direct_sale_price]);
+    public static function insert_into_db(string $title, string $description, int $duration, float $starting_bid, float $instant_purchase_price): void {
+        $owner_id = $_SESSION['user']->get_id();
+        $sql = "INSERT INTO items (title, description, duration_days, starting_bid, buy_now_price, owner, created_at) 
+                        VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :owner, NOW())" ;
+        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration, 'starting_bid' => $starting_bid,
+            'buy_now_price' => $instant_purchase_price, 'owner' => $owner_id]);
     }
 }
