@@ -184,14 +184,9 @@ class ControllerItem extends Controller {
 
         $errors = [];
 
-        if ($item->get_has_buy_now() !== 1 || $item->get_buy_now_price() === null) {
-            $errors["buy_now"] = "Buy now is not available for this item.";
-        } else {
-            $amount = (string)$item->get_buy_now_price();
-            if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
-                $this->redirect("item", "open", $id);
-                return;
-            }
+        if (Bid::buy_now($user, $item, $now, $errors)) {
+            $this->redirect("item", "open", $id);
+            return;
         }
 
         $pictures = $item->get_pictures();
