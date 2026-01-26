@@ -35,12 +35,54 @@
         </div>
     </div>
 
-    <div class="list-group">
-        <a class="list-group-item list-group-item-action" href="user/sales">Sales</a>
-        <a class="list-group-item list-group-item-action" href="user/purchases">Purchases</a>
-        <a class="list-group-item list-group-item-action" href="user/edit_profile">Edit profile</a>
-        <a class="list-group-item list-group-item-action" href="user/change_password">Change password</a>
-        <a class="list-group-item list-group-item-action" href="user/profile_picture">Profile picture</a>
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>My activities</strong>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       href="user/sales">
+                        <span><i class="bi bi-cash-coin me-2"></i>Sales</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       href="user/purchases">
+                        <span><i class="bi bi-bag-check me-2"></i>Purchases</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Account settings</strong>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       href="user/edit_profile">
+                        <span><i class="bi bi-person-gear me-2"></i>Edit profile</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       href="user/change_password">
+                        <span><i class="bi bi-shield-lock me-2"></i>Change password</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                       href="user/profile_picture">
+                        <span><i class="bi bi-image me-2"></i>Profile picture</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <form class="mt-4" method="post" action="user/logout">
