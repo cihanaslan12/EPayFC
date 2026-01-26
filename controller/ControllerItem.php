@@ -80,7 +80,7 @@ class ControllerItem extends Controller {
     public function place_bid(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -162,7 +162,7 @@ class ControllerItem extends Controller {
     public function buy_now(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -193,7 +193,7 @@ class ControllerItem extends Controller {
                 return;
             }
         }
-        
+
         $pictures = $item->get_pictures();
 
         $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
@@ -270,5 +270,91 @@ class ControllerItem extends Controller {
             ];
         }
         (new View("browse_items"))->show($browse_view);
+    }
+
+    public function my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("user", "login");
+            return;
+        }
+
+        $active_items = Item::get_my_active_items($user);
+        $closed_unsold_items = Item::get_my_closed_unsold_items($user);
+        $sold_items = Item::get_my_sold_items($user);
+
+        (new View("my_items"))->show([
+            "user" => $user,
+            "active_items" => $active_items,
+            "closed_unsold_items" => $closed_unsold_items,
+            "sold_items" => $sold_items,
+
+            "show_back" => false,
+            "page_title" => "My Items",
+            "show_save" => false
+        ]);
+    }
+
+
+    public function manage_images(): void {
+        $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
+        $error = null;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
+                $files = $_FILES['image']['name'];
+
+                foreach ($files as $index => $name) {
+                    $file_name = $_FILES['image']['name'][$index];
+                    $tmp_name = $_FILES['image']['tmp_name'][$index];
+                    $size = $_FILES['image']['size'][$index];
+                    $file_error = $_FILES['image']['error'][$index];
+
+                    if ($file_error === 0) {
+                        $extension = Uploader::check_extension($file_name);
+                        $size = Uploader::check_size($size);
+                        if (!$extension) {
+                            $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+                        } else if (!$size) {
+                            $error = "Image size is max 5MB";
+                        } else {
+                            $item->add_pictures($tmp_name, $file_name);
+                        }
+                    }
+                }
+            } else {
+                $error = "Error while uploading file.";
+            }
+        }
+
+        $images = $item->get_item_pictures();
+
+        $manage_images = [
+            'show_back' => true,
+            'backUrl' => 'item/open/' . $item->get_id(),
+            'page_title' => "Manage Images",
+            'show_save' => false,
+            'item' => $item,
+            'error' => $error,
+            'images' => $images,
+        ];
+        (new View("manage_images"))->show($manage_images);
+    }
+
+    public function move_picture(): void {
+        $item_id = $_POST['item'];
+        $priority = $_POST['priority'];
+        $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+
+        if($picture) {
+            if (isset($_POST['btn-left'])) {
+                $picture->priority_minus();
+            } else if (isset($_POST['btn-right'])) {
+                $picture->priority_plus();
+            } else if (isset($_POST['btn-delete'])) {
+                $picture->delete_picture();
+            }
+        }
+        $this->redirect("item", "manage_images", $item_id);
     }
 }

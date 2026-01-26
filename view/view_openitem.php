@@ -120,7 +120,7 @@ $postedAmount = $postedAmount ?? null;
 
     <?php if ($canManage): ?>
         <ul>
-            <li><a href="item/add_edit_item/<?= $item->get_id() ?>">Edit item details</a></li>
+            <li><a href="item/edit/<?= $item->get_id() ?>">Edit item details</a></li>
             <li><a href="item/manage_images/<?= $item->get_id() ?>">Manage images</a></li>
             <li><a href="item/delete_confirm/<?= $item->get_id() ?>">Delete item</a></li>
         </ul>
