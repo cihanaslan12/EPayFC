@@ -359,6 +359,8 @@ class ControllerItem extends Controller {
     }
 
     public function add(): void {
+        $user = $this->get_user_or_false();
+        $user_id = $user->get_id();
         $title = '';
         $description = '';
         $duration = 7;
@@ -376,12 +378,26 @@ class ControllerItem extends Controller {
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
             $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            if (empty($errors)) {
+                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price);
+                $this->redirect("item", "open", $new_item_id);
+            }
         }
+        $add_item = [
+            'user' => $user,
+            'show_back' => true,
+            'page_title' => "Add item",
+            'show_save' => true,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'errors' => $errors,
+        ];
 
-        if (empty($errors)) {
-            Item::insert_into_db($title, $description, $duration, $starting_bid, $instant_purchase_price);
-        }
-        $this->redirect("item", "open");
+        (new View("add_edit_item"))->show($add_item);
     }
 
     public function edit(): void {
