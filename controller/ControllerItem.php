@@ -80,7 +80,7 @@ class ControllerItem extends Controller {
     public function place_bid(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -162,7 +162,7 @@ class ControllerItem extends Controller {
     public function buy_now(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -184,14 +184,9 @@ class ControllerItem extends Controller {
 
         $errors = [];
 
-        if ($item->get_has_buy_now() !== 1 || $item->get_buy_now_price() === null) {
-            $errors["buy_now"] = "Buy now is not available for this item.";
-        } else {
-            $amount = (string)$item->get_buy_now_price();
-            if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
-                $this->redirect("item", "open", $id);
-                return;
-            }
+        if (Bid::buy_now($user, $item, $now, $errors)) {
+            $this->redirect("item", "open", $id);
+            return;
         }
 
         $pictures = $item->get_pictures();
@@ -275,7 +270,7 @@ class ControllerItem extends Controller {
     public function my_items(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
