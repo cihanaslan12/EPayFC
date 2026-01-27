@@ -12,7 +12,7 @@
 
         <?php if (isset($show_save) && $show_save): ?>
             <button type="submit" form="form" class="btn save-btn">
-                    <i class="bi bi-airplane text-primary"></i>
+                    <i class="bi bi-save text-primary"></i>
                 </button>
             <?php endif; ?>
     </div>
