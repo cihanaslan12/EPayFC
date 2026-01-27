@@ -402,6 +402,9 @@ class Item extends Model
         if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchased_price, $direct_sale_price)) {
             $errors['price'] = $price_error;
         }
+        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchased_price)) {
+            $errors['auction'] = $auction_error;
+        }
         return $errors;
     }
 
