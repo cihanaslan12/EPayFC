@@ -29,8 +29,10 @@ class Functions {
     }
 
     public static function auction_error(float $starting_bid, float $instant_purchase_price): string {
-        if ($starting_bid >= $instant_purchase_price) {
-            return 'Buy now price must be greater then the starting bid.';
+        if ($starting_bid > 0 && $instant_purchase_price > 0) {
+            if ($starting_bid >= $instant_purchase_price) {
+                return 'Buy now price must be greater then the starting bid.';
+            }
         }
         return '';
     }
