@@ -408,11 +408,11 @@ class Item extends Model
         return $errors;
     }
 
-    public static function insert_into_db(int $user_id, string $title, string $description, int $duration, float $starting_bid, float $instant_purchase_price): int {
+    public static function insert_into_db(int $user_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): int {
         $sql = "INSERT INTO items (title, description, duration_days, starting_bid, buy_now_price, owner, created_at) 
                         VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :user_id, NOW())" ;
         self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration, 'starting_bid' => $starting_bid,
-            'buy_now_price' => $instant_purchase_price, 'user_id' => $user_id]);
+            'buy_now_price' => $instant_or_direct, 'user_id' => $user_id]);
         return self::lastInsertId();
     }
 }

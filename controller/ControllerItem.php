@@ -362,6 +362,7 @@ class ControllerItem extends Controller {
         $starting_bid = 0.0;
         $instant_purchase_price = 0.0;
         $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
         $errors = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -374,7 +375,11 @@ class ControllerItem extends Controller {
 
             $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
             if (empty($errors)) {
-                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price);
+                if ($direct_sale_price && !$instant_purchase_price)
+                    $instant_or_direct = $direct_sale_price;
+                else if ($instant_purchase_price && !$direct_sale_price)
+                    $instant_or_direct = $instant_purchase_price;
+                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
                 $this->redirect("item", "open", $new_item_id);
             }
         }
