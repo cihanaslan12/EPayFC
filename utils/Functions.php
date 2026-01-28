@@ -7,7 +7,7 @@ class Functions {
         $title_length = strlen($title);
         if (empty($title_length)) {
             return 'Title is required.';
-        } else if ($title_length < $min && $title_length > $max) {
+        } else if ($title_length < $min || $title_length > $max) {
             return 'Title length must be between 3 and 255 characters.';
         } else {
             return '';
