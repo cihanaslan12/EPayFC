@@ -393,18 +393,11 @@ class Item extends Model
         $title_max = Configuration::get('TITLE_MAX_LENGTH');
         $desc_min = Configuration::get('DESCR_MIN_LENGTH');
 
-        if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
-            $errors['title'] = $title_error;
-        }
-        if ($desc_error = Functions::description_length($description, $desc_min)) {
-            $errors['description'] = $desc_error;
-        }
-        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
-            $errors['price'] = $price_error;
-        }
-        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
-            $errors['auction'] = $auction_error;
-        }
+        $errors['title'] = Functions::title_length($title, $title_min, $title_max);
+        $errors['description'] = Functions::description_length($description, $desc_min);
+        $errors['price'] = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price);
+        $errors['auction'] = Functions::auction_error($starting_bid, $instant_purchase_price);
+
         return $errors;
     }
 
