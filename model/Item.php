@@ -386,7 +386,7 @@ class Item extends Model
         return self::fetchItems($sql, $user);
     }
 
-    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchased_price, float $direct_sale_price): array {
+    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
         $errors = [];
 
         $title_min = Configuration::get('TITLE_MIN_LENGTH');
@@ -399,10 +399,10 @@ class Item extends Model
         if ($desc_error = Functions::description_length($description, $desc_min)) {
             $errors['description'] = $desc_error;
         }
-        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchased_price, $direct_sale_price)) {
+        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
             $errors['price'] = $price_error;
         }
-        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchased_price)) {
+        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
             $errors['auction'] = $auction_error;
         }
         return $errors;

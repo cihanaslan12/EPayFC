@@ -21,13 +21,13 @@
                 <div class="card-header">Basic Information</div>
                 <div class="card-body">
                     <label for="title">Item Title *</label>
-                    <input type="text" name="title" id="title" value="" class="form-control" placeholder="Ex: Iphone 13 Pro Max 256GB">
+                    <input type="text" name="title" id="title" value="<?= $title ?>" class="form-control" placeholder="Ex: Iphone 13 Pro Max 256GB">
                     <p class="text-danger"><?php if (isset($errors['title'])) echo $errors['title'] ?></p>
                     <label for="description">Description</label>
-                    <textarea name="description" id="description" value="" class="form-control" placeholder="Describe your item in detail..."></textarea>
+                    <textarea name="description" id="description" class="form-control" placeholder="Describe your item in detail..."><?= $description ?></textarea>
                     <p class="text-danger"><?php if (isset($errors['description'])) echo $errors['description'] ?></p>
                     <label for="duration">Sale Duration(days)*</label>
-                    <input type="number" name="duration" id="duration" value="" class="form-control">
+                    <input type="number" name="duration" id="duration" value="<?= $duration ?>" min="1" max="365" class="form-control">
                 </div>
             </div>
             <div class="card">
@@ -37,13 +37,13 @@
                     <div class="card-body">
                         <label for="starting_bid">Starting bid</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="start_bid" id="starting_bid" placeholder="e.g., 50.00">
+                            <input type="number" class="form-control" name="start_bid" id="starting_bid" value="<?= $starting_bid ?>" min="1" placeholder="e.g., 50.00">
                             <span class="input-group-text">€</span>
                         </div>
                             <p class="text-danger"><?php if(isset($errors['price'])) echo $errors['price'] ?></p>
-                        <label for="instant_purchased_price">Instant Purchased Price (optional)</label>
+                        <label for="instant_purchase_price">Instant Purchase Price (optional)</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="inst_purch_price" id="instant_purchased_price" placeholder="e.g., 200.00">
+                            <input type="number" class="form-control" name="inst_purch_price" id="instant_purchase_price" value="<?= $instant_purchase_price ?>" min="1" placeholder="e.g., 200.00">
                             <span class="input-group-text">€</span>
                         </div>
                             <p class="text-danger"><?php if(isset($errors['auction'])) echo $errors['auction'] ?></p>
@@ -52,7 +52,7 @@
                     <div class="card-body">
                         <label for="direct_sale_price">Sale Price</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" name="dir_sale_price" id="direct_sale_price" placeholder="e.g., 150.00">
+                            <input type="number" class="form-control" name="dir_sale_price" id="direct_sale_price" value="<?= $direct_sale_price ?>" placeholder="e.g., 150.00">
                             <span class="input-group-text">€</span>
                         </div>
                         <p class="text-danger"><?php if(isset($errors['price'])) echo $errors['price'] ?></p>

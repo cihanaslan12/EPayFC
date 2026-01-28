@@ -21,15 +21,15 @@ class Functions {
         return '';
     }
 
-    public static function auction_or_direct(float $starting_bid, float $instant_purchased_price, float $direct_sale_price): string {
-        if(($starting_bid > 0 || $instant_purchased_price > 0) && $direct_sale_price > 0) {
+    public static function auction_or_direct(float $starting_bid, float $instant_purchase_price, float $direct_sale_price): string {
+        if(($starting_bid > 0 || $instant_purchase_price > 0) && $direct_sale_price > 0) {
             return 'Cannot create both auction and direct sale.';
         }
         return '';
     }
 
-    public static function auction_error(float $starting_bid, float $instant_purchased_price): string {
-        if ($starting_bid >= $instant_purchased_price) {
+    public static function auction_error(float $starting_bid, float $instant_purchase_price): string {
+        if ($starting_bid >= $instant_purchase_price) {
             return 'Buy now price must be greater then the starting bid.';
         }
         return '';
