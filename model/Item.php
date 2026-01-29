@@ -149,7 +149,7 @@ class Item extends Model
 
 
     public static function get_by_id(?int $id): Item|false {
-        $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
+        $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
         return $row ? new Item(
             title: $row['title'],
@@ -158,11 +158,11 @@ class Item extends Model
             created_at: $row['created_at'],
             duration_days: $row['duration_days'],
             owner_pseudo: null,
-            end_at: null,
+            end_at: $row['end_at'],
             time_left: null,
-            has_bids: null,
-            is_direct_sale: null,
-            is_auction: null,
+            has_bids: $row['has_bids'],
+            is_direct_sale: $row['is_direct_sale'],
+            is_auction: $row['is_auction'],
             id: $row['id'],
             buy_now_price: $row['buy_now_price'],
             starting_bid: $row['starting_bid'],

@@ -401,6 +401,43 @@ class ControllerItem extends Controller {
     }
 
     public function edit(): void {
+        $user = $this->get_user_or_false();
+        $item_id = $_GET['param1'];
+        $item = Item::get_by_id($item_id);
 
+        $title = $item->get_title();
+        $description = $item->get_description();
+        $duration = $item->get_duration_days();
+        $starting_bid = $item->get_starting_bid();
+
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
+
+        $buy_now_price = $item->get_buy_now_price();
+        $is_auction = $item->get_is_auction();
+        $is_direct_sale = $item->get_is_direct_sale();
+        if ($buy_now_price > 0) {
+            if ($is_auction === 1) {
+                $instant_purchase_price = $buy_now_price;
+            } else if ($is_direct_sale === 1) {
+                $direct_sale_price = $buy_now_price;
+            }
+        }
+        $errors = [];
+
+        $edit_item = [
+            'user' => $user,
+            'show_back' => true,
+            'page_title' => "Edit item",
+            'show_save' => true,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'errors' => $errors,
+        ];
+        (new View("add_edit_item"))->show($edit_item);
     }
 }
