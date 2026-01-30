@@ -223,4 +223,9 @@ class ItemPicture extends Model {
                 AND priority > :priority ";
         self::execute($sql, ['item' => $item, 'priority' => $priority]);
     }
+
+    public static function delete_all_pictures_for(int $item_id): void {
+        $sql = "DELETE FROM item_pictures WHERE item = :item_id ";
+        self::execute($sql, ['item_id' => $item_id]);
+    }
 }

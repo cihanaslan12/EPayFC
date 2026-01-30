@@ -426,4 +426,23 @@ class Item extends Model
                 WHERE id = :id ";
         self::execute($sql, ['id' => $item_id, 'title' => $title, 'description' => $description, 'duration_days' => $duration, 'starting_bid' => $starting_bid, 'buy_now_price' => $instant_or_direct]);
     }
+
+    public function delete_item_with_dependencies(): void {
+        $this->delete_bids_dependencies();
+        $this->delete_pictures_dependencies();
+        $this->delete_item();
+    }
+
+    private function delete_bids_dependencies(): void {
+        Bid::delete_all_bids_for($this->get_id());
+    }
+
+    private function delete_pictures_dependencies(): void {
+        ItemPicture::delete_all_pictures_for($this->get_id());
+    }
+
+    private function delete_item(): void {
+        $sql = "DELETE FROM items WHERE id = :item_id ";
+        self::execute($sql, ['item_id' => $this->get_id()]);
+    }
 }

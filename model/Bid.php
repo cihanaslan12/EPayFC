@@ -160,5 +160,9 @@ class Bid extends Model {
         return true;
     }
 
+    public static function delete_all_bids_for(int $item): void {
+        $sql = "DELETE FROM bids WHERE item = :item_id ";
+        self::execute($sql, ['item_id' => $item]);
+    }
 
 }
