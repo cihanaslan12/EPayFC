@@ -412,6 +412,7 @@ class ControllerItem extends Controller {
 
         $instant_purchase_price = 0.0;
         $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
 
         $buy_now_price = $item->get_buy_now_price();
         $is_auction = $item->get_is_auction();
@@ -425,11 +426,31 @@ class ControllerItem extends Controller {
         }
         $errors = [];
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = $_POST['title'];
+            $description = $_POST['description'];
+            $duration = $_POST['duration'];
+            $starting_bid = (float)$_POST['start_bid'];
+            $instant_purchase_price = (float)$_POST['inst_purch_price'];
+            $direct_sale_price = (float)$_POST['dir_sale_price'];
+
+            $errors = Item::validations($title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            if (empty($errors)) {
+                if ($direct_sale_price && !$instant_purchase_price)
+                    $instant_or_direct = $direct_sale_price;
+                else if ($instant_purchase_price && !$direct_sale_price)
+                    $instant_or_direct = $instant_purchase_price;
+                Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                $this->redirect("item", "open", $item_id);
+            }
+        }
+
         $edit_item = [
             'user' => $user,
             'show_back' => true,
             'page_title' => "Edit item",
             'show_save' => true,
+            'item' => $item,
             'title' => $title,
             'description' => $description,
             'duration' => $duration,

@@ -15,7 +15,7 @@
     </header>
 
     <main>
-        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit' : 'item/add' ?>" method="POST">
+        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST">
         <div class="card m-5 p-5">
             <div class="card">
                 <div class="card-header">Basic Information</div>

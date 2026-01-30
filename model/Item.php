@@ -415,4 +415,15 @@ class Item extends Model
             'buy_now_price' => $instant_or_direct, 'user_id' => $user_id]);
         return self::lastInsertId();
     }
+
+    public static function update_into_db(int $item_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): void {
+        $sql = "UPDATE items
+                SET title = :title,
+                    description = :description,
+                    duration_days = :duration_days,
+                    starting_bid = :starting_bid,
+                    buy_now_price = :buy_now_price 
+                WHERE id = :id ";
+        self::execute($sql, ['id' => $item_id, 'title' => $title, 'description' => $description, 'duration_days' => $duration, 'starting_bid' => $starting_bid, 'buy_now_price' => $instant_or_direct]);
+    }
 }
