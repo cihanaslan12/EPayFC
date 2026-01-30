@@ -352,4 +352,113 @@ class ControllerItem extends Controller {
         }
         $this->redirect("item", "manage_images", $item_id);
     }
+
+    public function add(): void {
+        $user = $this->get_user_or_false();
+        $user_id = $user->get_id();
+        $title = '';
+        $description = '';
+        $duration = 7;
+        $starting_bid = 0.0;
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
+        $errors = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = $_POST['title'];
+            $description = $_POST['description'];
+            $duration = $_POST['duration'];
+            $starting_bid = (float)$_POST['start_bid'];
+            $instant_purchase_price = (float)$_POST['inst_purch_price'];
+            $direct_sale_price = (float)$_POST['dir_sale_price'];
+
+            $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            if (empty($errors)) {
+                if ($direct_sale_price && !$instant_purchase_price)
+                    $instant_or_direct = $direct_sale_price;
+                else if ($instant_purchase_price && !$direct_sale_price)
+                    $instant_or_direct = $instant_purchase_price;
+                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                $this->redirect("item", "open", $new_item_id);
+            }
+        }
+        $add_item = [
+            'user' => $user,
+            'show_back' => true,
+            'page_title' => "Add item",
+            'show_save' => true,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'errors' => $errors,
+        ];
+
+        (new View("add_edit_item"))->show($add_item);
+    }
+
+    public function edit(): void {
+        $user = $this->get_user_or_false();
+        $item_id = $_GET['param1'];
+        $item = Item::get_by_id($item_id);
+
+        $title = $item->get_title();
+        $description = $item->get_description();
+        $duration = $item->get_duration_days();
+        $starting_bid = $item->get_starting_bid();
+
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
+
+        $buy_now_price = $item->get_buy_now_price();
+        $is_auction = $item->get_is_auction();
+        $is_direct_sale = $item->get_is_direct_sale();
+        if ($buy_now_price > 0) {
+            if ($is_auction === 1) {
+                $instant_purchase_price = $buy_now_price;
+            } else if ($is_direct_sale === 1) {
+                $direct_sale_price = $buy_now_price;
+            }
+        }
+        $errors = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = $_POST['title'];
+            $description = $_POST['description'];
+            $duration = $_POST['duration'];
+            $starting_bid = (float)$_POST['start_bid'];
+            $instant_purchase_price = (float)$_POST['inst_purch_price'];
+            $direct_sale_price = (float)$_POST['dir_sale_price'];
+
+            $errors = Item::validations($title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            if (empty($errors)) {
+                if ($direct_sale_price && !$instant_purchase_price)
+                    $instant_or_direct = $direct_sale_price;
+                else if ($instant_purchase_price && !$direct_sale_price)
+                    $instant_or_direct = $instant_purchase_price;
+                Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                $this->redirect("item", "open", $item_id);
+            }
+        }
+
+        $edit_item = [
+            'user' => $user,
+            'show_back' => true,
+            'page_title' => "Edit item",
+            'show_save' => true,
+            'item' => $item,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'errors' => $errors,
+        ];
+        (new View("add_edit_item"))->show($edit_item);
+    }
 }

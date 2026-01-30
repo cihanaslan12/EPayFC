@@ -5,6 +5,7 @@ require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
 require_once "utils/AppTime.php";
 require_once "utils/Uploader.php";
+require_once "utils/Functions.php";
 
 class Item extends Model
 {
@@ -148,20 +149,20 @@ class Item extends Model
 
 
     public static function get_by_id(?int $id): Item|false {
-        $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
+        $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
         return $row ? new Item(
             title: $row['title'],
             description: $row['description'],
             owner: $row['owner'],
-            owner_pseudo: null,
             created_at: $row['created_at'],
             duration_days: $row['duration_days'],
-            end_at: null,
+            owner_pseudo: null,
+            end_at: $row['end_at'],
             time_left: null,
-            has_bids: null,
-            is_direct_sale: null,
-            is_auction: null,
+            has_bids: $row['has_bids'],
+            is_direct_sale: $row['is_direct_sale'],
+            is_auction: $row['is_auction'],
             id: $row['id'],
             buy_now_price: $row['buy_now_price'],
             starting_bid: $row['starting_bid'],
@@ -253,9 +254,9 @@ class Item extends Model
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
-                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
+                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 end_at: $item['end_at'],
                 time_left: self::get_time_left_string($item['secs_left']),
                 has_bids: $item['has_bids'],
@@ -385,4 +386,44 @@ class Item extends Model
         return self::fetchItems($sql, $user);
     }
 
+    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
+        $errors = [];
+
+        $title_min = Configuration::get('TITLE_MIN_LENGTH');
+        $title_max = Configuration::get('TITLE_MAX_LENGTH');
+        $desc_min = Configuration::get('DESCR_MIN_LENGTH');
+
+        if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
+            $errors['title'] = $title_error;
+        }
+        if ($desc_error = Functions::description_length($description, $desc_min)) {
+            $errors['description'] = $desc_error;
+        }
+        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
+            $errors['price'] = $price_error;
+        }
+        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
+            $errors['auction'] = $auction_error;
+        }
+        return $errors;
+    }
+
+    public static function insert_into_db(int $user_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): int {
+        $sql = "INSERT INTO items (title, description, duration_days, starting_bid, buy_now_price, owner, created_at) 
+                        VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :user_id, NOW())" ;
+        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration, 'starting_bid' => $starting_bid,
+            'buy_now_price' => $instant_or_direct, 'user_id' => $user_id]);
+        return self::lastInsertId();
+    }
+
+    public static function update_into_db(int $item_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): void {
+        $sql = "UPDATE items
+                SET title = :title,
+                    description = :description,
+                    duration_days = :duration_days,
+                    starting_bid = :starting_bid,
+                    buy_now_price = :buy_now_price 
+                WHERE id = :id ";
+        self::execute($sql, ['id' => $item_id, 'title' => $title, 'description' => $description, 'duration_days' => $duration, 'starting_bid' => $starting_bid, 'buy_now_price' => $instant_or_direct]);
+    }
 }
