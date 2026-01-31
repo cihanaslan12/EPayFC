@@ -147,6 +147,12 @@ class Item extends Model
         return $this->not_purchased_direct_sale;
     }
 
+    public function get_owner_full_name(): string {
+        $sql = "SELECT full_name FROM users WHERE id = :id ";
+        $query = self::execute($sql, ['id' => $this->get_owner()]);
+        $full_name = $query->fetch();
+        return $full_name['full_name'] ?? '';
+    }
 
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
