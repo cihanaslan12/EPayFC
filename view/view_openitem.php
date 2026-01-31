@@ -122,7 +122,7 @@ $postedAmount = $postedAmount ?? null;
         <ul>
             <li><a href="item/edit/<?= $item->get_id() ?>">Edit item details</a></li>
             <li><a href="item/manage_images/<?= $item->get_id() ?>">Manage images</a></li>
-            <li><a href="item/delete_confirm/<?= $item->get_id() ?>">Delete item</a></li>
+            <li><a href="item/delete/<?= $item->get_id() ?>">Delete item</a></li>
         </ul>
     <?php else: ?>
         <p><em>This item can no longer be modified or deleted because bids have been placed.</em></p>

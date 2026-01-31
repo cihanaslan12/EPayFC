@@ -461,4 +461,15 @@ class ControllerItem extends Controller {
         ];
         (new View("add_edit_item"))->show($edit_item);
     }
+
+    public function delete(): void {
+        $item_id = $_GET['param1'];
+        $item = Item::get_by_id($item_id);
+        (new View("delete_confirm"))->show(['item' => $item]);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $item->delete_item_with_dependencies();
+            $this->redirect("item", "my_items");
+        }
+    }
 }
