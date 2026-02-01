@@ -472,4 +472,18 @@ class ControllerItem extends Controller {
             $this->redirect("item", "my_items");
         }
     }
+
+    public function sales(): void {
+        $user = $this->get_user_or_redirect();
+        $sales = $user->get_my_sold_items();
+        $total = $user->get_my_sold_items_total();
+        $average = $user->get_average_ticket();
+        $loyal = $user->get_loyal_bidder();
+        (new View("sales"))->show([
+            'sales' => $sales,
+            'total' => $total,
+            'average' => $average,
+            'loyal' => $loyal
+        ]);
+    }
 }

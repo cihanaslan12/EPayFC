@@ -170,4 +170,32 @@ class User extends Model {
     {
         return Item::get_all_available_items_for_guest();
     }
+
+    public function get_my_sold_items(): array {
+        return Item::get_my_sold_items($this);
+    }
+
+    public function get_my_sold_items_total(): float {
+        return Item::get_my_sold_items_total($this);
+    }
+
+    public function get_average_ticket(): float {
+        return (float)($this->get_my_sold_items_total() / count($this->get_my_sold_items()));
+    }
+
+    public function get_loyal_bidder(): User {
+        $sql = "SELECT MAX(b.owner)
+            FROM bids b
+            	JOIN v_items_status vis ON b.item = vis.id
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
+                  ) 
+              AND vis.max_bid = b.amount ";
+        $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return $res['pseudo'];
+    }
 }
