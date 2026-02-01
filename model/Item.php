@@ -154,6 +154,18 @@ class Item extends Model
         return $full_name['full_name'] ?? '';
     }
 
+    public function get_winner(): string {
+        $sql = "SELECT u.pseudo as pseudo
+                FROM users u
+                    JOIN bids b ON u.id = b.owner
+                    JOIN v_items_status vis ON vis.id = b.item
+                WHERE vis.max_bid = b.amount
+                    AND vis.id = :id";
+        $query = self::execute($sql, ['id' => $this->get_id()]);
+        $pseudo = $query->fetch();
+        return $pseudo['pseudo'];
+    }
+
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
@@ -390,6 +402,19 @@ class Item extends Model
                   )
             ORDER BY vis.end_at DESC";
         return self::fetchItems($sql, $user);
+    }
+
+    public static function get_my_sold_items_total(User $user): float {
+        $sql = "SELECT SUM(vis.max_bid) as total
+            FROM v_items_status vis
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))) ";
+        $query = self::execute($sql, ['id' => $user->get_id(), 'now' => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return $res['total'];
     }
 
     public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
