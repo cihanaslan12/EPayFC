@@ -480,6 +480,9 @@ class ControllerItem extends Controller {
         $average = $user->get_average_ticket();
         $loyal = $user->get_loyal_bidder();
         (new View("sales"))->show([
+            'show_back' => true,
+            'page_title' => 'Sales',
+            'show_save' => false,
             'sales' => $sales,
             'total' => $total,
             'average' => $average,

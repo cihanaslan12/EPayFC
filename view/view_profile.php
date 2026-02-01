@@ -43,7 +43,7 @@
                 </div>
                 <div class="list-group list-group-flush">
                     <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                       href="user/sales">
+                       href="item/sales">
                         <span><i class="bi bi-cash-coin me-2"></i>Sales</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
