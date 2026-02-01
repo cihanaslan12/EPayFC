@@ -154,6 +154,18 @@ class Item extends Model
         return $full_name['full_name'] ?? '';
     }
 
+    public function get_winner(): string {
+        $sql = "SELECT u.pseudo as pseudo
+                FROM users u
+                    JOIN bids b ON u.id = b.owner
+                    JOIN v_items_status vis ON vis.id = b.item
+                WHERE vis.max_bid = b.amount
+                    AND vis.id = :id";
+        $query = self::execute($sql, ['id' => $this->get_id()]);
+        $pseudo = $query->fetch();
+        return $pseudo['pseudo'];
+    }
+
     public static function get_by_id(?int $id): Item|false {
         $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
