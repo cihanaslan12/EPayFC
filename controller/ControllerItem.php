@@ -481,6 +481,7 @@ class ControllerItem extends Controller {
         $loyal = $user->get_loyal_bidder();
         (new View("sales"))->show([
             'show_back' => true,
+            'backUrl' => 'user/profile',
             'page_title' => 'Sales',
             'show_save' => false,
             'sales' => $sales,
