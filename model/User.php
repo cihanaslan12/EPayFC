@@ -184,7 +184,7 @@ class User extends Model {
     }
 
     public function get_loyal_bidder(): User {
-        $sql = "SELECT MAX(b.owner)
+        $sql = "SELECT MAX(b.owner) as user_id
             FROM bids b
             	JOIN v_items_status vis ON b.item = vis.id
             WHERE vis.owner = :id
@@ -196,6 +196,6 @@ class User extends Model {
               AND vis.max_bid = b.amount ";
         $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
         $res = $query->fetch();
-        return $res['pseudo'];
+        return self::get_by_id($res['user_id']);
     }
 }

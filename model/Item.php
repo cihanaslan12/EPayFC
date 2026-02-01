@@ -393,17 +393,16 @@ class Item extends Model
     }
 
     public static function get_my_sold_items_total(User $user): float {
-        $sql = "SELECT SUM(vis.max_bid), 0 as secs_left
+        $sql = "SELECT SUM(vis.max_bid) as total
             FROM v_items_status vis
             WHERE vis.owner = :id
               AND (
                     (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
                  OR (vis.is_auction = 1 AND vis.has_bids = 1
-                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
-                  )
-            ORDER BY vis.end_at DESC";
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))) ";
         $query = self::execute($sql, ['id' => $user->get_id(), 'now' => AppTime::get_current_datetime()]);
-        return (float)$query->fetch();
+        $res = $query->fetch();
+        return $res['total'];
     }
 
     public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
