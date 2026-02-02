@@ -476,4 +476,33 @@ class Item extends Model
         $sql = "DELETE FROM items WHERE id = :item_id ";
         self::execute($sql, ['item_id' => $this->get_id()]);
     }
+
+    public static function get_purchases(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, 0 as secs_left
+            FROM v_items_status vis
+            JOIN bids b ON b.item = vis.id
+            WHERE b.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.has_bids = 1 AND vis.not_purchased_direct_sale = 0)
+
+                    OR
+                    
+                    (vis.is_auction = 1
+                        AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM bids b2
+                            WHERE b2.item = vis.id
+                              AND (
+                                   b2.amount > b.amount
+                                   OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                              )
+                        )
+                    )
+                  )
+            ORDER BY vis.end_at DESC";
+
+        return self::fetchItems($sql, $user);
+    }
+
 }
