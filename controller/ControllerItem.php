@@ -500,12 +500,15 @@ class ControllerItem extends Controller {
 
         $purchases = Item::get_purchases($user);
 
+        $stats = Item::get_purchase_stats($user);
+
         (new View("purchases"))->show([
             "user" => $user,
             "purchases" => $purchases,
             "show_back" => false,
             "page_title" => "Purchases",
-            "show_save" => false
+            "show_save" => false,
+            "stats" => $stats
         ]);
     }
 
