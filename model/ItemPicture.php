@@ -46,8 +46,8 @@ class ItemPicture extends Model {
 
         if ($picture_path)
             if($picture_path['picture_path'] !== "" && !empty($picture_path['picture_path'])) {
-                $p_p_explode = explode(".", $picture_path['picture_path']);
-                return $p_p_explode[0] . '_thumbnail.' . $p_p_explode[1];
+                $extract_extension = explode("." . UPLOADER::get_extension($picture_path['picture_path']), $picture_path['picture_path']);
+                return $extract_extension[0] . '_thumbnail.jpg';
             } else {
                 return null;
             }
