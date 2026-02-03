@@ -138,6 +138,10 @@ class User extends Model {
         return $this;
     }
 
+    public function valid_password(string $new_password): bool {
+        return preg_match('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,16}$/', $new_password) === 1;
+    }
+
     public function update_password(string $hashed_password): void {
         $sql = "UPDATE users SET password = :password WHERE id = :user_id ";
         self::execute($sql, ['password' => $hashed_password, 'user_id' => $this->get_id()]);
