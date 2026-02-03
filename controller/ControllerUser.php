@@ -104,4 +104,45 @@ class ControllerUser extends Controller {
         ]);
     }
 
+    public function change_password(): void {
+        $session = $this->get_user_or_redirect();
+        $current_password = '';
+        $new_password = '';
+        $confirm_new_password = '';
+        $errors = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $current_password = $_POST['current'];
+            $new_password = $_POST['new_password'];
+            $confirm_new_password = $_POST['confirm_new_password'];
+            $user = User::get_by_id($session->get_id());    // on récupère le user (et ses infos actuels)
+            $check = password_verify($current_password, $user->get_hashedPassword());
+            if (!$check) {
+                $errors['current'] = "Current password is wrong ! ";
+            }
+            if ($new_password === '' || $confirm_new_password === '') {
+                $errors['confirm_new_password'] = "Your new password is empty! ";
+            } else if ($user->valid_password($new_password)) {
+                $errors['confirm_new_password'] = "Password must be 8-16 characters with uppercase, number, and punctuation";
+            } else if ($new_password !== $confirm_new_password) {
+                $errors['confirm_new_password'] = "You have to enter twice the same password. ";
+            }
+            if (!$errors) {
+                $user->update_password(password_hash($new_password, PASSWORD_BCRYPT));
+                $this->redirect("user", "profile");
+            }
+
+        }
+        (new View("change_password"))->show([
+            'show_back' => true,
+            'backUrl' => 'user/profile',
+            'page_title' => 'Change Password',
+            'show_save' => true,
+            'user' => $user,
+            'current' => $current_password,
+            'new_password' => $new_password,
+            'confirm_new_password' => $confirm_new_password,
+            'errors' => $errors
+        ]);
+    }
 }
