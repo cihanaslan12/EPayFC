@@ -138,8 +138,12 @@ class User extends Model {
         return $this;
     }
 
+    public function update_password(string $hashed_password): void {
+        $sql = "UPDATE users SET password = :password WHERE id = :user_id ";
+        self::execute($sql, ['password' => $hashed_password, 'user_id' => $this->get_id()]);
+    }
 
-    private static function check_password(string $clear_password, string $hashed_password): bool {
+    public static function check_password(string $clear_password, string $hashed_password): bool {
         return password_verify($clear_password, $hashed_password);
     }
 
