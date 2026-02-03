@@ -106,6 +106,7 @@ class ControllerUser extends Controller {
 
     public function change_password(): void {
         $session = $this->get_user_or_redirect();
+        $user = User::get_by_id($session->get_id());    // on récupère le user (et ses infos actuels)
         $current_password = '';
         $new_password = '';
         $confirm_new_password = '';
@@ -115,7 +116,6 @@ class ControllerUser extends Controller {
             $current_password = $_POST['current'];
             $new_password = $_POST['new_password'];
             $confirm_new_password = $_POST['confirm_new_password'];
-            $user = User::get_by_id($session->get_id());    // on récupère le user (et ses infos actuels)
             $check = password_verify($current_password, $user->get_hashedPassword());
             if (!$check) {
                 $errors['current'] = "Current password is wrong ! ";
