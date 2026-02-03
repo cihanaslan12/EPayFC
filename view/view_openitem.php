@@ -5,8 +5,13 @@
     <title>Open item</title>
     <base href="<?= $web_root ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body>
+<header>
+    <?php require 'header_menu.php';?>
+</header>
+<body class="my-5">
 
 <h1><?= $item->get_title() ?></h1>
 
@@ -175,6 +180,8 @@ $postedAmount = $postedAmount ?? null;
     <p><em>No bids yet.</em></p>
 <?php endif; ?>
 
-
+<footer>
+    <?php require 'footer_menu.php'; ?>
+</footer>
 </body>
 </html>

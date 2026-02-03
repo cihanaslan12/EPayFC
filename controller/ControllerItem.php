@@ -63,6 +63,10 @@ class ControllerItem extends Controller {
         }
 
         (new View("openitem"))->show([
+            'show_back' => true,
+            'backUrl' => 'item/browse',
+            'page_title' => "Item open",
+            'show_save' => false,
             "item" => $item,
             "user" => $user,
             "pictures" => $pictures,
@@ -292,6 +296,7 @@ class ControllerItem extends Controller {
 
 
     public function manage_images(): void {
+        $user = $this->get_user_or_redirect();
         $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
         $error = null;
 
@@ -325,6 +330,7 @@ class ControllerItem extends Controller {
         $images = $item->get_item_pictures();
 
         $manage_images = [
+            'user' => $user,
             'show_back' => true,
             'backUrl' => 'item/open/' . $item->get_id(),
             'page_title' => "Manage Images",
@@ -480,6 +486,7 @@ class ControllerItem extends Controller {
         $average = $user->get_average_ticket();
         $loyal = $user->get_loyal_bidder();
         (new View("sales"))->show([
+            'user' => $user,
             'show_back' => true,
             'backUrl' => 'user/profile',
             'page_title' => 'Sales',

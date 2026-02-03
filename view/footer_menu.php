@@ -1,4 +1,4 @@
-<nav class="navbar fixed-bottom mb-5" id="navbar">
+<nav class="navbar fixed-bottom bg-dark text-light mb-5" id="navbar">
     <?php if(isset($user)): ?>
         <div class="container-fluid">
             <a href="item/browse" class="text-decoration-none link-light"><i class="bi bi-search"></i><br>Browse</a>

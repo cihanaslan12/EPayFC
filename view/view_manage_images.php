@@ -65,5 +65,8 @@
                 </div>
             </div>
         </main>
+        <footer>
+            <?php require 'footer_menu.php'; ?>
+        </footer>
     </body>
 </html>
