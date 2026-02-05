@@ -512,7 +512,8 @@ class ControllerItem extends Controller {
         (new View("purchases"))->show([
             "user" => $user,
             "purchases" => $purchases,
-            "show_back" => false,
+            "show_back" => true,
+            'backUrl' => 'user/profile',
             "page_title" => "Purchases",
             "show_save" => false,
             "stats" => $stats
