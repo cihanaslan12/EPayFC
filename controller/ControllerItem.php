@@ -27,8 +27,18 @@ class ControllerItem extends Controller {
             return;
         }
 
-        $bids = $item->get_bids();
+        $user = $this->get_user_or_false(); // guest autorisé
 
+
+        (new View("openitem"))->show($this->build_openitem_view_data($item, $user));
+    }
+
+    private function build_openitem_view_data(
+        Item $item,
+             $user,
+        ?array $errors = null,
+        ?string $postedAmount = null
+    ): array {
         $pictures = $item->get_pictures();
 
         $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
@@ -42,15 +52,13 @@ class ControllerItem extends Controller {
             }
         }
 
-        $user = $this->get_user_or_false(); // guest autorisé
-
         $now = AppTime::get_current_datetime();
         $isOpen = $item->is_open($now);
 
         $isOwner = $user && $user->get_id() === $item->get_owner();
-
         $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
 
+        $bids = $item->get_bids();
         $highestBid = Bid::get_highest_for_item($item->get_id());
 
         $defaultBid = null;
@@ -62,24 +70,38 @@ class ControllerItem extends Controller {
             }
         }
 
-        (new View("openitem"))->show([
+        $data = [
             'show_back' => true,
             'backUrl' => 'item/browse',
             'page_title' => "Item open",
             'show_save' => false,
+
             "item" => $item,
             "user" => $user,
+
             "pictures" => $pictures,
             "mainPicture" => $mainPicture,
+
             "bids" => $bids,
+            "highestBid" => $highestBid,
+
             "now" => $now,
             "isOpen" => $isOpen,
             "isOwner" => $isOwner,
+            "canManage" => $canManage,
             "defaultBid" => $defaultBid,
-            "highestBid" => $highestBid,
-            "canManage" => $canManage
-        ]);
+        ];
+
+        if ($errors !== null) {
+            $data["errors"] = $errors;
+        }
+        if ($postedAmount !== null) {
+            $data["postedAmount"] = $postedAmount;
+        }
+
+        return $data;
     }
+
 
     public function place_bid(): void {
         $user = $this->get_user_or_false();
@@ -112,54 +134,9 @@ class ControllerItem extends Controller {
             return;
         }
 
-        $pictures = $item->get_pictures();
-
-        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
-        $mainPicture = null;
-        if (!empty($pictures)) {
-            $mainPicture = $pictures[0]->get_picture_path();
-            if ($selectedPriority > 0) {
-                foreach ($pictures as $pic) {
-                    if ($pic->get_priority() === $selectedPriority) {
-                        $mainPicture = $pic->get_picture_path();
-                    }
-                }
-            }
-        }
-
-        $bids = $item->get_bids();
-        $highestBid = Bid::get_highest_for_item($item->get_id());
-
-        $isOpen = $item->is_open($now);
-        $isOwner = $user->get_id() === $item->get_owner();
-        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
-
-
-        $defaultBid = null;
-        if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
-            if ($item->get_max_bid() !== null) {
-                $defaultBid = (string)((float)$item->get_max_bid() + 1);
-            } else {
-                $defaultBid = $item->get_starting_bid();
-            }
-        }
-
-        (new View("openitem"))->show([
-            "item" => $item,
-            "user" => $user,
-            "pictures" => $pictures,
-            "mainPicture" => $mainPicture,
-            "bids" => $bids,
-            "highestBid" => $highestBid,
-            "now" => $now,
-            "isOpen" => $isOpen,
-            "isOwner" => $isOwner,
-            "defaultBid" => $defaultBid,
-            "canManage" => $canManage,
-
-            "errors" => $errors,
-            "postedAmount" => $amount
-        ]);
+        (new View("openitem"))->show(
+            $this->build_openitem_view_data($item, $user, $errors, $amount)
+        );
     }
 
 
@@ -193,55 +170,9 @@ class ControllerItem extends Controller {
             return;
         }
 
-        $pictures = $item->get_pictures();
-
-        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
-        $mainPicture = null;
-        if (!empty($pictures)) {
-            $mainPicture = $pictures[0]->get_picture_path();
-            if ($selectedPriority > 0) {
-                foreach ($pictures as $pic) {
-                    if ($pic->get_priority() === $selectedPriority) {
-                        $mainPicture = $pic->get_picture_path();
-                    }
-                }
-            }
-        }
-
-        $bids = $item->get_bids();
-        $highestBid = Bid::get_highest_for_item($item->get_id());
-
-        $isOpen = $item->is_open($now);
-        $isOwner = $user->get_id() === $item->get_owner();
-        $canManage = $isOwner && ((int)($item->get_bid_count() ?? 0) === 0);
-
-
-        $defaultBid = null;
-        if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
-            if ($item->get_max_bid() !== null) {
-                $defaultBid = (string)((float)$item->get_max_bid() + 1);
-            } else {
-                $defaultBid = $item->get_starting_bid();
-            }
-        }
-
-        (new View("openitem"))->show([
-            "item" => $item,
-            "user" => $user,
-            "pictures" => $pictures,
-            "mainPicture" => $mainPicture,
-            "bids" => $bids,
-            "highestBid" => $highestBid,
-            "now" => $now,
-            "isOpen" => $isOpen,
-            "isOwner" => $isOwner,
-            "defaultBid" => $defaultBid,
-            "canManage" => $canManage,
-
-            // erreurs buy now
-            "errors" => $errors,
-            "postedAmount" => null
-        ]);
+        (new View("openitem"))->show(
+            $this->build_openitem_view_data($item, $user, $errors, null)
+        );
     }
 
 
