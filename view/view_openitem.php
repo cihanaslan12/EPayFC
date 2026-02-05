@@ -8,48 +8,118 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
+<style>
+    body { padding-top: 50px; padding-bottom: 140px;}
+</style>
+<body>
 <header>
     <?php require 'header_menu.php';?>
 </header>
-<body class="my-5">
 
-<h1><?= $item->get_title() ?></h1>
+<main class="container py-4 pt-5">
+    <?php
+    $errors = $errors ?? [];
+    $postedAmount = $postedAmount ?? null;
+    $isGuest = !$user;
+    ?>
 
-<p><strong>Seller:</strong> <?= $item->get_seller_pseudo() ?></p>
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="mb-1"><?= $item->get_title() ?></h1>
 
-<?php
-$errors = $errors ?? [];
-$postedAmount = $postedAmount ?? null;
-$isGuest = !$user;
-?>
+            <div class="d-flex align-items-center gap-2">
+                <?php if ($item->get_seller_picture_path()): ?>
+                    <img src="<?= $item->get_seller_picture_path() ?>"
+                         alt="Seller picture"
+                         class="rounded-circle"
+                         style="width:36px;height:36px;object-fit:cover;">
+                <?php endif; ?>
 
-<h2>Photos</h2>
-
-<?php if ($mainPicture): ?>
-    <div style="max-width: 700px;">
-        <img
-                src="<?= $mainPicture ?>"
-                alt="Main picture"
-                style="width: 100%; height: auto; display:block; border:1px solid #ccc;">
-
-        <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-            <?php foreach ($pictures as $pic): ?>
-                <?php
-                $thumb = $pic->get_thumbnail_path();
-                $prio  = $pic->get_priority();
-                ?>
-                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>">
-                <img
-                            src="<?= $thumb ?>"
-                            alt="thumbnail <?= $prio ?>"
-                            style="width:120px; height:auto; border:1px solid #ccc;">
-                </a>
-            <?php endforeach; ?>
+                <div class="text-muted">
+                    <span>Seller:</span>
+                    <strong class="text-body"><?= $item->get_seller_pseudo() ?></strong>
+                </div>
+            </div>
         </div>
     </div>
-<?php else: ?>
-    <p><em>No pictures for this item.</em></p>
-<?php endif; ?>
+
+    <div class="row g-4">
+        <!-- Photos -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Photos</h5>
+
+                    <?php if ($mainPicture): ?>
+                        <img src="<?= $mainPicture ?>"
+                             alt="Main picture"
+                             class="img-fluid rounded border mb-3"
+                             style="width:100%;max-height:480px;object-fit:contain;">
+
+                        <div class="bg-dark text-white p-3 rounded">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-bold"><?= $item->get_title() ?></div>
+                                    <div class="small text-white-50">
+                                        <?= $item->get_description() ?>
+                                    </div>
+                                </div>
+
+                                <?php if ($item->get_is_auction() === 1): ?>
+                                    <span class="badge text-bg-secondary">Auction</span>
+                                <?php else: ?>
+                                    <span class="badge text-bg-secondary">Direct sale</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="small mt-2">
+                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php if (!empty($pictures)): ?>
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Additional images</h5>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <?php foreach ($pictures as $pic): ?>
+                                <?php
+                                $thumb = $pic->get_thumbnail_path();
+                                $prio  = $pic->get_priority();
+                                ?>
+                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
+                                   class="d-inline-block border rounded p-1 bg-light">
+                                    <img src="<?= $thumb ?>"
+                                         alt="thumbnail <?= $prio ?>"
+                                         style="width:90px;height:90px;object-fit:cover;display:block;">
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+        </div>
+
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Pricing</h5>
+
+                    <div class="text-muted"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
 
 <h2>Pricing</h2>
 
@@ -156,9 +226,6 @@ $isGuest = !$user;
 </p>
 
 <hr>
-
-<p><strong>Start:</strong> <?= $item->get_created_at() ?></p>
-<p><strong>End:</strong> <?= $item->get_end_at() ?></p>
 
 <hr>
 
