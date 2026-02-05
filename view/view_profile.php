@@ -49,7 +49,7 @@
                     </a>
 
                     <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                       href="user/purchases">
+                       href="item/purchases">
                         <span><i class="bi bi-bag-check me-2"></i>Purchases</span>
                         <i class="bi bi-chevron-right"></i>
                     </a>
