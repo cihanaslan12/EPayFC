@@ -16,19 +16,35 @@
     <?php require 'header_menu.php';?>
 </header>
 
-<main class="p-3 m-3">
+<main class="p-3 m-3 pt-5">
     <h2 class="pt-3">Purchases</h2>
 
-    <?php if (isset($stats)): ?>
-        <div class="card p-3 mb-3">
-            <p class="mb-1"><strong>Total spent:</strong> <?= $stats["total_spent"] ?></p>
-            <p class="mb-1"><strong>Average price:</strong> <?= $stats["avg_spent"] ?></p>
+    <span class="badge text-bg-light border mb-2">
+        <?= (int)$stats["count_purchases"] ?> purchase(s)
+    </span>
 
-            <?php if ($stats["top_seller_pseudo"] !== null): ?>
-                <p class="mb-0"><strong>Most loyal seller:</strong> <?= $stats["top_seller_pseudo"] ?> (<?= $stats["top_seller_count"] ?>)</p>
-            <?php else: ?>
-                <p class="mb-0"><strong>Most loyal seller:</strong> -</p>
-            <?php endif; ?>
+    <?php if (isset($stats)): ?>
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                <span class="badge text-bg-primary p-2">
+                    Total spent: <?= number_format((float)$stats["total_spent"], 2, '.', '') ?>
+                </span>
+
+                    <span class="badge text-bg-secondary p-2">
+                    Average price: <?= number_format((float)$stats["avg_spent"], 2, '.', '') ?>
+                </span>
+
+                    <span class="badge text-bg-success p-2">
+                    Most loyal seller:
+                    <?php if ($stats["top_seller_pseudo"] !== null): ?>
+                        <?= $stats["top_seller_pseudo"] ?> (<?= (int)$stats["top_seller_count"] ?>)
+                    <?php else: ?>
+                        -
+                    <?php endif; ?>
+                </span>
+                </div>
+            </div>
         </div>
     <?php endif; ?>
 
