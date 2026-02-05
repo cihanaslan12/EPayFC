@@ -145,4 +145,21 @@ class ControllerUser extends Controller {
             'errors' => $errors
         ]);
     }
+
+    public function edit_profile(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("main", "login");
+            return;
+        }
+
+        (new View("edit_profile"))->show([
+            "user" => $user,
+            "errors" => [],
+            "show_back" => true,
+            "page_title" => "Edit profile",
+            "show_save" => false
+        ]);
+    }
+
 }
