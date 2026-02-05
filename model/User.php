@@ -206,4 +206,33 @@ class User extends Model {
         $res = $query->fetch();
         return self::get_by_id($res['user_id']);
     }
+
+    public static function is_mail_unique(string $mail, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE email = :mail AND id <> :id";
+        $q = self::execute($sql, ["mail" => $mail, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
+    }
+
+    public static function is_pseudo_unique(string $pseudo, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE pseudo = :pseudo AND id <> :id";
+        $q = self::execute($sql, ["pseudo" => $pseudo, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
+    }
+
+    public static function update_profile(int $id, string $full_name, string $pseudo, string $mail, ?string $iban): void {
+        $sql = "UPDATE users
+            SET full_name = :full_name,
+                pseudo = :pseudo,
+                email = :mail,
+                iban = :iban
+            WHERE id = :id";
+        self::execute($sql, [
+            "full_name" => $full_name,
+            "pseudo" => $pseudo,
+            "mail" => $mail,
+            "iban" => $iban,
+            "id" => $id
+        ]);
+    }
+
 }
