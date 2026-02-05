@@ -212,6 +212,10 @@ class ControllerUser extends Controller {
             if (empty($errors)) {
                 User::update_profile($user->get_id(), $full_name, $pseudo, $mail, $iban);
 
+                $updated = User::get_by_id($user->get_id());
+                if ($updated) {
+                    $this->log_user($updated);
+                }
                 $this->redirect("user", "profile");
                 return;
             }
