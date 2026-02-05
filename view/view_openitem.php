@@ -20,6 +20,7 @@
 <?php
 $errors = $errors ?? [];
 $postedAmount = $postedAmount ?? null;
+$isGuest = !$user;
 ?>
 
 <h2>Photos</h2>
@@ -85,37 +86,52 @@ $postedAmount = $postedAmount ?? null;
         <?php if ($item->get_is_auction() === 1): ?>
             <p>Current highest bid: <?= (string)$item->get_max_bid() ?></p>
 
-            <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
-                <label for="amount"><strong>Your bid:</strong></label><br>
+            <?php if ($isGuest): ?>
+                <p class="text-muted"><em>Login required to place a bid.</em></p>
+                <div class="mb-3">
+                    <label for="amount"><strong>Your bid:</strong></label><br>
+                    <input type="text" id="amount" class="form-control" value="<?= (string)$defaultBid ?>" disabled>
+                </div>
+                <button class="btn btn-secondary" type="button" disabled>Place bid</button>
+            <?php else: ?>
+                <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                    <label for="amount"><strong>Your bid:</strong></label><br>
 
-                <input
-                        type="text"
-                        id="amount"
-                        name="amount"
-                        value="<?= $postedAmount !== null ? $postedAmount : (string)$defaultBid ?>">
+                    <input
+                            type="text"
+                            id="amount"
+                            name="amount"
+                            class="form-control"
+                            value="<?= $postedAmount !== null ? $postedAmount : (string)$defaultBid ?>">
 
-                <?php if (isset($errors["amount"])): ?>
-                    <p style="color:red;"><?= $errors["amount"] ?></p>
-                <?php endif; ?>
+                    <?php if (isset($errors["amount"])): ?>
+                        <p class="text-danger"><?= $errors["amount"] ?></p>
+                    <?php endif; ?>
 
-                <?php if (isset($errors["bid"])): ?>
-                    <p style="color:red;"><?= $errors["bid"] ?></p>
-                <?php endif; ?>
+                    <?php if (isset($errors["bid"])): ?>
+                        <p class="text-danger"><?= $errors["bid"] ?></p>
+                    <?php endif; ?>
 
-                <button type="submit">Place bid</button>
-            </form>
+                    <button class="btn btn-primary mt-2" type="submit">Place bid</button>
+                </form>
+            <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($item->get_has_buy_now() === 1): ?>
             <p>Buy now price: <?= (string)$item->get_buy_now_price() ?></p>
 
-            <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
-                <?php if (isset($errors["buy_now"])): ?>
-                    <p style="color:red;"><?= $errors["buy_now"] ?></p>
-                <?php endif; ?>
+            <?php if ($isGuest): ?>
+                <p class="text-muted"><em>Login required to buy now.</em></p>
+                <button class="btn btn-secondary" type="button" disabled>Buy now</button>
+            <?php else: ?>
+                <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                    <?php if (isset($errors["buy_now"])): ?>
+                        <p class="text-danger"><?= $errors["buy_now"] ?></p>
+                    <?php endif; ?>
 
-                <button type="submit">Buy now</button>
-            </form>
+                    <button class="btn btn-success" type="submit">Buy now</button>
+                </form>
+            <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
 <?php endif; ?>
