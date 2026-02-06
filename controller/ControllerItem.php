@@ -454,6 +454,7 @@ class ControllerItem extends Controller {
         $edit_item = [
             'user' => $user,
             'show_back' => true,
+            'backUrl' => 'item/open/' . $item->get_id(),
             'page_title' => "Edit item",
             'show_save' => true,
             'item' => $item,
