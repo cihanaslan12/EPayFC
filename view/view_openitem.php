@@ -23,32 +23,11 @@
     $isGuest = !$user;
     ?>
 
-    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
-        <div>
-            <h1 class="mb-1"><?= $item->get_title() ?></h1>
-
-            <div class="d-flex align-items-center gap-2">
-                <?php if ($item->get_seller_picture_path()): ?>
-                    <img src="<?= $item->get_seller_picture_path() ?>"
-                         alt="Seller picture"
-                         class="rounded-circle"
-                         style="width:36px;height:36px;object-fit:cover;">
-                <?php endif; ?>
-
-                <div class="text-muted">
-                    <span>Seller:</span>
-                    <strong class="text-body"><?= $item->get_seller_pseudo() ?></strong>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="row g-4">
         <!-- Photos -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Photos</h5>
 
                     <?php if ($mainPicture): ?>
                         <img src="<?= $mainPicture ?>"
@@ -80,7 +59,6 @@
                     <?php else: ?>
                         <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
                     <?php endif; ?>
-                </div>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
@@ -105,6 +83,30 @@
                 </div>
             <?php endif; ?>
 
+            <div class="card mt-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Bid History</h5>
+                        <span class="badge text-bg-light border"><?= count($bids) ?> entries</span>
+                    </div>
+
+                    <?php if (!empty($bids)): ?>
+                        <div class="list-group list-group-flush">
+                            <?php foreach ($bids as $bid): ?>
+                                <div class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fw-semibold"><?= $bid->get_owner_pseudo() ?></div>
+                                        <div class="text-muted small"><?= $bid->get_created_at() ?></div>
+                                    </div>
+                                    <div class="fw-bold text-success"><?= $bid->get_amount() ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-muted mb-0"><em>No bids yet.</em></p>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
 
 
@@ -112,156 +114,169 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-3">Pricing</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <?php if ($isOpen): ?>
+                            <span class="badge text-bg-success">Open</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-secondary">Closed</span>
+                        <?php endif; ?>
+                    </div>
 
-                    <div class="text-muted"></div>
+                    <?php if (!$isOpen): ?>
+
+                        <?php if ($item->get_is_auction() === 1): ?>
+                            <?php if ($highestBid !== null): ?>
+                                <div class="mb-2">
+                                    <div class="text-muted small">Final price</div>
+                                    <div class="fw-bold text-success"><?= $highestBid->get_amount() ?></div>
+                                </div>
+
+                                <?php if ($user && $highestBid->get_owner_id() === $user->get_id()): ?>
+                                    <div class="alert alert-success py-2 mb-0">You won this auction.</div>
+                                <?php elseif ($isOwner): ?>
+                                    <div class="text-muted">Sold to: <strong><?= $highestBid->get_owner_pseudo() ?></strong></div>
+                                <?php else: ?>
+                                    <div class="text-muted">Winner: <strong><?= $highestBid->get_owner_pseudo() ?></strong></div>
+                                <?php endif; ?>
+
+                            <?php else: ?>
+                                <div class="alert alert-secondary py-2 mb-0">This auction ended with no bids.</div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?php if ($highestBid !== null): ?>
+                                <div class="mb-2">
+                                    <div class="text-muted small">Final price</div>
+                                    <div class="fw-bold text-success"><?= $highestBid->get_amount() ?></div>
+                                </div>
+
+                                <?php if ($user && $highestBid->get_owner_id() === $user->get_id()): ?>
+                                    <div class="alert alert-success py-2 mb-0">You bought this item.</div>
+
+                                <?php elseif ($isOwner): ?>
+                                    <div class="text-muted">Sold to: <strong><?= $highestBid->get_owner_pseudo() ?></strong></div>
+
+                                <?php else: ?>
+                                    <div class="alert alert-secondary py-2 mb-0">This item has been sold.</div>
+                                <?php endif; ?>
+
+                            <?php else: ?>
+                                <div class="alert alert-secondary py-2 mb-0">This item is no longer available.</div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    <?php else: ?>
+
+                        <?php if ($isOwner): ?>
+                            <div class="alert alert-info py-2">You are the owner of this item.</div>
+                        <?php else: ?>
+
+                            <?php if ($item->get_is_auction() === 1): ?>
+                                <div class="mb-2">
+                                    <div class="text-muted small">Current bid</div>
+                                    <div class="fw-bold text-success"><?= (string)$item->get_max_bid() ?></div>
+                                </div>
+
+                                <?php if ($isGuest): ?>
+                                    <input class="form-control mb-2" value="<?= (string)$defaultBid ?>" disabled>
+                                    <button class="btn btn-secondary w-100 mb-2" type="button" disabled>Place bid</button>
+                                    <div class="text-muted small"><em>Login required to place a bid.</em></div>
+                                <?php else: ?>
+                                    <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                        <input
+                                                type="text"
+                                                name="amount"
+                                                class="form-control mb-2"
+                                                value="<?= $postedAmount !== null ? $postedAmount : (string)$defaultBid ?>">
+
+                                        <?php if (isset($errors["amount"])): ?>
+                                            <div class="text-danger small mb-1"><?= $errors["amount"] ?></div>
+                                        <?php endif; ?>
+                                        <?php if (isset($errors["bid"])): ?>
+                                            <div class="text-danger small mb-1"><?= $errors["bid"] ?></div>
+                                        <?php endif; ?>
+
+                                        <button class="btn btn-success w-100 mb-2" type="submit">Place bid</button>
+                                    </form>
+                                <?php endif; ?>
+                            <?php endif; ?>
+
+                            <?php if ($item->get_has_buy_now() === 1): ?>
+                                <div class="mb-2">
+                                    <div class="text-muted small">Buy Now</div>
+                                    <div class="fw-bold"><?= (string)$item->get_buy_now_price() ?></div>
+                                </div>
+
+                                <?php if ($isGuest): ?>
+                                    <button class="btn btn-secondary w-100" type="button" disabled>
+                                        Buy Now at <?= (string)$item->get_buy_now_price() ?>
+                                    </button>
+                                    <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
+                                <?php else: ?>
+                                    <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                        <?php if (isset($errors["buy_now"])): ?>
+                                            <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
+                                        <?php endif; ?>
+                                        <button class="btn btn-outline-success w-100" type="submit">
+                                            Buy Now at <?= (string)$item->get_buy_now_price() ?>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            <?php endif; ?>
+
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Seller information</h5>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <?php if ($item->get_seller_picture_path()): ?>
+                                <img src="<?= $item->get_seller_picture_path() ?>"
+                                     alt="Seller"
+                                     class="rounded-circle"
+                                     style="width:42px;height:42px;object-fit:cover;">
+                            <?php else: ?>
+                                <div class="rounded-circle bg-secondary" style="width:42px;height:42px;"></div>
+                            <?php endif; ?>
+
+                            <div>
+                                <div class="fw-semibold"><?= $item->get_seller_pseudo() ?></div>
+                                <div class="text-muted small">Member</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php if ($isOwner): ?>
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Manage your item</h5>
+
+                            <?php if ($canManage): ?>
+                                <div class="d-grid gap-2">
+                                    <a class="btn btn-outline-primary" href="item/edit/<?= $item->get_id() ?>">
+                                        Edit item details
+                                    </a>
+                                    <a class="btn btn-outline-primary" href="item/manage_images/<?= $item->get_id() ?>">
+                                        Manage images
+                                    </a>
+                                    <a class="btn btn-outline-danger" href="item/delete/<?= $item->get_id() ?>">
+                                        Delete item
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-warning mb-0">
+                                    This item can no longer be modified or deleted because bids have been placed.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>
 </main>
-
-
-<h2>Pricing</h2>
-
-<?php if (!$isOpen): ?>
-    <p><strong>Status:</strong> Closed</p>
-
-    <?php if ($item->get_is_auction() === 1): ?>
-        <?php if ($highestBid !== null): ?>
-            <p>Final price: <?= $highestBid->get_amount() ?></p>
-
-            <?php if ($user && $highestBid->get_owner_id() === $user->get_id()): ?>
-                <p><strong>You won this auction.</strong></p>
-
-            <?php elseif ($isOwner): ?>
-                <p>Sold to: <?= $highestBid->get_owner_pseudo() ?></p>
-
-            <?php else: ?>
-                <p>Winner: <?= $highestBid->get_owner_pseudo() ?></p>
-            <?php endif; ?>
-        <?php else: ?>
-            <p>This auction ended with no bids.</p>
-        <?php endif; ?>
-    <?php else: ?>
-        <p>This item is no longer available.</p>
-    <?php endif; ?>
-
-<?php else: ?>
-    <p><strong>Status:</strong> Open</p>
-
-    <?php if ($isOwner): ?>
-        <p>You are the owner of this item.</p>
-
-    <?php else: ?>
-        <?php if ($item->get_is_auction() === 1): ?>
-            <p>Current highest bid: <?= (string)$item->get_max_bid() ?></p>
-
-            <?php if ($isGuest): ?>
-                <p class="text-muted"><em>Login required to place a bid.</em></p>
-                <div class="mb-3">
-                    <label for="amount"><strong>Your bid:</strong></label><br>
-                    <input type="text" id="amount" class="form-control" value="<?= (string)$defaultBid ?>" disabled>
-                </div>
-                <button class="btn btn-secondary" type="button" disabled>Place bid</button>
-            <?php else: ?>
-                <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
-                    <label for="amount"><strong>Your bid:</strong></label><br>
-
-                    <input
-                            type="text"
-                            id="amount"
-                            name="amount"
-                            class="form-control"
-                            value="<?= $postedAmount !== null ? $postedAmount : (string)$defaultBid ?>">
-
-                    <?php if (isset($errors["amount"])): ?>
-                        <p class="text-danger"><?= $errors["amount"] ?></p>
-                    <?php endif; ?>
-
-                    <?php if (isset($errors["bid"])): ?>
-                        <p class="text-danger"><?= $errors["bid"] ?></p>
-                    <?php endif; ?>
-
-                    <button class="btn btn-primary mt-2" type="submit">Place bid</button>
-                </form>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php if ($item->get_has_buy_now() === 1): ?>
-            <p>Buy now price: <?= (string)$item->get_buy_now_price() ?></p>
-
-            <?php if ($isGuest): ?>
-                <p class="text-muted"><em>Login required to buy now.</em></p>
-                <button class="btn btn-secondary" type="button" disabled>Buy now</button>
-            <?php else: ?>
-                <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
-                    <?php if (isset($errors["buy_now"])): ?>
-                        <p class="text-danger"><?= $errors["buy_now"] ?></p>
-                    <?php endif; ?>
-
-                    <button class="btn btn-success" type="submit">Buy now</button>
-                </form>
-            <?php endif; ?>
-        <?php endif; ?>
-    <?php endif; ?>
-<?php endif; ?>
-
-<?php if ($isOwner): ?>
-    <h2>Manage your item</h2>
-
-    <?php if ($canManage): ?>
-        <ul>
-            <li><a href="item/edit/<?= $item->get_id() ?>">Edit item details</a></li>
-            <li><a href="item/manage_images/<?= $item->get_id() ?>">Manage images</a></li>
-            <li><a href="item/delete/<?= $item->get_id() ?>">Delete item</a></li>
-        </ul>
-    <?php else: ?>
-        <p><em>This item can no longer be modified or deleted because bids have been placed.</em></p>
-    <?php endif; ?>
-<?php endif; ?>
-
-
-<p><strong>Description:</strong><br>
-    <?= nl2br($item->get_description() ?? "") ?>
-</p>
-
-<hr>
-
-<hr>
-
-<ul>
-    <li><strong>Starting bid:</strong> <?= (string)$item->get_starting_bid() ?></li>
-    <li><strong>Buy now price:</strong> <?= (string)$item->get_buy_now_price() ?></li>
-    <li><strong>Max bid:</strong> <?= (string)$item->get_max_bid() ?></li>
-    <li><strong>Bid count:</strong> <?= (string)$item->get_bid_count() ?></li>
-</ul>
-
-<hr>
-
-<h2>Bid history</h2>
-
-<?php if (!empty($bids)): ?>
-    <table border="1" cellpadding="6" cellspacing="0">
-        <thead>
-        <tr>
-            <th>Bidder</th>
-            <th>Date/Time</th>
-            <th>Amount</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($bids as $bid): ?>
-            <tr>
-                <td><?= $bid->get_owner_pseudo() ?></td>
-                <td><?= $bid->get_created_at() ?></td>
-                <td><?= $bid->get_amount() ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php else: ?>
-    <p><em>No bids yet.</em></p>
-<?php endif; ?>
 
 <footer>
     <?php require 'footer_menu.php'; ?>
