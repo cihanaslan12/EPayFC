@@ -239,4 +239,13 @@ class User extends Model {
         ]);
     }
 
+    public static function exists_full_name(string $full_name): bool {
+        $q = self::execute(
+            "SELECT COUNT(*) FROM users WHERE full_name = :fn",
+            ["fn" => $full_name]
+        );
+        return ((int)$q->fetchColumn()) > 0;
+    }
+
+
 }

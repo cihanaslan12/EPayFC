@@ -43,27 +43,70 @@ class ControllerUser extends Controller {
     }
 
     public function signup(): void {
-        $pseudo = '';
-        $password = '';
-        $password_confirm = '';
+        if ($this->user_logged()) {
+            $this->redirect("item", "browse");
+            return;
+        }
+
+        $full_name = "";
+        $mail = "";
+        $pseudo = "";
+        $password = "";
+        $password_confirm = "";
         $errors = [];
 
-        if(isset($_POST['pseudo']) && isset($_POST['password']) && isset($_POST['password_confirm'])) {
-            $pseudo = $_POST['pseudo'];
-            $password = $_POST['password'];
-            $password_confirm = $_POST['password_confirm'];
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            $full_name = trim($_POST["full_name"] ?? "");
+            $mail = trim($_POST["mail"] ?? "");
+            $pseudo = trim($_POST["pseudo"] ?? "");
+            $password = $_POST["password"] ?? "";
+            $password_confirm = $_POST["password_confirm"] ?? "";
 
-            $user = new User($pseudo, password_hash($password, PASSWORD_BCRYPT));
-            $errors = User::validate_unicity($pseudo);
-            $errors = array_merge($errors, $user->validate());
-            $errors = array_merge($errors, User::validate_passwords($password, $password_confirm));
+            if (mb_strlen($full_name) < 3) $errors["full_name"] = "Full name must be at least 3 characters.";
+            if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) $errors["mail"] = "Invalid email format.";
+            if (mb_strlen($pseudo) < 3 || mb_strlen($pseudo) > 30) $errors["pseudo"] = "Pseudo must be between 3 and 30 characters.";
+            if ($password === "" || $password_confirm === "") $errors["password"] = "Password is required.";
+            if ($password !== $password_confirm) $errors["password_confirm"] = "Passwords do not match.";
 
-            if (count($errors) == 0) {
+
+            $tmpUser = new User($mail, $full_name, $pseudo, null);
+            if ($password !== "" && !$tmpUser->valid_password($password)) {
+                $errors["password"] = "Password must be 8-16 characters with uppercase, number, and punctuation.";
+            }
+
+            if (!isset($errors["mail"]) && User::get_by_mail($mail)) {
+                $errors["mail"] = "This email is already used.";
+            }
+            if (!isset($errors["pseudo"]) && User::get_by_pseudo($pseudo)) {
+                $errors["pseudo"] = "This pseudo is already used.";
+            }
+
+            if (!isset($errors["full_name"]) && User::exists_full_name($full_name)) {
+                $errors["full_name"] = "This full name is already used.";
+            }
+
+            if (empty($errors)) {
+                $user = new User(
+                    mail: $mail,
+                    fullName: $full_name,
+                    pseudo: $pseudo,
+                    hashedPassword: password_hash($password, PASSWORD_BCRYPT)
+                );
                 $user->persist();
                 $this->log_user($user);
+                $this->redirect("item", "browse");
+                return;
             }
         }
-        (new View("signup"))->show(['pseudo' => $pseudo, "password" => $password, "password_confirm" => $password_confirm, "errors" => $errors]);
+
+        (new View("signup"))->show([
+            "full_name" => $full_name,
+            "mail" => $mail,
+            "pseudo" => $pseudo,
+            "password" => $password,
+            "password_confirm" => $password_confirm,
+            "errors" => $errors
+        ]);
     }
 
     public function debug() {
@@ -208,6 +251,10 @@ class ControllerUser extends Controller {
 
             if (empty($errors["pseudo"]) && !User::is_pseudo_unique($pseudo, $user->get_id())) {
                 $errors["pseudo"] = "This pseudo is already used.";
+            }
+
+            if (!isset($errors["full_name"]) && User::exists_full_name($full_name)) {
+                $errors["full_name"] = "This full name is already used.";
             }
 
             if (empty($errors)) {
