@@ -7,11 +7,12 @@
     <base href="<?= Configuration::get("web_root") ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?= Configuration::get("web_root") ?>css/css_delete_confirm.css">
 </head>
 
 <body>
     <form action="item/delete/<?=$item->get_id() ?>" method="POST">
-        <div class="card text-center m-5 p-5">
+        <div class="card text-center m-5">
             <div class="card-body">
                 <i class="bi bi-trash"></i>
                 <h5 class="card-title">Are you sure?</h5>
