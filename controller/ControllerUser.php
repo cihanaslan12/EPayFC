@@ -99,7 +99,7 @@ class ControllerUser extends Controller {
         (new View("profile"))->show([
             "user" => $user,
             "show_back" => true,
-            'backUrl' => 'item/browse',
+            'back_url' => 'item/browse',
             "page_title" => "Profile",
             "show_save" => false
         ]);
@@ -136,7 +136,7 @@ class ControllerUser extends Controller {
         }
         (new View("change_password"))->show([
             'show_back' => true,
-            'backUrl' => 'user/profile',
+            'back_url' => 'user/profile',
             'page_title' => 'Change Password',
             'show_save' => true,
             'user' => $user,
