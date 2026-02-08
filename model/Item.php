@@ -228,7 +228,7 @@ class Item extends Model
                     AND  b.owner = :id
                 ORDER BY vis.end_at ASC ";
 
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_other_available_items(User $user): array {
@@ -247,7 +247,7 @@ class Item extends Model
               )
             ORDER BY vis.end_at ASC";
 
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
     public static function get_all_available_items_for_guest(): array {
         $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
@@ -258,10 +258,10 @@ class Item extends Model
                             AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached)))
                 ORDER BY vis.end_at ASC ";
 
-        return self::fetchItems($sql, null);
+        return self::fetch_items($sql, null);
     }
 
-    private static function fetchItems(string $sql, ?User $user): array {
+    private static function fetch_items(string $sql, ?User $user): array {
         $user_id = $user ? $user->get_id() : null;
         $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
         );
@@ -376,7 +376,7 @@ class Item extends Model
                      AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_my_closed_unsold_items(User $user): array {
@@ -388,7 +388,7 @@ class Item extends Model
                  OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_my_sold_items(User $user): array {
@@ -401,7 +401,7 @@ class Item extends Model
                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_my_sold_items_total(User $user): float {
@@ -502,7 +502,7 @@ class Item extends Model
                   )
             ORDER BY vis.end_at DESC";
 
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_purchase_stats(User $user): array {
