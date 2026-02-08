@@ -54,3 +54,7 @@ p {
     color: white;
     border-radius: 5px;
 }
+
+.card {
+    margin-bottom: 100px;
+}

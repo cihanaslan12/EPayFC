@@ -19,7 +19,7 @@
                 <p class="card-text">Do you want to delete item <strong>"<?= $item->get_title() ?>"</strong> by <?= $item->get_owner_full_name() ?> and all of its dependencies?</p>
                 <p>This process cannot be undone.</p>
                 <a href="item/open/<?= $item->get_id() ?>" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-danger">Delete</button>
+                <button type="submit" class="btn btn-danger" name="delete">Delete</button>
             </div>
         </div>
     </form>

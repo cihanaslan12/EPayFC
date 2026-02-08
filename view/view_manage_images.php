@@ -28,7 +28,7 @@
                             <?php if(isset($error)): ?>
                                 <p class="text-danger"><?= $error ?></p>
                             <?php endif; ?>
-                            <button type="submit" class="btn btn-primary" id="image">Upload Images</button>
+                            <button type="submit" class="btn btn-primary" name="upload_images">Upload Images</button>
                         </form>
                     </div>
                 </div>
