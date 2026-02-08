@@ -88,9 +88,9 @@ class ControllerUser extends Controller {
             if (empty($errors)) {
                 $user = new User(
                     mail: $mail,
-                    fullName: $full_name,
+                    full_name: $full_name,
                     pseudo: $pseudo,
-                    hashedPassword: password_hash($password, PASSWORD_BCRYPT)
+                    hashed_password: password_hash($password, PASSWORD_BCRYPT)
                 );
                 $user->persist();
                 $this->log_user($user);
@@ -160,7 +160,7 @@ class ControllerUser extends Controller {
             $current_password = $_POST['current'];
             $new_password = $_POST['new_password'];
             $confirm_new_password = $_POST['confirm_new_password'];
-            $check = password_verify($current_password, $user->get_hashedPassword());
+            $check = password_verify($current_password, $user->get_hashed_password());
             if (!$check) {
                 $errors['current'] = "Current password is wrong ! ";
             }

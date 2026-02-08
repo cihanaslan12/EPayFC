@@ -7,12 +7,12 @@ require_once "utils/Uploader.php";
 class User extends Model {
     public function __construct(
         private ?string $mail,
-        private ?string $fullName,
+        private ?string $full_name,
         private ?string $pseudo,
-        private ?string $hashedPassword,
+        private ?string $hashed_password,
         private ?bool $is_guest = false,
         private ?string $iban = null,
-        private ?string $picturePath = null,
+        private ?string $picture_path = null,
         private ?string $role = "user",
         private ?int $id = null,
     ) {
@@ -27,15 +27,15 @@ class User extends Model {
     }
 
     public function get_full_name(): ?string {
-        return $this->fullName;
+        return $this->full_name;
     }
 
     public function get_pseudo(): ?string {
         return $this->pseudo;
     }
 
-    public function get_hashedPassword(): ?string {
-        return $this->hashedPassword;
+    public function get_hashed_password(): ?string {
+        return $this->hashed_password;
     }
 
     public function is_guest(): ?bool {
@@ -43,7 +43,7 @@ class User extends Model {
     }
 
     public function get_picture_path(): ?string {
-        return $this->picturePath;
+        return $this->picture_path;
     }
 
     public function get_iban(): ?string {
@@ -57,13 +57,13 @@ class User extends Model {
     public static function get_by_id(?int $id): User|false {
         $query = self::execute("SELECT * FROM users WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
-        return $row ? new User(id: $row['id'], mail: $row['email'], fullName: $row['full_name'], pseudo: $row['pseudo'], hashedPassword: $row['password'], picturePath: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
+        return $row ? new User(id: $row['id'], mail: $row['email'], full_name: $row['full_name'], pseudo: $row['pseudo'], hashed_password: $row['password'], picture_path: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
     }
 
     public static function get_by_mail(string $mail): User|false {
         $query = self::execute("SELECT * FROM users WHERE email = :mail", array("mail" => $mail));
         $row = $query->fetch();
-        return $row ? new User(id: $row['id'], mail: $row['email'], fullName: $row['full_name'], pseudo: $row['pseudo'], hashedPassword: $row['password'], picturePath: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
+        return $row ? new User(id: $row['id'], mail: $row['email'], full_name: $row['full_name'], pseudo: $row['pseudo'], hashed_password: $row['password'], picture_path: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
     }
 
     public static function get_pseudo_by_owner_id(int $id): string {
@@ -103,7 +103,7 @@ class User extends Model {
     public static function get_by_pseudo(string $pseudo): User|false {
         $query = self::execute("SELECT * FROM users WHERE pseudo = :pseudo", array("pseudo" => $pseudo));
         $row = $query->fetch();
-        return $row ? new User(id: $row['id'], mail: $row['email'], fullName: $row['full_name'], pseudo: $row['pseudo'], hashedPassword: $row['password'], picturePath: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
+        return $row ? new User(id: $row['id'], mail: $row['email'], full_name: $row['full_name'], pseudo: $row['pseudo'], hashed_password: $row['password'], picture_path: $row['picture_path'], iban: $row['iban'], role: $row['role']) : false;
     }
 
     public function persist(): User
@@ -113,10 +113,10 @@ class User extends Model {
             WHERE ID=:id",
                 array(
                     "mail" => $this->mail,
-                    "full_name" => $this->fullName,
+                    "full_name" => $this->full_name,
                     "pseudo" => $this->pseudo,
-                    "hashed_password" => $this->hashedPassword,
-                    "picture_path" => $this->picturePath,
+                    "hashed_password" => $this->hashed_password,
+                    "picture_path" => $this->picture_path,
                     "iban" => $this->iban,
                     "role" => $this->role,
                 )
@@ -125,10 +125,10 @@ class User extends Model {
             self::execute("INSERT INTO users(email, full_name, pseudo, password, picture_path, iban, role) VALUES (:mail, :full_name, :pseudo, :hashed_password, :picture_path, :iban, :role)",
                 array(
                     "mail" => $this->mail,
-                    "full_name" => $this->fullName,
+                    "full_name" => $this->full_name,
                     "pseudo" => $this->pseudo,
-                    "hashed_password" => $this->hashedPassword,
-                    "picture_path" => $this->picturePath,
+                    "hashed_password" => $this->hashed_password,
+                    "picture_path" => $this->picture_path,
                     "iban" => $this->iban,
                     "role" => $this->role,
                 ),
@@ -156,7 +156,7 @@ class User extends Model {
         $errors = [];
         $user = User::get_by_mail($mail);
         if ($user) {
-            if (!self::check_password($password, $user->hashedPassword)) {
+            if (!self::check_password($password, $user->hashed_password)) {
                 $errors['password'] = "Wrong password. Please try again.";
             }
         } else {
