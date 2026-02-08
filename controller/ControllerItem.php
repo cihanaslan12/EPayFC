@@ -232,7 +232,7 @@ class ControllerItem extends Controller {
         $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
         $error = null;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['upload_images'])) {
             if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
                 $files = $_FILES['image']['name'];
 
@@ -304,7 +304,7 @@ class ControllerItem extends Controller {
         $instant_or_direct = 0.0;
         $errors = [];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['save'])) {
             $title = $_POST['title'];
             $description = $_POST['description'];
             $duration = $_POST['duration'];
@@ -365,7 +365,7 @@ class ControllerItem extends Controller {
         }
         $errors = [];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['save'])) {
             $title = $_POST['title'];
             $description = $_POST['description'];
             $duration = $_POST['duration'];
@@ -408,7 +408,7 @@ class ControllerItem extends Controller {
         $item = Item::get_by_id($item_id);
         (new View("delete_confirm"))->show(['item' => $item]);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['delete'])) {
             $item->delete_item_with_dependencies();
             $this->redirect("item", "my_items");
         }

@@ -11,7 +11,7 @@
         </span>
 
         <?php if (isset($show_save) && $show_save): ?>
-            <button type="submit" form="form" class="btn save-btn">
+            <button type="submit" form="form" class="btn save-btn" name="save">
                     <i class="bi bi-save text-primary"></i>
                 </button>
             <?php endif; ?>
