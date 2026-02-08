@@ -476,4 +476,120 @@ class Item extends Model
         $sql = "DELETE FROM items WHERE id = :item_id ";
         self::execute($sql, ['item_id' => $this->get_id()]);
     }
+
+    public static function get_purchases(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, 0 as secs_left
+            FROM v_items_status vis
+            JOIN bids b ON b.item = vis.id
+            WHERE b.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.has_bids = 1 AND vis.not_purchased_direct_sale = 0)
+
+                    OR
+                    
+                    (vis.is_auction = 1
+                        AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM bids b2
+                            WHERE b2.item = vis.id
+                              AND (
+                                   b2.amount > b.amount
+                                   OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                              )
+                        )
+                    )
+                  )
+            ORDER BY vis.end_at DESC";
+
+        return self::fetchItems($sql, $user);
+    }
+
+    public static function get_purchase_stats(User $user): array {
+        $sql = "SELECT
+                COUNT(*) AS count_purchases,
+                COALESCE(SUM(w.amount), 0) AS total_spent,
+                COALESCE(AVG(w.amount), 0) AS avg_spent
+            FROM (
+                -- gagnants enchères clôturées
+                SELECT vis.owner AS seller_id, b.amount
+                FROM v_items_status vis
+                JOIN bids b ON b.item = vis.id
+                WHERE b.owner = :id
+                  AND vis.is_auction = 1
+                  AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM bids b2
+                      WHERE b2.item = vis.id
+                        AND (
+                             b2.amount > b.amount
+                             OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                        )
+                  )
+
+                UNION ALL
+
+                -- ventes directes achetées
+                SELECT vis.owner AS seller_id, b.amount
+                FROM v_items_status vis
+                JOIN bids b ON b.item = vis.id
+                WHERE b.owner = :id
+                  AND vis.is_direct_sale = 1
+                  AND vis.not_purchased_direct_sale = 0
+            ) w";
+        $q = self::execute($sql, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]);
+        $row = $q->fetch();
+
+        // top seller
+        $sqlTop = "SELECT w.seller_id, COUNT(*) AS cnt
+               FROM (
+                    SELECT vis.owner AS seller_id
+                    FROM v_items_status vis
+                    JOIN bids b ON b.item = vis.id
+                    WHERE b.owner = :id
+                      AND vis.is_auction = 1
+                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM bids b2
+                          WHERE b2.item = vis.id
+                            AND (
+                                 b2.amount > b.amount
+                                 OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                            )
+                      )
+
+                    UNION ALL
+
+                    SELECT vis.owner AS seller_id
+                    FROM v_items_status vis
+                    JOIN bids b ON b.item = vis.id
+                    WHERE b.owner = :id
+                      AND vis.is_direct_sale = 1
+                      AND vis.not_purchased_direct_sale = 0
+               ) w
+               GROUP BY w.seller_id
+               ORDER BY cnt DESC, w.seller_id ASC
+               LIMIT 1";
+        $qt = self::execute($sqlTop, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]);
+        $top = $qt->fetch();
+
+        $topPseudo = null;
+        $topCount = 0;
+        if ($top) {
+            $topPseudo = User::get_pseudo_by_owner_id((int)$top["seller_id"]);
+            $topCount = (int)$top["cnt"];
+        }
+
+        return [
+            "count_purchases" => (int)($row["count_purchases"] ?? 0),
+            "total_spent" => (string)($row["total_spent"] ?? "0"),
+            "avg_spent" => (string)($row["avg_spent"] ?? "0"),
+            "top_seller_pseudo" => $topPseudo,
+            "top_seller_count" => $topCount
+        ];
+    }
+
+
 }
