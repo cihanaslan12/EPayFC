@@ -10,7 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= Configuration::get("web_root") ?>css/css_browse_items.css">
 </head>
-
+<style>
+    body {padding-bottom: 50px;}
+</style>
 <body>
 <header>
     <?php require 'header_menu.php';?>
