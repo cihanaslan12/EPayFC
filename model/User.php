@@ -192,7 +192,7 @@ class User extends Model {
     }
 
     public function get_loyal_bidder(): User {
-        $sql = "SELECT MAX(b.owner) as user_id
+        $sql = "SELECT MAX(b.owner) as user_id, COUNT(DISTINCT vis.id) as purchase_count
             FROM bids b
             	JOIN v_items_status vis ON b.item = vis.id
             WHERE vis.owner = :id
@@ -201,7 +201,9 @@ class User extends Model {
                  OR (vis.is_auction = 1 AND vis.has_bids = 1
                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
                   ) 
-              AND vis.max_bid = b.amount ";
+              AND vis.max_bid = b.amount 
+              GROUP BY b.owner
+              ORDER BY purchase_count DESC, user_id DESC";
         $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
         $res = $query->fetch();
         return self::get_by_id($res['user_id']);
