@@ -1,0 +1,44 @@
+body {
+    background-color: #1b263b;
+}
+
+#page-title, h2, .get-buy-now-price {
+    color: dodgerblue;
+}
+
+.card {
+    background-color: #212121;
+}
+
+.card-title {
+    color: white;
+    font-weight: bold;
+}
+
+.card-owner, .current-bid-label {
+    color: gray;
+    font-size: smaller;
+}
+
+.get-buy-now-price {
+    font-weight: bold;
+}
+
+.starting-bid {
+    color: orange;
+}
+
+.card-price {
+    color: green;
+    font-weight: bold;
+}
+
+.card-left_time {
+    color: green;
+    font-weight: bold;
+}
+
+#navbar {
+    background-color: yellow;
+    color: red !important;
+}

@@ -1,0 +1,68 @@
+body {
+    background-color: #1b263b;
+    padding: 100px;
+}
+
+label {
+    color: white;
+    font-weight: bold;
+}
+
+input, textarea {
+    background-color: #252424 !important;
+    color: white !important;
+    border: 1px solid gray !important;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #778da9 !important;
+}
+
+.input-group-text {
+    background-color: #252424FF;
+    border: 1px solid gray !important;
+    color: white;
+}
+
+#basic-info, #sale-type {
+    border: none;
+    color: white;
+    background-color: #212121;
+}
+
+.auction-div{
+    margin-bottom: 10px;
+    border: 1px solid dodgerblue !important;
+    border-radius: 5px;
+}
+
+#auction-header {
+    background-color: steelblue !important;
+    color: white;
+    border: 1px solid dodgerblue !important;
+}
+
+.direct-sale-div {
+    border: 1px solid green !important;
+    border-radius: 5px;
+}
+
+#direct-sale-header {
+    background-color: green !important;
+    color: mediumspringgreen;
+}
+
+.card-header {
+    background-color: #415a77;
+    color: white;
+    font-weight: bold;
+}
+
+li {
+    color: red;
+    font-size: small;
+    margin-left: 30px;
+}
+
+
+

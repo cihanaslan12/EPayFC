@@ -1,0 +1,17 @@
+body {
+    background-color: #1b263b;
+    padding: 100px;
+}
+
+.card-body {
+    background-color: #252424;
+}
+
+i, .card-title {
+    color: red;
+    font-size: xxx-large ;
+}
+
+p {
+    color: white;
+}

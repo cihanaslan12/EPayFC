@@ -1,0 +1,60 @@
+body {
+    background-color: #1b263b;
+}
+
+main {
+    margin-top: 100px;
+    margin-left: 20px;
+    margin-right: 20px;
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+h3, label {
+    color: white;
+    font-weight: bold;
+}
+
+input, textarea {
+    background-color: #252424 !important;
+    color: white !important;
+    border: 1px solid gray !important;
+}
+
+.card-body, #img-card {
+    background-color: #252424;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #778da9 !important;
+}
+
+.card-header{
+    background-color: #415a77;
+    color: white;
+    font-weight: bold;
+}
+
+p {
+    color: gray;
+}
+
+.arrow-btn {
+    color: gray;
+    background-color: #252424;
+    border: 1px solid gray;
+}
+
+.arrow-btn:disabled {
+    opacity: 0.3;
+}
+
+.delete-btn {
+    background-color: red;
+    color: white;
+    border-radius: 5px;
+}
+
+.card {
+    margin-bottom: 100px;
+}
