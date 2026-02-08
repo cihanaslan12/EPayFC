@@ -141,8 +141,7 @@ class ControllerUser extends Controller {
 
         (new View("profile"))->show([
             "user" => $user,
-            "show_back" => true,
-            'back_url' => 'item/browse',
+            "show_back" => false,
             "page_title" => "Profile",
             "show_save" => false
         ]);
