@@ -8,6 +8,7 @@ require_once "utils/AppTime.php";
 
 class ControllerItem extends Controller {
     public function index(): void {
+        $this->get_user_or_redirect();
         $this->browse();
     }
 
@@ -274,6 +275,7 @@ class ControllerItem extends Controller {
     }
 
     public function move_picture(): void {
+        $this->get_user_or_redirect();
         $item_id = $_POST['item'];
         $priority = $_POST['priority'];
         $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
@@ -401,6 +403,7 @@ class ControllerItem extends Controller {
     }
 
     public function delete(): void {
+        $this->get_user_or_redirect();
         $item_id = $_GET['param1'];
         $item = Item::get_by_id($item_id);
         (new View("delete_confirm"))->show(['item' => $item]);
