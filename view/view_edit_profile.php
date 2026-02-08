@@ -7,7 +7,9 @@
     <base href="<?= Configuration::get("web_root") ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
+<style>
 body { padding-top: 50px;}
+</style>
 <body>
 <header>
     <?php require 'header_menu.php'; ?>
