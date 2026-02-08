@@ -325,7 +325,7 @@ class ControllerUser extends Controller {
             "user" => $user,
             "errors" => $errors,
             "show_back" => true,
-            "backUrl" => "user/profile",
+            "back_url" => "user/profile",
             "page_title" => "Manage profile picture",
             "show_save" => false
         ]);
