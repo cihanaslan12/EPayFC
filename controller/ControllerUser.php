@@ -279,5 +279,58 @@ class ControllerUser extends Controller {
         ]);
     }
 
+    public function profile_picture(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->redirect("user", "login");
+            return;
+        }
+
+        $errors = [];
+
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+            if (isset($_POST["delete_picture"])) {
+                User::delete_profile_picture($user->get_id());
+                
+                $updated = User::get_by_id($user->get_id());
+                if ($updated) {
+                    $_SESSION["user"] = $updated;
+                }
+
+                $this->redirect("user", "profile_picture");
+                return;
+            }
+
+            if (isset($_POST["upload_picture"])) {
+                if (!isset($_FILES["picture"]) || $_FILES["picture"]["error"] !== UPLOAD_ERR_OK) {
+                    $errors["picture"] = "Please select an image.";
+                } else {
+                    $tmp = $_FILES["picture"]["tmp_name"];
+                    $name = $_FILES["picture"]["name"];
+
+                    if (User::update_profile_picture($user->get_id(), $tmp, $name, $errors)) {
+                        $updated = User::get_by_id($user->get_id());
+                        if ($updated) {
+                            $_SESSION["user"] = $updated;
+                        }
+                        $this->redirect("user", "profile_picture");
+                        return;
+                    }
+                }
+            }
+        }
+
+        (new View("profile_picture"))->show([
+            "user" => $user,
+            "errors" => $errors,
+            "show_back" => true,
+            "backUrl" => "user/profile",
+            "page_title" => "Manage profile picture",
+            "show_save" => false
+        ]);
+    }
+
+
 
 }

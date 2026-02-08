@@ -2,6 +2,7 @@
 
 require_once "framework/Model.php";
 require_once "model/Item.php";
+require_once "utils/Uploader.php";
 
 class User extends Model {
     public function __construct(
@@ -246,6 +247,76 @@ class User extends Model {
         );
         return ((int)$q->fetchColumn()) > 0;
     }
+
+    public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
+        if (!Uploader::check_extension($original_name)) {
+            $errors["picture"] = "Unsupported image format: JPG, PNG, GIF, WebP.";
+            return false;
+        }
+
+        $size_ok = Uploader::check_size(filesize($tmp_path));
+        if (!$size_ok) {
+            $errors["picture"] = "Image size is max 5MB.";
+            return false;
+        }
+
+        $original = Uploader::create_image_from($tmp_path, $original_name);
+        if (!$original) {
+            $errors["picture"] = "Could not read the image file.";
+            return false;
+        }
+
+        $config = parse_ini_file(__DIR__ . '/../config/dev.ini');
+        $max_w = (int)$config["MAX_THUMB_WIDTH"];
+        $max_h = (int)$config["MAX_THUMB_HEIGHT"];
+
+        $ow = imagesx($original);
+        $oh = imagesy($original);
+
+        $ratio = min($max_w / $ow, $max_h / $oh);
+        $ratio = ($ratio < 1) ? $ratio : 1;
+
+        $nw = (int)round($ow * $ratio);
+        $nh = (int)round($oh * $ratio);
+
+        $new_img = imagecreatetruecolor($nw, $nh);
+        imagecopyresampled($new_img, $original, 0, 0, 0, 0, $nw, $nh, $ow, $oh);
+
+        $dir = "uploads/users/$user_id/";
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        $path = $dir . "profile.jpg";
+
+        imagejpeg($new_img, $path, 85);
+
+        imagedestroy($original);
+        imagedestroy($new_img);
+
+        self::execute("UPDATE users SET picture_path = :p WHERE id = :id", [
+            "p" => $path,
+            "id" => $user_id
+        ]);
+
+        return true;
+    }
+
+    public static function delete_profile_picture(int $user_id): void {
+        $q = self::execute("SELECT picture_path FROM users WHERE id = :id", ["id" => $user_id]);
+        $row = $q->fetch();
+
+        if ($row && !empty($row["picture_path"])) {
+            $path = $row["picture_path"];
+            if (file_exists($path)) {
+                @unlink($path);
+            }
+        }
+
+        self::execute("UPDATE users SET picture_path = NULL WHERE id = :id", [
+            "id" => $user_id
+        ]);
+    }
+
 
 
 }
