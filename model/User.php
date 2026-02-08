@@ -192,7 +192,7 @@ class User extends Model {
     }
 
     public function get_loyal_bidder(): User {
-        $sql = "SELECT MAX(b.owner) as user_id, COUNT(DISTINCT vis.id) as purchase_count
+        $sql = "SELECT b.owner as user_id, COUNT(DISTINCT vis.id) as purchase_count
             FROM bids b
             	JOIN v_items_status vis ON b.item = vis.id
             WHERE vis.owner = :id
