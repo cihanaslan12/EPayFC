@@ -72,7 +72,7 @@ class ControllerItem extends Controller {
 
         $data = [
             'show_back' => true,
-            'backUrl' => 'item/browse',
+            'back_url' => 'item/browse',
             'page_title' => "Item open",
             'show_save' => false,
 
@@ -263,7 +263,7 @@ class ControllerItem extends Controller {
         $manage_images = [
             'user' => $user,
             'show_back' => true,
-            'backUrl' => 'item/open/' . $item->get_id(),
+            'back_url' => 'item/open/' . $item->get_id(),
             'page_title' => "Manage Images",
             'show_save' => false,
             'item' => $item,
@@ -385,6 +385,7 @@ class ControllerItem extends Controller {
         $edit_item = [
             'user' => $user,
             'show_back' => true,
+            'back_url' => 'item/open/' . $item->get_id(),
             'page_title' => "Edit item",
             'show_save' => true,
             'item' => $item,
@@ -419,7 +420,7 @@ class ControllerItem extends Controller {
         (new View("sales"))->show([
             'user' => $user,
             'show_back' => true,
-            'backUrl' => 'user/profile',
+            'back_url' => 'user/profile',
             'page_title' => 'Sales',
             'show_save' => false,
             'sales' => $sales,
@@ -444,7 +445,7 @@ class ControllerItem extends Controller {
             "user" => $user,
             "purchases" => $purchases,
             "show_back" => true,
-            'backUrl' => 'user/profile',
+            'back_url' => 'user/profile',
             "page_title" => "Purchases",
             "show_save" => false,
             "stats" => $stats
