@@ -375,7 +375,7 @@ class Item extends Model
                  OR (vis.is_auction = 1 AND vis.end_at > :now
                      AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
                   )
-            ORDER BY vis.end_at DESC";
+            ORDER BY vis.end_at ASC";
         return self::fetch_items($sql, $user);
     }
 
@@ -387,7 +387,7 @@ class Item extends Model
                     (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
                  OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
                   )
-            ORDER BY vis.end_at DESC";
+            ORDER BY vis.end_at ASC";
         return self::fetch_items($sql, $user);
     }
 
@@ -400,7 +400,7 @@ class Item extends Model
                  OR (vis.is_auction = 1 AND vis.has_bids = 1
                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
                   )
-            ORDER BY vis.end_at DESC";
+            ORDER BY vis.end_at ASC";
         return self::fetch_items($sql, $user);
     }
 
