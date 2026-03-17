@@ -1,0 +1,68 @@
+body {
+    background-color: #1b263b;
+    padding: 75px;
+}
+
+main {
+    padding-bottom: 25px;
+}
+
+h2 {
+    color: white;
+}
+
+#res {
+    font-size: xxx-large;
+}
+
+#bidder {
+    font-size: x-large;
+}
+
+#sales-infos {
+    color: gray;
+}
+
+h5 {
+    margin-left: 20px;
+    color: grey;
+}
+
+p {
+    color: white;
+}
+
+.card {
+    margin: 25px;
+    background-color: #252424;
+}
+
+#item-infos {
+    padding-left: 30px;
+    color: gray;
+}
+
+.card-title {
+    color: white;
+}
+
+.card-owner {
+    color: gray;
+}
+
+label {
+    color: gray;
+}
+
+#current-bid {
+    color: green;
+}
+
+.get-buy-now-price, .starting-bid {
+    color: dodgerblue;
+    font-weight: bold;
+}
+
+.card-left_time {
+    color: gray;
+}

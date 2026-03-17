@@ -2,6 +2,7 @@
 
 require_once "framework/Model.php";
 require_once "model/Item.php";
+require_once "utils/Uploader.php";
 
 class User extends Model {
     public function __construct(
@@ -138,8 +139,16 @@ class User extends Model {
         return $this;
     }
 
+    public function valid_password(string $new_password): bool {
+        return preg_match('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,16}$/', $new_password) === 1;
+    }
 
-    private static function check_password(string $clear_password, string $hashed_password): bool {
+    public function update_password(string $hashed_password): void {
+        $sql = "UPDATE users SET password = :password WHERE id = :user_id ";
+        self::execute($sql, ['password' => $hashed_password, 'user_id' => $this->get_id()]);
+    }
+
+    public static function check_password(string $clear_password, string $hashed_password): bool {
         return password_verify($clear_password, $hashed_password);
     }
 
@@ -170,4 +179,144 @@ class User extends Model {
     {
         return Item::get_all_available_items_for_guest();
     }
+
+    public function get_my_sold_items(): array {
+        return Item::get_my_sold_items($this);
+    }
+
+    public function get_my_sold_items_total(): float {
+        return Item::get_my_sold_items_total($this);
+    }
+
+    public function get_average_ticket(): float {
+        return (float)($this->get_my_sold_items_total() / count($this->get_my_sold_items()));
+    }
+
+    public function get_loyal_bidder(): ?User {
+        $sql = "SELECT b.owner as user_id, COUNT(DISTINCT vis.id) as purchase_count
+            FROM bids b
+            	JOIN v_items_status vis ON b.item = vis.id
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR 
+                    (vis.is_auction = 1 
+                        AND vis.has_bids = 1
+                        AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                        AND vis.max_bid = b.amount)) 
+              GROUP BY b.owner
+              ORDER BY purchase_count DESC, user_id DESC
+              LIMIT 1 ";
+        $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return self::get_by_id($res['user_id']);
+    }
+
+    public static function is_mail_unique(string $mail, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE email = :mail AND id <> :id";
+        $q = self::execute($sql, ["mail" => $mail, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
+    }
+
+    public static function is_pseudo_unique(string $pseudo, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE pseudo = :pseudo AND id <> :id";
+        $q = self::execute($sql, ["pseudo" => $pseudo, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
+    }
+
+    public static function update_profile(int $id, string $full_name, string $pseudo, string $mail, ?string $iban): void {
+        $sql = "UPDATE users
+            SET full_name = :full_name,
+                pseudo = :pseudo,
+                email = :mail,
+                iban = :iban
+            WHERE id = :id";
+        self::execute($sql, [
+            "full_name" => $full_name,
+            "pseudo" => $pseudo,
+            "mail" => $mail,
+            "iban" => $iban,
+            "id" => $id
+        ]);
+    }
+
+    public static function exists_full_name(string $full_name): bool {
+        $q = self::execute(
+            "SELECT COUNT(*) FROM users WHERE full_name = :fn",
+            ["fn" => $full_name]
+        );
+        return ((int)$q->fetchColumn()) > 0;
+    }
+
+    public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
+        if (!Uploader::check_extension($original_name)) {
+            $errors["picture"] = "Unsupported image format: JPG, PNG, GIF, WebP.";
+            return false;
+        }
+
+        $size_ok = Uploader::check_size(filesize($tmp_path));
+        if (!$size_ok) {
+            $errors["picture"] = "Image size is max 5MB.";
+            return false;
+        }
+
+        $original = Uploader::create_image_from($tmp_path, $original_name);
+        if (!$original) {
+            $errors["picture"] = "Could not read the image file.";
+            return false;
+        }
+
+        $config = parse_ini_file(__DIR__ . '/../config/dev.ini');
+        $max_w = (int)$config["MAX_THUMB_WIDTH"];
+        $max_h = (int)$config["MAX_THUMB_HEIGHT"];
+
+        $ow = imagesx($original);
+        $oh = imagesy($original);
+
+        $ratio = min($max_w / $ow, $max_h / $oh);
+        $ratio = ($ratio < 1) ? $ratio : 1;
+
+        $nw = (int)round($ow * $ratio);
+        $nh = (int)round($oh * $ratio);
+
+        $new_img = imagecreatetruecolor($nw, $nh);
+        imagecopyresampled($new_img, $original, 0, 0, 0, 0, $nw, $nh, $ow, $oh);
+
+        $dir = "uploads/users/$user_id/";
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        $path = $dir . "profile.jpg";
+
+        imagejpeg($new_img, $path, 85);
+
+        imagedestroy($original);
+        imagedestroy($new_img);
+
+        self::execute("UPDATE users SET picture_path = :p WHERE id = :id", [
+            "p" => $path,
+            "id" => $user_id
+        ]);
+
+        return true;
+    }
+
+    public static function delete_profile_picture(int $user_id): void {
+        $q = self::execute("SELECT picture_path FROM users WHERE id = :id", ["id" => $user_id]);
+        $row = $q->fetch();
+
+        if ($row && !empty($row["picture_path"])) {
+            $path = $row["picture_path"];
+            if (file_exists($path)) {
+                @unlink($path);
+            }
+        }
+
+        self::execute("UPDATE users SET picture_path = NULL WHERE id = :id", [
+            "id" => $user_id
+        ]);
+    }
+
+
+
 }

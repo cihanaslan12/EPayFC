@@ -4,14 +4,23 @@ require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
 require_once "utils/AppTime.php";
+require_once "utils/Uploader.php";
+require_once "utils/Functions.php";
 
-class Item extends Model {
+class Item extends Model
+{
     public function __construct(
         private string  $title,
-        private string  $description,
-        private int     $owner,
-        private string  $created_at,
-        private int     $duration_days,
+        private ?string $description,
+        private ?int    $owner,
+        private ?string $created_at,
+        private ?int    $duration_days,
+        private ?string $owner_pseudo = null,
+        private ?string $end_at = null,
+        private ?string $time_left = null,
+        private ?int    $has_bids = null,
+        private ?int    $is_direct_sale = null,
+        private ?int    $is_auction = null,
         private ?int    $id = null,
         private ?string $buy_now_price = null,
         private ?string $starting_bid = null,
@@ -21,23 +30,19 @@ class Item extends Model {
         private ?int    $bid_count = null,
         private ?string $max_bid = null,
 
-        private ?string $owner_pseudo = null,
-        private ?string $end_at = null,
-        private ?string $time_left = null,
-        private ?int    $has_bids = null,
-        private ?int    $is_direct_sale = null,
-        private ?int    $is_auction = null,
         private ?int    $has_buy_now = null,
         private ?int    $buy_now_reached = null,
         private ?int    $not_purchased_direct_sale = null,
-        
+
         private ?string $thumbnail = null,
         private ?bool   $bidder = null,
-        private ?bool   $highest_bidder = null
-    ) {}
+        private ?bool   $highest_bidder = null,
+    )
+    {
+    }
 
-
-    public function get_id(): ?int {
+    public function get_id(): ?int
+    {
         return $this->id;
     }
 
@@ -142,31 +147,57 @@ class Item extends Model {
         return $this->not_purchased_direct_sale;
     }
 
+    public function get_owner_full_name(): string {
+        $sql = "SELECT full_name FROM users WHERE id = :id ";
+        $query = self::execute($sql, ['id' => $this->get_owner()]);
+        $full_name = $query->fetch();
+        return $full_name['full_name'] ?? '';
+    }
+
+    public function get_winner(): string {
+        $sql = "SELECT u.pseudo as pseudo
+                FROM users u
+                    JOIN bids b ON u.id = b.owner
+                    JOIN v_items_status vis ON vis.id = b.item
+                WHERE vis.max_bid = b.amount
+                    AND vis.id = :id";
+        $query = self::execute($sql, ['id' => $this->get_id()]);
+        $pseudo = $query->fetch();
+        return $pseudo['pseudo'];
+    }
 
     public static function get_by_id(?int $id): Item|false {
-        $query = self::execute("SELECT * FROM items WHERE id = :id", array("id" => $id));
+        $query = self::execute("SELECT * FROM v_items_status WHERE id = :id", array("id" => $id));
         $row = $query->fetch();
-        return $row ? new Item(title: $row['title'], description: $row['description'], owner: $row['owner'],
-            created_at: $row['created_at'], duration_days: $row['duration_days'], id: $row['id'],
-            buy_now_price: $row['buy_now_price'], starting_bid: $row['starting_bid']) : false;
+        return $row ? new Item(
+            title: $row['title'],
+            description: $row['description'],
+            owner: $row['owner'],
+            created_at: $row['created_at'],
+            duration_days: $row['duration_days'],
+            owner_pseudo: null,
+            end_at: $row['end_at'],
+            time_left: null,
+            has_bids: $row['has_bids'],
+            is_direct_sale: $row['is_direct_sale'],
+            is_auction: $row['is_auction'],
+            id: $row['id'],
+            buy_now_price: $row['buy_now_price'],
+            starting_bid: $row['starting_bid'],
+            max_bid: null,
+            thumbnail: null,
+            bidder: null,
+            highest_bidder: null
+        ) : false;
+    }
+
+    public function add_pictures(string $upload_images, string $name): void {
+        $item = $this->get_id();
+        ItemPicture::add_pictures($upload_images, $name, $item);
     }
 
     public function get_item_pictures(): array {
-        $sql = "SELECT *
-                FROM item_pictures
-                WHERE item = :id 
-                ORDER BY priority ASC ";
-        $query = self::execute($sql, ['id' => $this->get_id()]);
-        $rows = $query->fetchAll();
-
-        $pictures = [];
-        foreach($rows as $picture)
-            $pictures[] = new ItemPicture(
-                item: $picture['item'],
-                priority: $picture['priority'],
-                picture_path: $picture['picture_path'],
-            );
-        return $pictures;
+        return ItemPicture::get_item_pictures($this->get_id());
     }
 
     public static function get_time_left_string(int $secs_left): string {
@@ -197,25 +228,27 @@ class Item extends Model {
                     AND  b.owner = :id
                 ORDER BY vis.end_at ASC ";
 
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_other_available_items(User $user): array {
         $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-                FROM v_items_status vis
-                    JOIN bids b ON b.item = vis.id
-                WHERE (vis.not_purchased_direct_sale
-                    OR (vis.is_auction AND vis.end_at > :now 
-                            AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
-                    AND vis.owner != :id
-                    AND vis.id NOT IN (SELECT item
-                                        FROM bids
-                                        WHERE owner = :id))
-                ORDER BY vis.end_at ASC ";
+            FROM v_items_status vis
+            WHERE vis.owner != :id
+              AND vis.id NOT IN (
+                    SELECT item
+                    FROM bids
+                    WHERE owner = :id
+              )
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+                 OR (vis.is_auction = 1 AND vis.end_at > :now
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+              )
+            ORDER BY vis.end_at ASC";
 
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
-
     public static function get_all_available_items_for_guest(): array {
         $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
                 FROM v_items_status vis
@@ -225,23 +258,23 @@ class Item extends Model {
                             AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached)))
                 ORDER BY vis.end_at ASC ";
 
-        return self::fetchItems($sql, null);
+        return self::fetch_items($sql, null);
     }
 
-    private static function fetchItems(string $sql, ?User $user): array {
+    private static function fetch_items(string $sql, ?User $user): array {
         $user_id = $user ? $user->get_id() : null;
         $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
         );
         $row = $query->fetchAll();
-        $other_items = [];
+        $items = [];
         foreach ($row as $item) {
-            $other_items[] = new Item(
+            $items[] = new Item(
                 title: $item['title'],
                 description: $item['description'],
                 owner: $item['owner'],
-                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 created_at: $item['created_at'],
                 duration_days: $item['duration_days'],
+                owner_pseudo: User::get_pseudo_by_owner_id($item['owner']),
                 end_at: $item['end_at'],
                 time_left: self::get_time_left_string($item['secs_left']),
                 has_bids: $item['has_bids'],
@@ -256,7 +289,7 @@ class Item extends Model {
                 highest_bidder: $user_id ? User::am_i_highest_bidder($user->get_id(), $item['id']) : null,
             );
         }
-        return $other_items;
+        return $items;
     }
 
     public static function get_open_item_with_seller(int $id): Item|false {
@@ -343,7 +376,7 @@ class Item extends Model {
                      AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_my_closed_unsold_items(User $user): array {
@@ -355,7 +388,7 @@ class Item extends Model {
                  OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
 
     public static function get_my_sold_items(User $user): array {
@@ -368,7 +401,195 @@ class Item extends Model {
                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
                   )
             ORDER BY vis.end_at DESC";
-        return self::fetchItems($sql, $user);
+        return self::fetch_items($sql, $user);
     }
+
+    public static function get_my_sold_items_total(User $user): float {
+        $sql = "SELECT SUM(vis.max_bid) as total
+            FROM v_items_status vis
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))) ";
+        $query = self::execute($sql, ['id' => $user->get_id(), 'now' => AppTime::get_current_datetime()]);
+        $res = $query->fetch();
+        return $res['total'];
+    }
+
+    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
+        $errors = [];
+
+        $title_min = Configuration::get('TITLE_MIN_LENGTH');
+        $title_max = Configuration::get('TITLE_MAX_LENGTH');
+        $desc_min = Configuration::get('DESCR_MIN_LENGTH');
+
+        if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
+            $errors['title'] = $title_error;
+        }
+        if ($desc_error = Functions::description_length($description, $desc_min)) {
+            $errors['description'] = $desc_error;
+        }
+        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
+            $errors['price'] = $price_error;
+        }
+        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
+            $errors['auction'] = $auction_error;
+        }
+        return $errors;
+    }
+
+    public static function insert_into_db(int $user_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): int {
+        $sql = "INSERT INTO items (title, description, duration_days, starting_bid, buy_now_price, owner, created_at) 
+                        VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :user_id, NOW())" ;
+        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration, 'starting_bid' => $starting_bid,
+            'buy_now_price' => $instant_or_direct, 'user_id' => $user_id]);
+        return self::lastInsertId();
+    }
+
+    public static function update_into_db(int $item_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): void {
+        $sql = "UPDATE items
+                SET title = :title,
+                    description = :description,
+                    duration_days = :duration_days,
+                    starting_bid = :starting_bid,
+                    buy_now_price = :buy_now_price 
+                WHERE id = :id ";
+        self::execute($sql, ['id' => $item_id, 'title' => $title, 'description' => $description, 'duration_days' => $duration, 'starting_bid' => $starting_bid, 'buy_now_price' => $instant_or_direct]);
+    }
+
+    public function delete_item_with_dependencies(): void {
+        $this->delete_bids_dependencies();
+        $this->delete_pictures_dependencies();
+        $this->delete_item();
+    }
+
+    private function delete_bids_dependencies(): void {
+        Bid::delete_all_bids_for($this->get_id());
+    }
+
+    private function delete_pictures_dependencies(): void {
+        ItemPicture::delete_all_pictures_for($this->get_id());
+    }
+
+    private function delete_item(): void {
+        $sql = "DELETE FROM items WHERE id = :item_id ";
+        self::execute($sql, ['item_id' => $this->get_id()]);
+    }
+
+    public static function get_purchases(User $user): array {
+        $sql = "SELECT DISTINCT vis.*, 0 as secs_left
+            FROM v_items_status vis
+            JOIN bids b ON b.item = vis.id
+            WHERE b.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.has_bids = 1 AND vis.not_purchased_direct_sale = 0)
+
+                    OR
+                    
+                    (vis.is_auction = 1
+                        AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM bids b2
+                            WHERE b2.item = vis.id
+                              AND (
+                                   b2.amount > b.amount
+                                   OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                              )
+                        )
+                    )
+                  )
+            ORDER BY vis.end_at DESC";
+
+        return self::fetch_items($sql, $user);
+    }
+
+    public static function get_purchase_stats(User $user): array {
+        $sql = "SELECT
+                COUNT(*) AS count_purchases,
+                COALESCE(SUM(w.amount), 0) AS total_spent,
+                COALESCE(AVG(w.amount), 0) AS avg_spent
+            FROM (
+                -- gagnants enchères clôturées
+                SELECT vis.owner AS seller_id, b.amount
+                FROM v_items_status vis
+                JOIN bids b ON b.item = vis.id
+                WHERE b.owner = :id
+                  AND vis.is_auction = 1
+                  AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM bids b2
+                      WHERE b2.item = vis.id
+                        AND (
+                             b2.amount > b.amount
+                             OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                        )
+                  )
+
+                UNION ALL
+
+                -- ventes directes achetées
+                SELECT vis.owner AS seller_id, b.amount
+                FROM v_items_status vis
+                JOIN bids b ON b.item = vis.id
+                WHERE b.owner = :id
+                  AND vis.is_direct_sale = 1
+                  AND vis.not_purchased_direct_sale = 0
+            ) w";
+        $q = self::execute($sql, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]);
+        $row = $q->fetch();
+
+        // top seller
+        $sqlTop = "SELECT w.seller_id, COUNT(*) AS cnt
+               FROM (
+                    SELECT vis.owner AS seller_id
+                    FROM v_items_status vis
+                    JOIN bids b ON b.item = vis.id
+                    WHERE b.owner = :id
+                      AND vis.is_auction = 1
+                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1)
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM bids b2
+                          WHERE b2.item = vis.id
+                            AND (
+                                 b2.amount > b.amount
+                                 OR (b2.amount = b.amount AND b2.created_at < b.created_at)
+                            )
+                      )
+
+                    UNION ALL
+
+                    SELECT vis.owner AS seller_id
+                    FROM v_items_status vis
+                    JOIN bids b ON b.item = vis.id
+                    WHERE b.owner = :id
+                      AND vis.is_direct_sale = 1
+                      AND vis.not_purchased_direct_sale = 0
+               ) w
+               GROUP BY w.seller_id
+               ORDER BY cnt DESC, w.seller_id ASC
+               LIMIT 1";
+        $qt = self::execute($sqlTop, ["id" => $user->get_id(), "now" => AppTime::get_current_datetime()]);
+        $top = $qt->fetch();
+
+        $topPseudo = null;
+        $topCount = 0;
+        if ($top) {
+            $topPseudo = User::get_pseudo_by_owner_id((int)$top["seller_id"]);
+            $topCount = (int)$top["cnt"];
+        }
+
+        return [
+            "count_purchases" => (int)($row["count_purchases"] ?? 0),
+            "total_spent" => (string)($row["total_spent"] ?? "0"),
+            "avg_spent" => (string)($row["avg_spent"] ?? "0"),
+            "top_seller_pseudo" => $topPseudo,
+            "top_seller_count" => $topCount
+        ];
+    }
+
 
 }
