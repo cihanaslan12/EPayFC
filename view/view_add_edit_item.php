@@ -23,6 +23,7 @@
                     <label for="title">Item Title *</label>
                     <input type="text" name="title" id="title" value="<?= $title ?>" class="form-control" placeholder="Ex: Iphone 13 Pro Max 256GB">
                     <p class="text-danger"><?php if (isset($errors['title'])) echo "<li>".$errors['title']."</li>" ?></p>
+                    <p class="text-danger"><?php if (isset($errors['unicity'])) echo "<li>".$errors['unicity']."</li>" ?></p>
                     <label for="description">Description</label>
                     <textarea name="description" id="description" class="form-control" placeholder="Describe your item in detail..."><?= $description ?></textarea>
                     <p class="text-danger"><?php if (isset($errors['description'])) echo "<li>".$errors['description']."</li>" ?></p>
