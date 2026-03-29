@@ -327,7 +327,7 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($user_id, $title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;
@@ -356,6 +356,7 @@ class ControllerItem extends Controller {
 
     public function edit(): void {
         $user = $this->get_user_or_false();
+        $user_id = $user->get_id();
         $item_id = $_GET['param1'];
         $item = Item::get_by_id($item_id);
 
@@ -388,7 +389,7 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($user_id, $title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;

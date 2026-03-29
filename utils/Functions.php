@@ -24,6 +24,8 @@ class Functions {
     public static function auction_or_direct(float $starting_bid, float $instant_purchase_price, float $direct_sale_price): string {
         if(($starting_bid > 0 || $instant_purchase_price > 0) && $direct_sale_price > 0) {
             return 'Cannot create both auction and direct sale.';
+        } else if (empty($starting_bid) && empty($direct_sale_price)) {
+            return 'Starting Bid or Sale Price must be provided';
         }
         return '';
     }

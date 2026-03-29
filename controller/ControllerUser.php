@@ -165,12 +165,12 @@ class ControllerUser extends Controller {
             }
             if ($new_password === '' || $confirm_new_password === '') {
                 $errors['confirm_new_password'] = "Your new password is empty! ";
-            } else if ($user->valid_password($new_password)) {
+            } else if (!$user->valid_password($new_password)) {
                 $errors['confirm_new_password'] = "Password must be 8-16 characters with uppercase, number, and punctuation";
             } else if ($new_password !== $confirm_new_password) {
                 $errors['confirm_new_password'] = "You have to enter twice the same password. ";
             }
-            if (!$errors) {
+            if (empty($errors)) {
                 $user->update_password(password_hash($new_password, PASSWORD_BCRYPT));
                 $this->redirect("user", "profile");
             }

@@ -417,7 +417,21 @@ class Item extends Model
         return $res['total'];
     }
 
-    public static function validations(string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price): array {
+    private static function unique_title(string $title, int $owner, ?int $item_id = null): string {
+        $sql = "SELECT * FROM items WHERE title = :title AND owner = :owner_id";
+        $params = ['title' => $title, 'owner_id' => $owner];
+        if ($item_id !== null) {
+            $sql .= " AND id != :item_id";
+            $params['item_id'] = $item_id;
+        }
+        $query = self::execute($sql, $params);
+        $res = $query->fetch();
+        if ($res)
+            return 'This title is already used for you';
+        return '';
+    }
+
+    public static function validations(int $user_id, string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
         $errors = [];
 
         $title_min = Configuration::get('TITLE_MIN_LENGTH');
@@ -426,6 +440,9 @@ class Item extends Model
 
         if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
             $errors['title'] = $title_error;
+        }
+        if ($unicity_error = self::unique_title($title, $user_id, $item_id)) {
+            $errors['unicity'] = $unicity_error;
         }
         if ($desc_error = Functions::description_length($description, $desc_min)) {
             $errors['description'] = $desc_error;
