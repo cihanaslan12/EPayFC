@@ -42,7 +42,8 @@ class ControllerItem extends Controller {
     ): array {
         $pictures = $item->get_pictures();
 
-        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
+        $param2 = $_GET["param2"] ?? null;
+        $selectedPriority = (is_numeric($param2)) ? intval($param2) : 0;
 
         $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : null;
         if ($selectedPriority > 0) {
@@ -71,9 +72,12 @@ class ControllerItem extends Controller {
             }
         }
 
+        $from = $this->get_open_from();
+
         $data = [
             'show_back' => true,
-            'back_url' => 'item/browse',
+            'back_url' => $this->get_back_url_from_source($from),
+            'from' => $from,
             'page_title' => "Item open",
             'show_save' => false,
 
@@ -101,6 +105,15 @@ class ControllerItem extends Controller {
         }
 
         return $data;
+    }
+
+    private function get_back_url_from_source(string $from): string {
+        return match ($from) {
+            'my_items' => 'item/my_items',
+            'sales' => 'item/sales',
+            'purchases' => 'item/purchases',
+            default => 'item/browse',
+        };
     }
 
 
@@ -131,7 +144,8 @@ class ControllerItem extends Controller {
         $errors = [];
 
         if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from);
             return;
         }
 
@@ -167,7 +181,8 @@ class ControllerItem extends Controller {
         $errors = [];
 
         if (Bid::buy_now($user, $item, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from);
             return;
         }
 
@@ -453,6 +468,43 @@ class ControllerItem extends Controller {
             "show_save" => false,
             "stats" => $stats
         ]);
+    }
+
+    private function get_open_from(): string {
+        $allowed = ['browse', 'my_items', 'sales', 'purchases'];
+
+        $param2 = $_GET['param2'] ?? null;
+        $param3 = $_GET['param3'] ?? null;
+        $postFrom = $_POST['from'] ?? null;
+
+        if (is_string($param3) && in_array($param3, $allowed, true)) {
+            return $param3;
+        }
+
+        if (is_string($param2) && in_array($param2, $allowed, true)) {
+            return $param2;
+        }
+
+        if (is_string($postFrom) && in_array($postFrom, $allowed, true)) {
+            return $postFrom;
+        }
+
+        return 'browse';
+    }
+
+    private function redirect_to_open(int $itemId, string $from, ?int $priority = null): void {
+        $web_root = Configuration::get("web_root");
+
+        $url = $web_root . "item/open/" . $itemId;
+
+        if ($priority !== null) {
+            $url .= "/" . $priority . "/" . $from;
+        } else {
+            $url .= "/" . $from;
+        }
+
+        header("Location: $url", true, 303);
+        die();
     }
 
 }

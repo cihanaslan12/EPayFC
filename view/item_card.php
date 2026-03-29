@@ -1,4 +1,4 @@
-<a href="item/open/<?=$item->get_id() ?>" class="text-decoration-none">
+<a href="item/open/<?= $item->get_id() ?>/<?= urlencode($open_from ?? 'browse') ?>" class="text-decoration-none">
     <div class="card">
         <div class="position-relative">
             <?php if(!empty($item->get_thumbnail()) && ($item->get_thumbnail() !== "")): ?>

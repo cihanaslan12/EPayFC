@@ -71,7 +71,7 @@
                                 $thumb = $pic->get_thumbnail_path();
                                 $prio  = $pic->get_priority();
                                 ?>
-                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
+                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>/<?= urlencode($from ?? 'browse') ?>"
                                    class="d-inline-block border rounded p-1 bg-light">
                                     <img src="<?= $thumb ?>"
                                          alt="thumbnail <?= $prio ?>"
@@ -181,6 +181,7 @@
                                     <div class="text-muted small"><em>Login required to place a bid.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <input
                                                 type="text"
                                                 name="amount"
@@ -212,6 +213,7 @@
                                     <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <?php if (isset($errors["buy_now"])): ?>
                                             <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
                                         <?php endif; ?>

@@ -21,6 +21,7 @@
                     <h2 class="pt-5">Items I'm Participating In</h2>
                         <div class="row row-cols-md-4 g-4">
                             <?php foreach ($my_participations as $item): ?>
+                                <?php $open_from = 'browse'; ?>
                                 <?php require 'item_card.php'; ?>
                             <?php endforeach;?>
                         </div>
@@ -29,6 +30,7 @@
                     <h2 class="pt-3">Other Available Items</h2>
                         <div class="row row-cols-md-4 g-4 pb-5">
                             <?php foreach ($others_available as $item): ?>
+                                <?php $open_from = 'browse'; ?>
                                 <?php require 'item_card.php'; ?>
                             <?php endforeach;?>
                         </div>
@@ -38,6 +40,7 @@
                     <h2 class="pt-5">Available Items</h2>
                         <div class="row row-cols-md-4 g-4">
                             <?php foreach ($all_available_items as $item): ?>
+                                <?php $open_from = 'browse'; ?>
                                 <?php require 'item_card.php'; ?>
                             <?php endforeach;?>
                         </div>

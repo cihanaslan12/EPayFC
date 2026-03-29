@@ -20,6 +20,7 @@
         <h2 class="pt-5">Active Items</h2>
         <div class="row row-cols-md-4 g-4">
             <?php foreach ($active_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
@@ -29,6 +30,7 @@
         <h2 class="pt-3">Closed Unsold Items</h2>
         <div class="row row-cols-md-4 g-4">
             <?php foreach ($closed_unsold_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
@@ -38,6 +40,7 @@
         <h2 class="pt-3">Sold Items</h2>
         <div class="row row-cols-md-4 g-4 pb-5">
             <?php foreach ($sold_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
