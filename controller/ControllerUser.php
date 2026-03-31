@@ -252,7 +252,7 @@ class ControllerUser extends Controller {
                 $errors["pseudo"] = "This pseudo is already used.";
             }
 
-            if (!isset($errors["full_name"]) && User::exists_full_name($full_name)) {
+            if (empty($errors["full_name"]) && !User::is_full_name_unique($full_name, $user->get_id())) {
                 $errors["full_name"] = "This full name is already used.";
             }
 

@@ -240,12 +240,10 @@ class User extends Model {
         ]);
     }
 
-    public static function exists_full_name(string $full_name): bool {
-        $q = self::execute(
-            "SELECT COUNT(*) FROM users WHERE full_name = :fn",
-            ["fn" => $full_name]
-        );
-        return ((int)$q->fetchColumn()) > 0;
+    public static function is_full_name_unique(string $full_name, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE full_name = :full_name AND id <> :id";
+        $q = self::execute($sql, ["full_name" => $full_name, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
     }
 
     public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
