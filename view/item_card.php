@@ -1,12 +1,16 @@
 <a href="item/open/<?= $item->get_id() ?>/<?= urlencode($open_from ?? 'browse') ?>" class="text-decoration-none">
     <div class="card">
         <div class="position-relative">
-            <?php if(!empty($item->get_thumbnail()) && ($item->get_thumbnail() !== "")): ?>
-                <img src="<?= $item->get_thumbnail() ?>" alt="item_thumbnail" class="card-img-top w-100">
-            <?php else: ?>
-                <svg aria-label="Placeholder: Image cap" class="bd-placeholder-img card-img-top" height="140" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-                    <title>Placeholder</title><rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">Vignette image</text></svg>
-            <?php endif; ?>
+            <?php
+            $thumbnail = $item->get_thumbnail();
+            $displayThumbnail = (!empty($thumbnail) && $thumbnail !== "")
+                    ? $thumbnail
+                    : 'img//item_placeholder/item_placeholder.jpg';
+            ?>
+
+            <img src="<?= $displayThumbnail ?>"
+                 alt="item_thumbnail"
+                 class="card-img-top w-100">
 
             <?php if ($item->get_highest_bidder()): ?>
                 <span class="position-absolute top-O start-0 m-2 badge rounded-pill text-bg-success text-white">
