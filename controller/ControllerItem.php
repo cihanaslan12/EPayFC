@@ -45,7 +45,8 @@ class ControllerItem extends Controller {
         $param2 = $_GET["param2"] ?? null;
         $selectedPriority = (is_numeric($param2)) ? intval($param2) : 0;
 
-        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : null;
+        $placeholderPicture = 'img/item_placeholder/item_placeholder.jpg';
+        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : $placeholderPicture;
         if ($selectedPriority > 0) {
             foreach ($pictures as $pic) {
                 if ($pic->get_priority() === $selectedPriority) {

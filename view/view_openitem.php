@@ -28,37 +28,32 @@
         <!-- Photos -->
         <div class="col-lg-8">
             <div class="card">
+                <img src="<?= $mainPicture ?>"
+                     alt="Main picture"
+                     class="img-fluid rounded border mb-3"
+                     style="width:100%;max-height:480px;object-fit:contain;">
 
-                    <?php if ($mainPicture): ?>
-                        <img src="<?= $mainPicture ?>"
-                             alt="Main picture"
-                             class="img-fluid rounded border mb-3"
-                             style="width:100%;max-height:480px;object-fit:contain;">
-
-                        <div class="bg-dark text-white p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div>
-                                    <div class="fw-bold"><?= $item->get_title() ?></div>
-                                    <div class="small text-white-50">
-                                        <?= $item->get_description() ?>
-                                    </div>
-                                </div>
-
-                                <?php if ($item->get_is_auction() === 1): ?>
-                                    <span class="badge text-bg-secondary">Auction</span>
-                                <?php else: ?>
-                                    <span class="badge text-bg-secondary">Direct sale</span>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="small mt-2">
-                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
-                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                <div class="bg-dark text-white p-3 rounded">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold"><?= $item->get_title() ?></div>
+                            <div class="small text-white-50">
+                                <?= $item->get_description() ?>
                             </div>
                         </div>
-                    <?php else: ?>
-                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
-                    <?php endif; ?>
+
+                        <?php if ($item->get_is_auction() === 1): ?>
+                            <span class="badge text-bg-secondary">Auction</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-secondary">Direct sale</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="small mt-2">
+                        <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                        <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                    </div>
+                </div>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
