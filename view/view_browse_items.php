@@ -16,6 +16,24 @@
         </header>
 
         <main class="p-3 m-3">
+            <div id="item-search-config"
+                 data-search-url="item/search_browse"
+                 data-open-from="browse"></div>
+
+            <div id="item-search-box" class="d-none pt-5 search-box-wrapper">
+                <input
+                        type="text"
+                        id="item-search-input"
+                        class="form-control"
+                        placeholder="Search items...">
+            </div>
+
+            <div id="item-search-empty" class="d-none no-item-found mt-4">
+                No item found.
+            </div>
+
+            <div id="item-search-sections">
+
             <?php if(isset($user)): ?>
                 <?php if(isset($my_participations) && count($my_participations) > 0): ?>
                     <h2 class="pt-5">Items I'm Participating In</h2>
@@ -46,10 +64,13 @@
                         </div>
                 <?php endif; ?>
             <?php endif; ?>
+            </div>
         </main>
 
         <footer>
             <?php require 'footer_menu.php'; ?>
         </footer>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="<?= Configuration::get("web_root") ?>js/item_search.js"></script>
     </body>
 </html>

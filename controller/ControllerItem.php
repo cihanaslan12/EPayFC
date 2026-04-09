@@ -242,6 +242,92 @@ class ControllerItem extends Controller {
         ]);
     }
 
+    private function json_response(array $data, int $status = 200): void {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    private function item_to_search_array(Item $item): array {
+        return [
+            'id' => $item->get_id(),
+            'title' => $item->get_title(),
+            'owner_pseudo' => $item->get_owner_pseudo(),
+            'time_left' => $item->get_time_left(),
+            'buy_now_price' => $item->get_buy_now_price(),
+            'starting_bid' => $item->get_starting_bid(),
+            'has_bids' => (int)($item->get_has_bids() ?? 0),
+            'max_bid' => $item->get_max_bid(),
+            'is_auction' => (int)($item->get_is_auction() ?? 0),
+            'thumbnail' => $item->get_thumbnail() ?: 'img/item_placeholder/item_placeholder.jpg',
+            'bidder' => (bool)($item->get_bidder() ?? false),
+            'highest_bidder' => (bool)($item->get_highest_bidder() ?? false),
+            'picture_count' => count($item->get_item_pictures())
+        ];
+    }
+
+    private function items_to_search_array(array $items): array {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = $this->item_to_search_array($item);
+        }
+        return $result;
+    }
+
+    public function search_browse(): void {
+        $query = trim($_POST['query'] ?? '');
+        $user = $this->get_user_or_false();
+
+        if ($user) {
+            $sections = [
+                [
+                    'title' => "Items I'm Participating In",
+                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query))
+                ],
+                [
+                    'title' => "Other Available Items",
+                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query))
+                ]
+            ];
+        } else {
+            $sections = [
+                [
+                    'title' => "Available Items",
+                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query))
+                ]
+            ];
+        }
+
+        $this->json_response(['sections' => $sections]);
+    }
+
+    public function search_my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $query = trim($_POST['query'] ?? '');
+
+        $sections = [
+            [
+                'title' => 'Active Items',
+                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query))
+            ],
+            [
+                'title' => 'Closed Unsold Items',
+                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query))
+            ],
+            [
+                'title' => 'Sold Items',
+                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query))
+            ]
+        ];
+
+        $this->json_response(['sections' => $sections]);
+    }
+
 
     public function manage_images(): void {
         $user = $this->get_user_or_redirect();

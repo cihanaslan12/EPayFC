@@ -261,11 +261,138 @@ class Item extends Model
         return self::fetch_items($sql, null);
     }
 
-    private static function fetch_items(string $sql, ?User $user): array {
+    private static function get_search_clause(string $itemAlias = 'vis', string $userAlias = 'u'): string {
+        return "(
+        $itemAlias.title LIKE :search_title
+        OR COALESCE($itemAlias.description, '') LIKE :search_description
+        OR $userAlias.pseudo LIKE :search_pseudo
+        OR $userAlias.full_name LIKE :search_full_name
+    )";
+    }
+
+    private static function get_search_params(string $query): array {
+        $pattern = '%' . $query . '%';
+
+        return [
+            'search_title' => $pattern,
+            'search_description' => $pattern,
+            'search_pseudo' => $pattern,
+            'search_full_name' => $pattern
+        ];
+    }
+
+    public static function search_participating_items(User $user, string $query): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            JOIN bids b ON b.item = vis.id
+            JOIN users u ON u.id = vis.owner
+            WHERE b.owner = :id
+              AND (
+                    vis.not_purchased_direct_sale = 1
+                 OR (vis.is_auction = 1 AND vis.end_at > :now
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, $user, self::get_search_params($query));
+    }
+
+    public static function search_other_available_items(User $user, string $query): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.owner != :id
+              AND vis.id NOT IN (
+                    SELECT item
+                    FROM bids
+                    WHERE owner = :id
+              )
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+                 OR (vis.is_auction = 1 AND vis.end_at > :now
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, $user, self::get_search_params($query));
+    }
+
+    public static function search_available_items_for_guest(string $query): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.end_at > :now
+              AND (
+                    vis.not_purchased_direct_sale = 1
+                 OR (vis.is_auction = 1
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, null, self::get_search_params($query));
+    }
+
+    public static function search_my_active_items(User $user, string $query): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+                 OR (vis.is_auction = 1 AND vis.end_at > :now
+                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, $user, self::get_search_params($query));
+    }
+
+    public static function search_my_closed_unsold_items(User $user, string $query): array {
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
+                 OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, $user, self::get_search_params($query));
+    }
+
+    public static function search_my_sold_items(User $user, string $query): array {
+        $sql = "SELECT DISTINCT vis.*, 0 as secs_left
+            FROM v_items_status vis
+            JOIN users u ON u.id = vis.owner
+            WHERE vis.owner = :id
+              AND (
+                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+                 OR (vis.is_auction = 1 AND vis.has_bids = 1
+                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
+              )
+              AND " . self::get_search_clause('vis', 'u') . "
+            ORDER BY vis.end_at ASC";
+
+        return self::fetch_items($sql, $user, self::get_search_params($query));
+    }
+
+    private static function fetch_items(string $sql, ?User $user, array $extra_params = []): array {
         $user_id = $user ? $user->get_id() : null;
-        $query = self::execute($sql, ["id" => $user_id, "now" => AppTime::get_current_datetime()]
+
+        $params = array_merge(
+            ["id" => $user_id, "now" => AppTime::get_current_datetime()],
+            $extra_params
         );
+
+        $query = self::execute($sql, $params);
         $row = $query->fetchAll();
+
         $items = [];
         foreach ($row as $item) {
             $items[] = new Item(
