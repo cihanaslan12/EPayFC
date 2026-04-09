@@ -246,6 +246,15 @@ class User extends Model {
         return (int)$q->fetchColumn() === 0;
     }
 
+    public static function exists_full_name(string $full_name): bool
+    {
+        $q = self::execute(
+            "SELECT COUNT(*) FROM users WHERE full_name = :fn",
+            ["fn" => $full_name]
+        );
+        return ((int)$q->fetchColumn()) > 0;
+    }
+
     public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
         if (!Uploader::check_extension($original_name)) {
             $errors["picture"] = "Unsupported image format: JPG, PNG, GIF, WebP.";
