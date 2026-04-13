@@ -42,9 +42,11 @@ class ControllerItem extends Controller {
     ): array {
         $pictures = $item->get_pictures();
 
-        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
+        $param2 = $_GET["param2"] ?? null;
+        $selectedPriority = (is_numeric($param2)) ? intval($param2) : 0;
 
-        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : null;
+        $placeholderPicture = 'img/item_placeholder/item_placeholder.jpg';
+        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : $placeholderPicture;
         if ($selectedPriority > 0) {
             foreach ($pictures as $pic) {
                 if ($pic->get_priority() === $selectedPriority) {
@@ -71,9 +73,12 @@ class ControllerItem extends Controller {
             }
         }
 
+        $from = $this->get_open_from();
+
         $data = [
             'show_back' => true,
-            'back_url' => 'item/browse',
+            'back_url' => $this->get_back_url_from_source($from),
+            'from' => $from,
             'page_title' => "Item open",
             'show_save' => false,
 
@@ -101,6 +106,15 @@ class ControllerItem extends Controller {
         }
 
         return $data;
+    }
+
+    private function get_back_url_from_source(string $from): string {
+        return match ($from) {
+            'my_items' => 'item/my_items',
+            'sales' => 'item/sales',
+            'purchases' => 'item/purchases',
+            default => 'item/browse',
+        };
     }
 
 
@@ -131,7 +145,8 @@ class ControllerItem extends Controller {
         $errors = [];
 
         if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from);
             return;
         }
 
@@ -167,7 +182,8 @@ class ControllerItem extends Controller {
         $errors = [];
 
         if (Bid::buy_now($user, $item, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from);
             return;
         }
 
@@ -224,6 +240,92 @@ class ControllerItem extends Controller {
             "page_title" => "My Items",
             "show_save" => false
         ]);
+    }
+
+    private function json_response(array $data, int $status = 200): void {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    private function item_to_search_array(Item $item): array {
+        return [
+            'id' => $item->get_id(),
+            'title' => $item->get_title(),
+            'owner_pseudo' => $item->get_owner_pseudo(),
+            'time_left' => $item->get_time_left(),
+            'buy_now_price' => $item->get_buy_now_price(),
+            'starting_bid' => $item->get_starting_bid(),
+            'has_bids' => (int)($item->get_has_bids() ?? 0),
+            'max_bid' => $item->get_max_bid(),
+            'is_auction' => (int)($item->get_is_auction() ?? 0),
+            'thumbnail' => $item->get_thumbnail() ?: 'img/item_placeholder/item_placeholder.jpg',
+            'bidder' => (bool)($item->get_bidder() ?? false),
+            'highest_bidder' => (bool)($item->get_highest_bidder() ?? false),
+            'picture_count' => count($item->get_item_pictures())
+        ];
+    }
+
+    private function items_to_search_array(array $items): array {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = $this->item_to_search_array($item);
+        }
+        return $result;
+    }
+
+    public function search_browse(): void {
+        $query = trim($_POST['query'] ?? '');
+        $user = $this->get_user_or_false();
+
+        if ($user) {
+            $sections = [
+                [
+                    'title' => "Items I'm Participating In",
+                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query))
+                ],
+                [
+                    'title' => "Other Available Items",
+                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query))
+                ]
+            ];
+        } else {
+            $sections = [
+                [
+                    'title' => "Available Items",
+                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query))
+                ]
+            ];
+        }
+
+        $this->json_response(['sections' => $sections]);
+    }
+
+    public function search_my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $query = trim($_POST['query'] ?? '');
+
+        $sections = [
+            [
+                'title' => 'Active Items',
+                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query))
+            ],
+            [
+                'title' => 'Closed Unsold Items',
+                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query))
+            ],
+            [
+                'title' => 'Sold Items',
+                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query))
+            ]
+        ];
+
+        $this->json_response(['sections' => $sections]);
     }
 
 
@@ -454,6 +556,43 @@ class ControllerItem extends Controller {
             "show_save" => false,
             "stats" => $stats
         ]);
+    }
+
+    private function get_open_from(): string {
+        $allowed = ['browse', 'my_items', 'sales', 'purchases'];
+
+        $param2 = $_GET['param2'] ?? null;
+        $param3 = $_GET['param3'] ?? null;
+        $postFrom = $_POST['from'] ?? null;
+
+        if (is_string($param3) && in_array($param3, $allowed, true)) {
+            return $param3;
+        }
+
+        if (is_string($param2) && in_array($param2, $allowed, true)) {
+            return $param2;
+        }
+
+        if (is_string($postFrom) && in_array($postFrom, $allowed, true)) {
+            return $postFrom;
+        }
+
+        return 'browse';
+    }
+
+    private function redirect_to_open(int $itemId, string $from, ?int $priority = null): void {
+        $web_root = Configuration::get("web_root");
+
+        $url = $web_root . "item/open/" . $itemId;
+
+        if ($priority !== null) {
+            $url .= "/" . $priority . "/" . $from;
+        } else {
+            $url .= "/" . $from;
+        }
+
+        header("Location: $url", true, 303);
+        die();
     }
 
 }

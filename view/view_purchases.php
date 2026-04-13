@@ -54,6 +54,7 @@
     <?php if (!empty($purchases)): ?>
         <div class="row row-cols-md-4 g-4 pb-5">
             <?php foreach ($purchases as $item): ?>
+                <?php $open_from = 'purchases'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach; ?>
         </div>

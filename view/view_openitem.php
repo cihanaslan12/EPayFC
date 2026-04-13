@@ -28,37 +28,32 @@
         <!-- Photos -->
         <div class="col-lg-8">
             <div class="card">
+                <img src="<?= $mainPicture ?>"
+                     alt="Main picture"
+                     class="img-fluid rounded border mb-3"
+                     style="width:100%;max-height:480px;object-fit:contain;">
 
-                    <?php if ($mainPicture): ?>
-                        <img src="<?= $mainPicture ?>"
-                             alt="Main picture"
-                             class="img-fluid rounded border mb-3"
-                             style="width:100%;max-height:480px;object-fit:contain;">
-
-                        <div class="bg-dark text-white p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div>
-                                    <div class="fw-bold"><?= $item->get_title() ?></div>
-                                    <div class="small text-white-50">
-                                        <?= $item->get_description() ?>
-                                    </div>
-                                </div>
-
-                                <?php if ($item->get_is_auction() === 1): ?>
-                                    <span class="badge text-bg-secondary">Auction</span>
-                                <?php else: ?>
-                                    <span class="badge text-bg-secondary">Direct sale</span>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="small mt-2">
-                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
-                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                <div class="bg-dark text-white p-3 rounded">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold"><?= $item->get_title() ?></div>
+                            <div class="small text-white-50">
+                                <?= $item->get_description() ?>
                             </div>
                         </div>
-                    <?php else: ?>
-                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
-                    <?php endif; ?>
+
+                        <?php if ($item->get_is_auction() === 1): ?>
+                            <span class="badge text-bg-secondary">Auction</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-secondary">Direct sale</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="small mt-2">
+                        <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                        <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                    </div>
+                </div>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
@@ -71,7 +66,7 @@
                                 $thumb = $pic->get_thumbnail_path();
                                 $prio  = $pic->get_priority();
                                 ?>
-                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
+                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>/<?= urlencode($from ?? 'browse') ?>"
                                    class="d-inline-block border rounded p-1 bg-light">
                                     <img src="<?= $thumb ?>"
                                          alt="thumbnail <?= $prio ?>"
@@ -181,6 +176,7 @@
                                     <div class="text-muted small"><em>Login required to place a bid.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <input
                                                 type="text"
                                                 name="amount"
@@ -212,6 +208,7 @@
                                     <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <?php if (isset($errors["buy_now"])): ?>
                                             <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
                                         <?php endif; ?>

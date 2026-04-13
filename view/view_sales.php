@@ -50,6 +50,7 @@
             <div class="row row-cols-md-4 g-4">
                 <?php foreach ($sales as $item): ?>
                     <div class="card-item">
+                        <?php $open_from = 'sales'; ?>
                         <?php require 'item_card.php'; ?>
                         <div id="item-infos">
                             <p class="text-secondary"><i class="bi bi-currency-dollar"></i> Final price € <?= $item->get_max_bid() ?></p>
