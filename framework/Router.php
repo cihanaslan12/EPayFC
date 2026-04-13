@@ -39,7 +39,7 @@ class Router {
         $controller_class_name = 'Controller' . implode('', $parts);
 
         $filename = "controller/$controller_class_name.php";
-        
+
         if (file_exists($filename)) {
             require_once "controller/$controller_class_name.php";
             if (class_exists($controller_class_name)) {
@@ -74,12 +74,28 @@ class Router {
             $host = $_SERVER['HTTP_HOST'];
             $web_root = Configuration::get("web_root");
             $baseUrl = $protocol . '://' . $host . $web_root;
-            $enabled_paths = trim(Configuration::get("enabled_paths", false));
-            if ($enabled_paths) {
-                $enabled_paths = preg_split("/[\s;:]+/", $enabled_paths);
+            $enabled_paths_config = Configuration::get("enabled_paths", false);
+
+            $paths_array = [];
+            if ($enabled_paths_config) {
+                if (is_array($enabled_paths_config)) {
+                    $paths_array = $enabled_paths_config;
+                } else {
+                    $enabled_paths = trim($enabled_paths_config);
+                    if ($enabled_paths) {
+                        $paths_array = preg_split("/[\s;:]+/", $enabled_paths);
+                    }
+                }
+            }
+
+            if (!empty($paths_array)) {
                 $enabled_paths = implode(" ", array_map(function ($p) use ($baseUrl) {
-                    return "{$baseUrl}{$p}";
-                }, $enabled_paths));
+                    $path = trim($p);
+                    if (preg_match('/^https?:\/\//', $path)) {
+                        return $path;
+                    }
+                    return "{$baseUrl}{$path}";
+                }, $paths_array));
             } else {
                 $enabled_paths = "'none'";
             }
