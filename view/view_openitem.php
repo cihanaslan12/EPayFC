@@ -28,32 +28,49 @@
         <!-- Photos -->
         <div class="col-lg-8">
             <div class="card">
-                <img src="<?= $mainPicture ?>"
-                     alt="Main picture"
-                     class="img-fluid rounded border mb-3"
-                     style="width:100%;max-height:480px;object-fit:contain;">
+                <div id="carousel" class="carousel slide">
+                    <div class="carousel-inner">
+                        <?php foreach($pictures as $pic): ?>
+                            <?php $isMain = ($pic->get_picture_path() === $mainPicture); ?>
+                                <div class="carousel-item <?= $isMain ? 'active' : ''?>">
+                                    <img src="<?= $pic->get_picture_path() ?>" class="d-block w-100" alt="Main picture">
+                                </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
 
-                <div class="bg-dark text-white p-3 rounded">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <div class="fw-bold"><?= $item->get_title() ?></div>
-                            <div class="small text-white-50">
-                                <?= $item->get_description() ?>
+                        <div class="bg-dark text-white p-3 rounded">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-bold"><?= $item->get_title() ?></div>
+                                    <div class="small text-white-50">
+                                        <?= $item->get_description() ?>
+                                    </div>
+                                </div>
+
+                                <?php if ($item->get_is_auction() === 1): ?>
+                                    <span class="badge text-bg-secondary">Auction</span>
+                                <?php else: ?>
+                                    <span class="badge text-bg-secondary">Direct sale</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="small mt-2">
+                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
                             </div>
                         </div>
-
-                        <?php if ($item->get_is_auction() === 1): ?>
-                            <span class="badge text-bg-secondary">Auction</span>
-                        <?php else: ?>
-                            <span class="badge text-bg-secondary">Direct sale</span>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="small mt-2">
-                        <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
-                        <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
-                    </div>
-                </div>
+                    <?php if (empty($pictures)): ?>
+                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
+                    <?php endif; ?>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
@@ -66,7 +83,8 @@
                                 $thumb = $pic->get_thumbnail_path();
                                 $prio  = $pic->get_priority();
                                 ?>
-                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>/<?= urlencode($from ?? 'browse') ?>"
+                                <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
+                                   data-bs-target="#carousel" data-bs-slide-to="<?= (int)$item->get_id() ?>/<?= $prio ?>"
                                    class="d-inline-block border rounded p-1 bg-light">
                                     <img src="<?= $thumb ?>"
                                          alt="thumbnail <?= $prio ?>"
@@ -278,5 +296,7 @@
 <footer>
     <?php require 'footer_menu.php'; ?>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
 </body>
 </html>
