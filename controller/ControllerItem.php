@@ -595,4 +595,18 @@ class ControllerItem extends Controller {
         die();
     }
 
+    public function get_pictures_service() {
+        $item_id = '';
+        if (isset($_GET['param1'])) {
+            $item_id = $_GET['param1'];
+        }
+        $item = Item::get_by_id($item_id);
+        $pictures = $item->get_item_pictures();
+        $pictures_paths = [];
+        foreach ($pictures as $picture) {
+            $pictures_paths[] = $picture->get_picture_path();
+        }
+        header('Content-Type: application/json');
+        echo json_encode($pictures_paths);
+    }
 }
