@@ -68,7 +68,7 @@
                                 <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
                             </div>
                         </div>
-                    <?php if (count($pictures) == 0): ?>
+                    <?php if (empty($pictures)): ?>
                         <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
                     <?php endif; ?>
             </div>
@@ -194,6 +194,7 @@
                                     <div class="text-muted small"><em>Login required to place a bid.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <input
                                                 type="text"
                                                 name="amount"
@@ -225,6 +226,7 @@
                                     <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
                                 <?php else: ?>
                                     <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <?php if (isset($errors["buy_now"])): ?>
                                             <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
                                         <?php endif; ?>
