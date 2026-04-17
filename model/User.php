@@ -313,9 +313,18 @@ class User extends Model {
         $row = $q->fetch();
 
         if ($row && !empty($row["picture_path"])) {
-            $path = $row["picture_path"];
-            if (file_exists($path)) {
-                @unlink($path);
+            $relativePath = $row["picture_path"];
+
+            $absolutePath = __DIR__ . "/../" . $relativePath;
+
+            $thumbnailPath = preg_replace('/\.jpg$/', '_thumbnail.jpg', $absolutePath);
+
+            if (file_exists($absolutePath)) {
+                unlink($absolutePath);
+            }
+
+            if ($thumbnailPath && file_exists($thumbnailPath)) {
+                unlink($thumbnailPath);
             }
         }
 
