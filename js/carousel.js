@@ -1,10 +1,8 @@
 $(async () => {
-    console.log("Démarrage du script AJAX..."); // Si tu ne vois pas ça en console, le JS ne tourne pas
     const itemId = $('#item-container').data('id');
 
     if (itemId) {
         const pictures = await $.getJSON(`item/get_pictures_service/${itemId}`);
-        console.log("Données reçues :", pictures); // Si tu ne vois pas ça, l'appel n'est pas fait
         rebuild_all(pictures);
     }
 });
