@@ -606,6 +606,7 @@ class Item extends Model
         $this->delete_bids_dependencies();
         $this->delete_pictures_dependencies();
         $this->delete_item();
+        $this->delete_uploads();
     }
 
     private function delete_bids_dependencies(): void {
@@ -619,6 +620,14 @@ class Item extends Model
     private function delete_item(): void {
         $sql = "DELETE FROM items WHERE id = :item_id ";
         self::execute($sql, ['item_id' => $this->get_id()]);
+    }
+
+    private function delete_uploads(): void {
+        $upload_dir = "uploads/items/" . $this->get_id();
+        if (is_dir($upload_dir)) {
+            array_map('unlink', glob("$upload_dir/*"));
+        }
+        rmdir($upload_dir);
     }
 
     public static function get_purchases(User $user): array {
