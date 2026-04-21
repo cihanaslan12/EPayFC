@@ -744,5 +744,12 @@ class Item extends Model
         ];
     }
 
+    public function get_finish_time(): string {
+        $sql = "SELECT * FROM bids WHERE item = :item ORDER BY created_at DESC LIMIT 1";
+        $query = self::execute($sql, ['item' => $this->get_id()]);
+        $created_at = $query->fetch();
+        return $created_at['created_at'];
+    }
+
 
 }
