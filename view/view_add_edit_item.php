@@ -16,7 +16,7 @@
     </header>
 
     <main>
-        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST">
+        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST" novalidate>
             <div class="card mb-2" id="basic-info">
                 <div class="card-header">Basic Information</div>
                 <div class="card-body">
@@ -29,6 +29,7 @@
                     <p class="text-danger"><?php if (isset($errors['description'])) echo "<li>".$errors['description']."</li>" ?></p>
                     <label for="duration">Sale Duration(days)*</label>
                     <input type="number" name="duration" id="duration" value="<?= $duration ?>" min="1" max="365" class="form-control">
+                    <p class="text-danger"><?php if (isset($errors['duration'])) echo "<li>".$errors['duration']."</li>" ?></p>
                 </div>
             </div>
             <div class="card" id="sale-type">

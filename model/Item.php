@@ -558,12 +558,15 @@ class Item extends Model
         return '';
     }
 
-    public static function validations(int $user_id, string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
+    public static function validations(int $user_id, string $title, string $description, mixed $duration, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
         $errors = [];
 
         $title_min = Configuration::get('TITLE_MIN_LENGTH');
         $title_max = Configuration::get('TITLE_MAX_LENGTH');
         $desc_min = Configuration::get('DESCR_MIN_LENGTH');
+
+        $duration_min = Configuration::get('DURATION_MIN');
+        $duration_max = Configuration::get('DURATION_MAX');
 
         if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
             $errors['title'] = $title_error;
@@ -573,6 +576,9 @@ class Item extends Model
         }
         if ($desc_error = Functions::description_length($description, $desc_min)) {
             $errors['description'] = $desc_error;
+        }
+        if ($duration_error = Functions::duration_error($duration, $duration_min, $duration_max)) {
+            $errors['duration'] = $duration_error;
         }
         if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
             $errors['price'] = $price_error;
