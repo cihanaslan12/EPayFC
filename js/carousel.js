@@ -1,11 +1,11 @@
+// récupération des images du carousel au chargement de la page
 $(async () => {
-    console.log("Démarrage du script AJAX..."); // Si tu ne vois pas ça en console, le JS ne tourne pas
     const itemId = $('#item-container').data('id');
 
     if (itemId) {
         const pictures = await $.getJSON(`item/get_pictures_service/${itemId}`);
-        console.log("Données reçues :", pictures); // Si tu ne vois pas ça, l'appel n'est pas fait
         rebuild_all(pictures);
+        $('.thumb-link').first().find('img').addClass('border border-info-subtle border-4'); // bordure
     }
 });
 
@@ -25,12 +25,19 @@ function rebuild_all(pictures) {
             </div>
         `);
         $thumbnails.append(`
-            <a href="#" data-bs-target="#carousel" data-bs-slide-to="${index}">
+            <a href="#" data-bs-target="#carousel" data-bs-slide-to="${index}" class="thumb-link">
                 <img src="${picture_path}" 
                     class="border rounded p-1 bg-light"
                     alt="thumbnail ${index}"
                     style="width:90px;height:90px;object-fit:cover;display:block;">
             </a>
         `);
+    });
+
+    // affichage de la bordure au clique de la vignette
+    $('.thumb-link').on('click', function(e) {
+        e.preventDefault()
+        $('.thumb-link img').removeClass('border-info-subtle border-4');
+        $(this).find('img').addClass('border border-info-subtle border-4');
     });
 }
