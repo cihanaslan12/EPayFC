@@ -3,10 +3,20 @@
     let titleRequestTimer = null;
     let latestTitleRequest = 0;
 
-    const titleState = {
-        touched: false,
-        valid: false,
-        asyncPending: false
+    const fieldState = {
+        title: {
+            touched: false,
+            valid: false,
+            asyncPending: false
+        },
+        description: {
+            touched: false,
+            valid: true
+        },
+        duration: {
+            touched: false,
+            valid: false
+        }
     };
 
     function getConfig() {
@@ -15,6 +25,10 @@
 
     function getSaveButton() {
         return $('button[name="save"]');
+    }
+
+    function escapeHtml(value) {
+        return $('<div>').text(value ?? '').html();
     }
 
     function setFieldNeutral($input, $group, $error) {
@@ -36,14 +50,16 @@
         $error.html(html);
     }
 
-    function escapeHtml(value) {
-        return $('<div>').text(value ?? '').html();
-    }
-
     function updateSaveButtonState() {
         const $save = getSaveButton();
-        const hasError = !titleState.valid || titleState.asyncPending;
-        $save.prop('disabled', hasError);
+
+        const hasInvalidField =
+            !fieldState.title.valid ||
+            !fieldState.description.valid ||
+            !fieldState.duration.valid ||
+            fieldState.title.asyncPending;
+
+        $save.prop('disabled', hasInvalidField);
     }
 
     function validateTitleSync() {
@@ -54,8 +70,8 @@
         const value = $input.val().trim();
         const errors = [];
 
-        if (!titleState.touched) {
-            titleState.valid = false;
+        if (!fieldState.title.touched) {
+            fieldState.title.valid = false;
             setFieldNeutral($input, $group, $error);
             updateSaveButtonState();
             return { ok: false, value };
@@ -73,14 +89,14 @@
         }
 
         if (errors.length > 0) {
-            titleState.valid = false;
-            titleState.asyncPending = false;
+            fieldState.title.valid = false;
+            fieldState.title.asyncPending = false;
             setFieldInvalid($input, $group, $error, errors);
             updateSaveButtonState();
             return { ok: false, value };
         }
 
-        titleState.valid = false;
+        fieldState.title.valid = false;
         setFieldNeutral($input, $group, $error);
         updateSaveButtonState();
         return { ok: true, value };
@@ -93,7 +109,7 @@
         const config = getConfig();
         const itemId = config.data('itemId');
 
-        titleState.asyncPending = true;
+        fieldState.title.asyncPending = true;
         updateSaveButtonState();
 
         const requestId = ++latestTitleRequest;
@@ -111,14 +127,14 @@
                 return;
             }
 
-            titleState.asyncPending = false;
+            fieldState.title.asyncPending = false;
 
             const errors = Object.values(response.errors || {});
             if (response.valid) {
-                titleState.valid = true;
+                fieldState.title.valid = true;
                 setFieldValid($input, $group, $error);
             } else {
-                titleState.valid = false;
+                fieldState.title.valid = false;
                 setFieldInvalid($input, $group, $error, errors);
             }
 
@@ -128,8 +144,8 @@
                 return;
             }
 
-            titleState.asyncPending = false;
-            titleState.valid = false;
+            fieldState.title.asyncPending = false;
+            fieldState.title.valid = false;
             setFieldInvalid($input, $group, $error, ['Erreur lors de la validation du titre.']);
             updateSaveButtonState();
         });
@@ -147,6 +163,91 @@
         }, 250);
     }
 
+    function validateDescriptionSync() {
+        const $input = $('#description');
+        const $group = $('#description-group');
+        const $error = $('#description-error');
+
+        const value = $input.val().trim();
+        const errors = [];
+
+        if (!fieldState.description.touched) {
+            fieldState.description.valid = true;
+            setFieldNeutral($input, $group, $error);
+            updateSaveButtonState();
+            return true;
+        }
+
+        if (value !== '' && value.length < validationConfig.description.min) {
+            errors.push(`La description doit contenir au moins ${validationConfig.description.min} caractères.`);
+        }
+
+        if (errors.length > 0) {
+            fieldState.description.valid = false;
+            setFieldInvalid($input, $group, $error, errors);
+            updateSaveButtonState();
+            return false;
+        }
+
+        fieldState.description.valid = true;
+
+        if (value === '') {
+            setFieldNeutral($input, $group, $error);
+        } else {
+            setFieldValid($input, $group, $error);
+        }
+
+        updateSaveButtonState();
+        return true;
+    }
+
+    function validateDurationSync() {
+        const $input = $('#duration');
+        const $group = $('#duration-group');
+        const $error = $('#duration-error');
+
+        const rawValue = $input.val().trim();
+        const errors = [];
+
+        if (!fieldState.duration.touched) {
+            fieldState.duration.valid = false;
+            setFieldNeutral($input, $group, $error);
+            updateSaveButtonState();
+            return false;
+        }
+
+        if (rawValue === '') {
+            errors.push('La durée est requise.');
+        } else if (!/^\d+$/.test(rawValue)) {
+            errors.push('La durée doit être un entier.');
+        } else {
+            const value = parseInt(rawValue, 10);
+
+            if (value < validationConfig.duration.min || value > validationConfig.duration.max) {
+                errors.push(`La durée doit être comprise entre ${validationConfig.duration.min} et ${validationConfig.duration.max} jours.`);
+            }
+        }
+
+        if (errors.length > 0) {
+            fieldState.duration.valid = false;
+            setFieldInvalid($input, $group, $error, errors);
+            updateSaveButtonState();
+            return false;
+        }
+
+        fieldState.duration.valid = true;
+        setFieldValid($input, $group, $error);
+        updateSaveButtonState();
+        return true;
+    }
+
+    function validateAllSyncFields() {
+        const titleSyncOk = validateTitleSync();
+        validateDescriptionSync();
+        validateDurationSync();
+        return titleSyncOk.ok;
+    }
+
     function loadValidationConfig() {
         const config = getConfig();
 
@@ -160,22 +261,34 @@
     }
 
     function bindEvents() {
-        $('#title').on('input', function () {
-            titleState.touched = true;
+        $('#title').on('input blur', function () {
+            fieldState.title.touched = true;
             triggerTitleValidation();
         });
 
-        $('#title').on('blur', function () {
-            titleState.touched = true;
-            triggerTitleValidation();
+        $('#description').on('input blur', function () {
+            fieldState.description.touched = true;
+            validateDescriptionSync();
+        });
+
+        $('#duration').on('input blur', function () {
+            fieldState.duration.touched = true;
+            validateDurationSync();
         });
 
         $('#form').on('submit', function (e) {
-            titleState.touched = true;
-            const syncResult = validateTitleSync();
+            fieldState.title.touched = true;
+            fieldState.description.touched = true;
+            fieldState.duration.touched = true;
 
-            if (!syncResult.ok || titleState.asyncPending || !titleState.valid) {
+            const titleSyncOk = validateAllSyncFields();
+
+            if (!titleSyncOk || fieldState.title.asyncPending || !fieldState.title.valid || !fieldState.description.valid || !fieldState.duration.valid) {
                 e.preventDefault();
+
+                if (titleSyncOk && !fieldState.title.asyncPending) {
+                    validateTitleAsync($('#title').val().trim());
+                }
             }
         });
     }

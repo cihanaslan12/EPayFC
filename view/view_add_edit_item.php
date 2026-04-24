@@ -35,12 +35,20 @@
                             ?>
                         </div>
                     </div>
-                    <label for="description">Description</label>
-                    <textarea name="description" id="description" class="form-control" placeholder="Describe your item in detail..."><?= $description ?></textarea>
-                    <p class="text-danger"><?php if (isset($errors['description'])) echo "<li>".$errors['description']."</li>" ?></p>
-                    <label for="duration">Sale Duration(days)*</label>
-                    <input type="number" name="duration" id="duration" value="<?= $duration ?>" min="1" max="365" class="form-control">
-                    <p class="text-danger"><?php if (isset($errors['duration'])) echo "<li>".$errors['duration']."</li>" ?></p>
+                    <div id="description-group" class="mb-3">
+                        <label for="description">Description</label>
+                        <textarea name="description" id="description" class="form-control" placeholder="Describe your item in detail..."><?= $description ?></textarea>
+                        <div id="description-error" class="text-danger small">
+                            <?php if (isset($errors['description'])) echo "<div>".$errors['description']."</div>" ?>
+                        </div>
+                    </div>
+                    <div id="duration-group" class="mb-3">
+                        <label for="duration">Sale Duration(days)*</label>
+                        <input type="number" name="duration" id="duration" value="<?= $duration ?>" min="1" max="365" class="form-control">
+                        <div id="duration-error" class="text-danger small">
+                            <?php if (isset($errors['duration'])) echo "<div>".$errors['duration']."</div>" ?>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="card" id="sale-type">
