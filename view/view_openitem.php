@@ -32,9 +32,9 @@
                     <div class="carousel-inner">
                         <?php foreach($pictures as $pic): ?>
                             <?php $isMain = ($pic->get_picture_path() === $mainPicture); ?>
-                                <div class="carousel-item <?= $isMain ? 'active' : ''?>">
-                                    <img src="<?= $pic->get_picture_path() ?>" class="d-block w-100" alt="Main picture">
-                                </div>
+                            <div class="carousel-item <?= $isMain ? 'active' : ''?>">
+                                <img src="<?= $pic->get_picture_path() ?>" class="d-block w-100" alt="Main picture">
+                            </div>
                         <?php endforeach; ?>
                     </div>
                     <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
@@ -47,30 +47,30 @@
                     </button>
                 </div>
 
-                        <div class="bg-dark text-white p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div>
-                                    <div class="fw-bold"><?= $item->get_title() ?></div>
-                                    <div class="small text-white-50">
-                                        <?= $item->get_description() ?>
-                                    </div>
-                                </div>
-
-                                <?php if ($item->get_is_auction() === 1): ?>
-                                    <span class="badge text-bg-secondary">Auction</span>
-                                <?php else: ?>
-                                    <span class="badge text-bg-secondary">Direct sale</span>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="small mt-2">
-                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
-                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                <div class="bg-dark text-white p-3 rounded">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold"><?= $item->get_title() ?></div>
+                            <div class="small text-white-50">
+                                <?= $item->get_description() ?>
                             </div>
                         </div>
-                    <?php if (empty($pictures)): ?>
-                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
-                    <?php endif; ?>
+
+                        <?php if ($item->get_is_auction() === 1): ?>
+                            <span class="badge text-bg-secondary">Auction</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-secondary">Direct sale</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="small mt-2">
+                        <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                        <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                    </div>
+                </div>
+                <?php if (empty($pictures)): ?>
+                    <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
+                <?php endif; ?>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
@@ -82,10 +82,14 @@
                                 <?php
                                 $thumb = $pic->get_thumbnail_path();
                                 $prio  = $pic->get_priority();
+                                $param2 = $_GET['param2'] ?? '';
+                                $target = is_numeric($param2) ? $param2 : 1;
+                                $is_selected = $prio == $target;
+                                $border = $is_selected ? "border-4 border-info-subtle" : "";
                                 ?>
                                 <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
                                    data-bs-target="#carousel" data-bs-slide-to="<?= (int)$item->get_id() ?>/<?= $prio ?>"
-                                   class="d-inline-block border rounded p-1 bg-light">
+                                   class="d-inline-block border rounded p-1 bg-light <?= $border ?> ">
                                     <img src="<?= $thumb ?>"
                                          alt="thumbnail <?= $prio ?>"
                                          style="width:90px;height:90px;object-fit:cover;display:block;">
