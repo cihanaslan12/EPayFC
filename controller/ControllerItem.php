@@ -524,6 +524,25 @@ class ControllerItem extends Controller {
         ]);
     }
 
+    public function validate_title(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        $item_id = isset($_POST['item_id']) && $_POST['item_id'] !== ''
+            ? (int) $_POST['item_id']
+            : null;
+
+        $errors = Item::validate_title_uniqueness($user->get_id(), $title, $item_id);
+
+        $this->json_response([
+            'valid' => empty($errors),
+            'errors' => $errors
+        ]);
+    }
+
     public function delete(): void {
         $this->get_user_or_redirect();
         $item_id = $_GET['param1'];

@@ -16,14 +16,25 @@
     </header>
 
     <main>
+        <div id="item-form-config"
+             data-validation-config-url="item/validation_config"
+             data-validate-title-url="item/validate_title"
+             data-item-id="<?= isset($item) ? $item->get_id() : '' ?>">
+        </div>
         <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST" novalidate>
             <div class="card mb-2" id="basic-info">
                 <div class="card-header">Basic Information</div>
                 <div class="card-body">
-                    <label for="title">Item Title *</label>
-                    <input type="text" name="title" id="title" value="<?= $title ?>" class="form-control" placeholder="Ex: Iphone 13 Pro Max 256GB">
-                    <p class="text-danger"><?php if (isset($errors['title'])) echo "<li>".$errors['title']."</li>" ?></p>
-                    <p class="text-danger"><?php if (isset($errors['unicity'])) echo "<li>".$errors['unicity']."</li>" ?></p>
+                    <div id="title-group" class="mb-3">
+                        <label for="title">Item Title *</label>
+                        <input type="text" name="title" id="title" value="<?= $title ?>" class="form-control" placeholder="Ex: Iphone 13 Pro Max 256GB">
+                        <div id="title-error" class="text-danger small">
+                            <?php
+                            if (isset($errors['title'])) echo "<div>".$errors['title']."</div>";
+                            if (isset($errors['unicity'])) echo "<div>".$errors['unicity']."</div>";
+                            ?>
+                        </div>
+                    </div>
                     <label for="description">Description</label>
                     <textarea name="description" id="description" class="form-control" placeholder="Describe your item in detail..."><?= $description ?></textarea>
                     <p class="text-danger"><?php if (isset($errors['description'])) echo "<li>".$errors['description']."</li>" ?></p>
@@ -93,4 +104,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
     <script src="js/modal.js"></script>
+    <script src="<?= Configuration::get("web_root") ?>js/item_form_validation.js"></script>
 </body>

@@ -558,6 +558,16 @@ class Item extends Model
         return '';
     }
 
+    public static function validate_title_uniqueness(int $user_id, string $title, ?int $item_id = null): array {
+        $errors = [];
+
+        if ($unicity_error = self::unique_title(trim($title), $user_id, $item_id)) {
+            $errors['unicity'] = $unicity_error;
+        }
+
+        return $errors;
+    }
+
     public static function validations(int $user_id, string $title, string $description, mixed $duration, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
         $errors = [];
 
