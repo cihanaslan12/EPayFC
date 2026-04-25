@@ -54,8 +54,21 @@
     <?php if (!empty($purchases)): ?>
         <div class="row row-cols-md-4 g-4 pb-5">
             <?php foreach ($purchases as $item): ?>
-                <?php $open_from = 'purchases'; ?>
-                <?php require 'item_card.php'; ?>
+                <div class="purchase-item">
+                    <?php $open_from = 'purchases'; ?>
+                    <?php require 'item_card.php'; ?>
+
+                    <div class="mt-2 ps-1">
+                        <p class="text-secondary mb-1">
+                            <i class="bi bi-tag"></i>
+                            Paid € <?= number_format((float)$item->get_final_paid_price(), 2, ',', ' ') ?>
+                        </p>
+                        <p class="text-secondary mb-0">
+                            <i class="bi bi-clock"></i>
+                            Closed on <?= $item->get_finish_time() ?>
+                        </p>
+                    </div>
+                </div>
             <?php endforeach; ?>
         </div>
     <?php else: ?>

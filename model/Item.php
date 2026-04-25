@@ -761,10 +761,49 @@ class Item extends Model
     }
 
     public function get_finish_time(): string {
-        $sql = "SELECT * FROM bids WHERE item = :item ORDER BY created_at DESC LIMIT 1";
+        $sql = "SELECT vis.end_at,
+                   vis.is_direct_sale,
+                   vis.is_auction,
+                   vis.buy_now_reached,
+                   vis.not_purchased_direct_sale,
+                   (
+                       SELECT b.created_at
+                       FROM bids b
+                       WHERE b.item = vis.id
+                       ORDER BY b.amount DESC, b.created_at ASC
+                       LIMIT 1
+                   ) AS winning_bid_at
+            FROM v_items_status vis
+            WHERE vis.id = :item";
+
         $query = self::execute($sql, ['item' => $this->get_id()]);
-        $created_at = $query->fetch();
-        return $created_at['created_at'];
+        $row = $query->fetch();
+
+        if (!$row) {
+            return '';
+        }
+
+        if ((int)$row['is_direct_sale'] === 1 && (int)$row['not_purchased_direct_sale'] === 0) {
+            return $row['winning_bid_at'] ?? $row['end_at'];
+        }
+
+        if ((int)$row['is_auction'] === 1 && (int)$row['buy_now_reached'] === 1) {
+            return $row['winning_bid_at'] ?? $row['end_at'];
+        }
+
+        return $row['end_at'] ?? '';
+    }
+
+    public function get_final_paid_price(): string {
+        $sql = "SELECT amount
+            FROM bids
+            WHERE item = :item
+            ORDER BY amount DESC, created_at ASC
+            LIMIT 1";
+        $query = self::execute($sql, ['item' => $this->get_id()]);
+        $row = $query->fetch();
+
+        return $row['amount'] ?? ($this->get_max_bid() ?? $this->get_buy_now_price() ?? '0.00');
     }
 
 
