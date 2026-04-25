@@ -245,7 +245,7 @@ class ItemPicture extends Model {
             throw new Exception('Invalid image set for reorder.');
         }
 
-        self::execute("START TRANSACTION");
+        self::execute("START TRANSACTION", []);
 
         try {
             foreach ($ordered_paths as $index => $path) {
@@ -274,9 +274,9 @@ class ItemPicture extends Model {
                 );
             }
 
-            self::execute("COMMIT");
+            self::execute("COMMIT", []);
         } catch (Exception $e) {
-            self::execute("ROLLBACK");
+            self::execute("ROLLBACK", []);
             throw $e;
         }
     }
