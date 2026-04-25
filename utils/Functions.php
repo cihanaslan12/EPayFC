@@ -39,6 +39,24 @@ class Functions {
         return '';
     }
 
+    public static function duration_error(mixed $duration, int $min, int $max): string {
+        if ($duration === '' || $duration === null) {
+            return 'Duration is required.';
+        }
+
+        if (filter_var($duration, FILTER_VALIDATE_INT) === false) {
+            return 'Duration must be an integer.';
+        }
+
+        $duration = (int)$duration;
+
+        if ($duration < $min || $duration > $max) {
+            return "Duration must be between $min and $max days.";
+        }
+
+        return '';
+    }
+
     /**
      * Permet d'encoder un string au format base64url, c'est-à-dire un format base64 dans lequel
      * les caractères '+' et '/' sont remplacés respectivement par '-' et '_', ce qui permet d'utiliser le

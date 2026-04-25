@@ -558,12 +558,25 @@ class Item extends Model
         return '';
     }
 
-    public static function validations(int $user_id, string $title, string $description, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
+    public static function validate_title_uniqueness(int $user_id, string $title, ?int $item_id = null): array {
+        $errors = [];
+
+        if ($unicity_error = self::unique_title(trim($title), $user_id, $item_id)) {
+            $errors['unicity'] = $unicity_error;
+        }
+
+        return $errors;
+    }
+
+    public static function validations(int $user_id, string $title, string $description, mixed $duration, float $starting_bid, float $instant_purchase_price, float $direct_sale_price, ?int $item_id = null): array {
         $errors = [];
 
         $title_min = Configuration::get('TITLE_MIN_LENGTH');
         $title_max = Configuration::get('TITLE_MAX_LENGTH');
         $desc_min = Configuration::get('DESCR_MIN_LENGTH');
+
+        $duration_min = Configuration::get('DURATION_MIN');
+        $duration_max = Configuration::get('DURATION_MAX');
 
         if ($title_error = Functions::title_length($title, $title_min, $title_max)) {
             $errors['title'] = $title_error;
@@ -573,6 +586,9 @@ class Item extends Model
         }
         if ($desc_error = Functions::description_length($description, $desc_min)) {
             $errors['description'] = $desc_error;
+        }
+        if ($duration_error = Functions::duration_error($duration, $duration_min, $duration_max)) {
+            $errors['duration'] = $duration_error;
         }
         if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
             $errors['price'] = $price_error;
@@ -745,10 +761,49 @@ class Item extends Model
     }
 
     public function get_finish_time(): string {
-        $sql = "SELECT * FROM bids WHERE item = :item ORDER BY created_at DESC LIMIT 1";
+        $sql = "SELECT vis.end_at,
+                   vis.is_direct_sale,
+                   vis.is_auction,
+                   vis.buy_now_reached,
+                   vis.not_purchased_direct_sale,
+                   (
+                       SELECT b.created_at
+                       FROM bids b
+                       WHERE b.item = vis.id
+                       ORDER BY b.amount DESC, b.created_at ASC
+                       LIMIT 1
+                   ) AS winning_bid_at
+            FROM v_items_status vis
+            WHERE vis.id = :item";
+
         $query = self::execute($sql, ['item' => $this->get_id()]);
-        $created_at = $query->fetch();
-        return $created_at['created_at'];
+        $row = $query->fetch();
+
+        if (!$row) {
+            return '';
+        }
+
+        if ((int)$row['is_direct_sale'] === 1 && (int)$row['not_purchased_direct_sale'] === 0) {
+            return $row['winning_bid_at'] ?? $row['end_at'];
+        }
+
+        if ((int)$row['is_auction'] === 1 && (int)$row['buy_now_reached'] === 1) {
+            return $row['winning_bid_at'] ?? $row['end_at'];
+        }
+
+        return $row['end_at'] ?? '';
+    }
+
+    public function get_final_paid_price(): string {
+        $sql = "SELECT amount
+            FROM bids
+            WHERE item = :item
+            ORDER BY amount DESC, created_at ASC
+            LIMIT 1";
+        $query = self::execute($sql, ['item' => $this->get_id()]);
+        $row = $query->fetch();
+
+        return $row['amount'] ?? ($this->get_max_bid() ?? $this->get_buy_now_price() ?? '0.00');
     }
 
 
