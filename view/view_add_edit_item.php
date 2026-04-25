@@ -23,8 +23,9 @@
              data-validate-title-url="item/validate_title"
              data-item-id="<?= isset($item) ? $item->get_id() : '' ?>">
         </div>
-        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST" novalidate>
-            <div class="card mb-2" id="basic-info">
+        <form id="form" action="<?= isset($_GET['param1']) ? "item/edit/" . $item->get_id() . '/' . $from . ($back_filter ? '/' . $back_filter : '') : 'item/add' ?>" method="POST" novalidate>
+            <input type="hidden" name="from" value="<?= $from ?>">
+            <input type="hidden" name="back_filter" value="<?= $back_filter ?>">            <div class="card mb-2" id="basic-info">
                 <div class="card-header">Basic Information</div>
                 <div class="card-body">
                     <div id="title-group" class="mb-3">

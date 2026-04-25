@@ -21,7 +21,7 @@
                 <div class="card-header">Add New Images</div>
                 <div class="card-body">
                     <div class="file">
-                        <form action="item/manage_images/<?= $item->get_id() ?>" method="POST" enctype="multipart/form-data">
+                        <form action="item/manage_images/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>" method="POST" enctype="multipart/form-data">
                             <label for="formFileMultiple" class="form-label">Select Images</label>
                             <input type="file" name="image[]" class="form-control" id="formFileMultiple" multiple>
                             <p>You can select multiple images (JPG, PNG, GIF, WebP). Images will be added to the end of your current list</p>
@@ -47,7 +47,7 @@
                                  data-picture-path="<?= htmlspecialchars($image->get_picture_path(), ENT_QUOTES) ?>">
                                 <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
                                 <div class="card-btn m-2 p-2">
-                                    <form action="item/move_picture" method="POST">
+                                    <form action="item/move_picture/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>" method="POST">
                                         <input type="hidden" name="item" value="<?= $image->get_item() ?>">
                                         <input type="hidden" name="priority" value="<?= $image->get_priority() ?>">
                                         <button type="submit" class="arrow-btn" name="btn-left" <?php if($image->get_priority() == 1): ?>disabled<?php endif; ?>>
