@@ -394,6 +394,33 @@ class ControllerItem extends Controller {
         $this->redirect("item", "manage_images", $item_id);
     }
 
+    public function reorder_pictures(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['success' => false, 'error' => 'Authentication required.'], 401);
+        }
+
+        $item_id = isset($_POST['item_id']) ? (int) $_POST['item_id'] : 0;
+        $ordered_paths = $_POST['ordered_paths'] ?? [];
+
+        $item = Item::get_by_id($item_id);
+        if (!$item) {
+            $this->json_response(['success' => false, 'error' => 'Item not found.'], 404);
+        }
+
+        if ($item->get_owner() !== $user->get_id()) {
+            $this->json_response(['success' => false, 'error' => 'Forbidden.'], 403);
+        }
+
+        if (!is_array($ordered_paths) || empty($ordered_paths)) {
+            $this->json_response(['success' => false, 'error' => 'Invalid image order.'], 400);
+        }
+
+        ItemPicture::reorder_for_item($item_id, $ordered_paths);
+
+        $this->json_response(['success' => true]);
+    }
+
     public function add(): void {
         $user = $this->get_user_or_false();
         $user_id = $user->get_id();

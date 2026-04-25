@@ -33,13 +33,18 @@
                     </div>
                 </div>
             </div>
+            <div id="manage-images-config"
+                 data-reorder-url="item/reorder_pictures"
+                 data-item-id="<?= $item->get_id() ?>">
+            </div>
             <div class="card">
                 <div class="card-header">Current Images</div>
                 <div class="card-body">
                     <?php if(isset($images) && count($images) > 0): ?>
-                        <div class="row row-cols-md-4 m-2">
+                        <div class="row row-cols-md-4 m-2" id="sortable-images">
                         <?php foreach ($images as $image): ?>
-                            <div class="card card-thumb m-2 p-2" id="img-card">
+                            <div class="card card-thumb m-2 p-2 sortable-image-card"
+                                 data-picture-path="<?= htmlspecialchars($image->get_picture_path(), ENT_QUOTES) ?>">
                                 <img src="<?= $image->get_picture_thumbnail() ?>" alt="item_thumbnail">
                                 <div class="card-btn m-2 p-2">
                                     <form action="item/move_picture" method="POST">
@@ -66,5 +71,9 @@
         <footer>
             <?php require 'footer_menu.php'; ?>
         </footer>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+        <script src="<?= Configuration::get("web_root") ?>js/manage_images_sortable.js"></script>
     </body>
 </html>

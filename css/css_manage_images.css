@@ -58,3 +58,20 @@ p {
 .card {
     margin-bottom: 100px;
 }
+
+#sortable-images {
+    min-height: 120px;
+}
+
+.sortable-image-card {
+    cursor: move;
+}
+
+.sortable-placeholder {
+    visibility: visible !important;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 2px dashed #778da9;
+    border-radius: 8px;
+    min-height: 220px;
+    margin: 0.5rem;
+}
