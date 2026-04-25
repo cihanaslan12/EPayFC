@@ -16,7 +16,9 @@
     </header>
 
     <main>
-        <form id="form" action="<?= isset($_GET['param1']) ? 'item/edit/'.$item->get_id() : 'item/add' ?>" method="POST">
+        <form id="form" action="<?= isset($_GET['param1']) ? "item/edit/" . $item->get_id() . '/' . $from . ($back_filter ? '/' . $back_filter : '') : 'item/add' ?>" method="POST">
+            <input type="hidden" name="from" value="<?= $from ?>">
+            <input type="hidden" name="back_filter" value="<?= $back_filter ?>">
             <div class="card mb-2" id="basic-info">
                 <div class="card-header">Basic Information</div>
                 <div class="card-body">

@@ -197,7 +197,7 @@
                                     <button class="btn btn-secondary w-100 mb-2" type="button" disabled>Place bid</button>
                                     <div class="text-muted small"><em>Login required to place a bid.</em></div>
                                 <?php else: ?>
-                                    <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                    <form method="post" action="item/place_bid/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <input
                                                 type="text"
@@ -229,7 +229,7 @@
                                     </button>
                                     <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
                                 <?php else: ?>
-                                    <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                    <form method="post" action="item/buy_now/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <?php if (isset($errors["buy_now"])): ?>
                                             <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
@@ -273,10 +273,10 @@
 
                             <?php if ($canManage): ?>
                                 <div class="d-grid gap-2">
-                                    <a class="btn btn-outline-primary" href="item/edit/<?= $item->get_id() ?>">
+                                    <a class="btn btn-outline-primary" href="item/edit/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         Edit item details
                                     </a>
-                                    <a class="btn btn-outline-primary" href="item/manage_images/<?= $item->get_id() ?>">
+                                    <a class="btn btn-outline-primary" href="item/manage_images/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         Manage images
                                     </a>
                                     <a class="btn btn-outline-danger" href="item/delete/<?= $item->get_id() ?>">

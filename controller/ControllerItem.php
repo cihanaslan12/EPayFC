@@ -14,6 +14,7 @@ class ControllerItem extends Controller {
 
     public function open(): void {
         $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
+        $encoded_filter = $_GET["param3"] ?? "";
 
         if ($id <= 0) {
             http_response_code(404);
@@ -31,12 +32,13 @@ class ControllerItem extends Controller {
         $user = $this->get_user_or_false(); // guest autorisé
 
 
-        (new View("openitem"))->show($this->build_openitem_view_data($item, $user));
+        (new View("openitem"))->show($this->build_openitem_view_data($item, $user, $encoded_filter));
     }
 
     private function build_openitem_view_data(
         Item $item,
              $user,
+        ?string $encoded_filter,
         ?array $errors = null,
         ?string $postedAmount = null
     ): array {
@@ -74,11 +76,19 @@ class ControllerItem extends Controller {
         }
 
         $from = $this->get_open_from();
+        $source_back_url = $this->get_back_url_from_source($from);
+
+        $back_url_with_details = $source_back_url;
+        if ($encoded_filter !== '' && $encoded_filter != null) {
+            $back_url_with_details .= '/' . $encoded_filter;
+        }
 
         $data = [
             'show_back' => true,
-            'back_url' => $this->get_back_url_from_source($from),
+            'back_url' => $back_url_with_details,
             'from' => $from,
+            'back_filter' => $encoded_filter,
+            'url' => $from . ($encoded_filter ? '/' . $encoded_filter : ''),
             'page_title' => "Item open",
             'show_save' => false,
 
@@ -140,18 +150,18 @@ class ControllerItem extends Controller {
         }
 
         $now = AppTime::get_current_datetime();
-
+        $encoded_filter = ($_GET['param3'] ?? '');
         $amount = trim($_POST["amount"] ?? "");
         $errors = [];
 
         if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
             $from = $this->get_open_from();
-            $this->redirect_to_open($id, $from);
+            $this->redirect_to_open($id, $from, $encoded_filter);
             return;
         }
 
         (new View("openitem"))->show(
-            $this->build_openitem_view_data($item, $user, $errors, $amount)
+            $this->build_openitem_view_data($item, $user, $encoded_filter, $errors, $amount)
         );
     }
 
@@ -178,17 +188,17 @@ class ControllerItem extends Controller {
         }
 
         $now = AppTime::get_current_datetime();
-
+        $encoded_filter = $_GET['param3'] ?? '';
         $errors = [];
 
         if (Bid::buy_now($user, $item, $now, $errors)) {
             $from = $this->get_open_from();
-            $this->redirect_to_open($id, $from);
+            $this->redirect_to_open($id, $from, $encoded_filter);
             return;
         }
 
         (new View("openitem"))->show(
-            $this->build_openitem_view_data($item, $user, $errors, null)
+            $this->build_openitem_view_data($item, $user, $encoded_filter, $errors, null)
         );
     }
 
@@ -331,8 +341,11 @@ class ControllerItem extends Controller {
 
     public function manage_images(): void {
         $user = $this->get_user_or_redirect();
-        $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
+        $item = Item::get_by_id($_GET['param1']);
         $error = null;
+
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
 
         if (isset($_POST['upload_images'])) {
             if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
@@ -366,7 +379,9 @@ class ControllerItem extends Controller {
         $manage_images = [
             'user' => $user,
             'show_back' => true,
-            'back_url' => 'item/open/' . $item->get_id(),
+            'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
             'page_title' => "Manage Images",
             'show_save' => false,
             'item' => $item,
@@ -381,6 +396,8 @@ class ControllerItem extends Controller {
         $item_id = $_POST['item'];
         $priority = $_POST['priority'];
         $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
 
         if($picture) {
             if (isset($_POST['btn-left'])) {
@@ -391,7 +408,7 @@ class ControllerItem extends Controller {
                 $picture->delete_picture();
             }
         }
-        $this->redirect("item", "manage_images", $item_id);
+        $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
     }
 
     public function add(): void {
@@ -447,6 +464,9 @@ class ControllerItem extends Controller {
         $item_id = $_GET['param1'];
         $item = Item::get_by_id($item_id);
 
+        $from = $_GET['param2'];
+        $encoded_filter = $_GET['param3'] ?? '';
+
         $title = $item->get_title();
         $description = $item->get_description();
         $duration = $item->get_duration_days();
@@ -483,14 +503,16 @@ class ControllerItem extends Controller {
                 else if ($instant_purchase_price && !$direct_sale_price)
                     $instant_or_direct = $instant_purchase_price;
                 Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                $this->redirect("item", "open", $item_id);
+                $this->redirect_to_open($item_id, $from, $encoded_filter);
             }
         }
 
         $edit_item = [
             'user' => $user,
             'show_back' => true,
-            'back_url' => 'item/open/' . $item->get_id(),
+            'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
             'page_title' => "Edit item",
             'show_save' => true,
             'item' => $item,
@@ -580,7 +602,7 @@ class ControllerItem extends Controller {
         return 'browse';
     }
 
-    private function redirect_to_open(int $itemId, string $from, ?int $priority = null): void {
+    private function redirect_to_open(int $itemId, string $from, ?string $encoded_filter, ?int $priority = null): void {
         $web_root = Configuration::get("web_root");
 
         $url = $web_root . "item/open/" . $itemId;
@@ -589,6 +611,9 @@ class ControllerItem extends Controller {
             $url .= "/" . $priority . "/" . $from;
         } else {
             $url .= "/" . $from;
+            if ($encoded_filter !== null) {
+                $url .= "/" . $encoded_filter;
+            }
         }
 
         header("Location: $url", true, 303);
@@ -608,5 +633,15 @@ class ControllerItem extends Controller {
         }
         header('Content-Type: application/json');
         echo json_encode($pictures_paths);
+    }
+
+    public function encode_filter_service() : void {
+        $filter = $_POST['filter'];
+        echo Functions::url_safe_encode($filter);
+    }
+
+    public function decode_filter_service() :void {
+        $filter = $_POST['encoded_filter'];
+        echo Functions::url_safe_decode($filter);
     }
 }

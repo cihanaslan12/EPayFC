@@ -91,7 +91,7 @@
 
         return `
             <div class="col">
-                <a href="item/open/${item.id}/${encodeURIComponent(openFrom)}" class="text-decoration-none">
+                <a href="item/open/${item.id}/${encodeURIComponent(openFrom)}" class="text-decoration-none item-card-link">
                     <div class="card">
                         <div class="position-relative">
                             <img src="${escapeHtml(thumbnail)}"
@@ -193,6 +193,33 @@
                     });
             }, 250);
         });
+
+        // propagation du filtre sur la page suivante
+        $(document).on('click', '.item-card-link', function (e) {
+            e.preventDefault();
+
+            const currentUrl = $(this).attr('href');
+            const filterValue = $searchInput.val().trim();
+
+            if (filterValue === '') {
+                window.location.href = currentUrl;
+            } else {
+                $.post('item/encode_filter_service', {filter: filterValue}, function (encodedFilter) {
+                    window.location.href = currentUrl + '/' + encodedFilter;
+                });
+            }
+        });
+
+        // propagation inverse (btn back)
+        const parts = window.location.pathname.split('/');
+        const lastPart = parts[parts.length - 1];
+        if (lastPart !== openFrom && lastPart !== '') {
+            $.post('item/decode_filter_service', {encoded_filter: lastPart}, function (decoded_filter) {
+                if (decoded_filter) {
+                    $searchInput.val(decoded_filter.trim()).trigger('input');
+                }
+            });
+        }
     }
 
     $(initItemSearch);
