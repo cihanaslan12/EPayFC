@@ -414,7 +414,7 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($user_id, $title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($user_id, $title,$description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;
@@ -476,7 +476,7 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($user_id, $title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
+            $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;
@@ -503,6 +503,44 @@ class ControllerItem extends Controller {
             'errors' => $errors,
         ];
         (new View("add_edit_item"))->show($edit_item);
+    }
+
+    public function validation_config(): void {
+        $this->json_response([
+            'title' => [
+                'min' => (int) Configuration::get('TITLE_MIN_LENGTH'),
+                'max' => (int) Configuration::get('TITLE_MAX_LENGTH'),
+            ],
+            'description' => [
+                'min' => (int) Configuration::get('DESCR_MIN_LENGTH'),
+            ],
+            'duration' => [
+                'min' => (int) Configuration::get('DURATION_MIN'),
+                'max' => (int) Configuration::get('DURATION_MAX'),
+            ],
+            'price' => [
+                'min' => (float) Configuration::get('PRICE_MIN'),
+            ],
+        ]);
+    }
+
+    public function validate_title(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        $item_id = isset($_POST['item_id']) && $_POST['item_id'] !== ''
+            ? (int) $_POST['item_id']
+            : null;
+
+        $errors = Item::validate_title_uniqueness($user->get_id(), $title, $item_id);
+
+        $this->json_response([
+            'valid' => empty($errors),
+            'errors' => $errors
+        ]);
     }
 
     public function delete(): void {
