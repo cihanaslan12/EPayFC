@@ -19,23 +19,20 @@ En développement, donnez les permissions d'écriture aux dossiers uploads et da
 
 ### Liste des bugs connus
 
-* bug 1
-* bug 2
-* .....
+* Pas de bugs connus
 
 ### URLs deploiement
 
-* étudiant Nom Prenom :
+* étudiant Nom Prenom : Boughanem Bilal
   * URL :
   * Mot de passe :
-* étudiant Nom Prenom :
-  * URL :
-  * Mot de passe :
-* étudiant Nom Prénom :
+* étudiant Nom Prenom :Aslan Cihan
   * URL :
   * Mot de passe :
 
 ### Liste des fonctionnalités supplémentaires
+
+* Aucune
 
 ### Divers
 
