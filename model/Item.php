@@ -541,7 +541,7 @@ class Item extends Model
                      AND (vis.end_at <= :now OR vis.buy_now_reached = 1))) ";
         $query = self::execute($sql, ['id' => $user->get_id(), 'now' => AppTime::get_current_datetime()]);
         $res = $query->fetch();
-        return $res['total'];
+        return (float)($res['total'] ?? 0.0);
     }
 
     private static function unique_title(string $title, int $owner, ?int $item_id = null): string {

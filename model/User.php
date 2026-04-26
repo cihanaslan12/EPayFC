@@ -189,7 +189,10 @@ class User extends Model {
     }
 
     public function get_average_ticket(): float {
-        return (float)($this->get_my_sold_items_total() / count($this->get_my_sold_items()));
+        $sold_items_count = count($this->get_my_sold_items());
+        if ($sold_items_count === 0)
+            return 0.0;
+        return (float)($this->get_my_sold_items_total() / $sold_items_count);
     }
 
     public function get_loyal_bidder(): ?User {
@@ -209,7 +212,8 @@ class User extends Model {
               LIMIT 1 ";
         $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
         $res = $query->fetch();
-        return self::get_by_id($res['user_id']);
+        if (!$res) return null;
+        return self::get_by_id($res['user_id']) ?: null;
     }
 
     public static function is_mail_unique(string $mail, int $exclude_user_id): bool {

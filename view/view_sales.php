@@ -39,7 +39,11 @@
                 <div class="col">
                     <div class="card">
                         <h5>LOYAL BIDDER</h5>
-                        <p id="bidder"><?= $loyal->get_pseudo() ?></p>
+                        <?php if ($loyal): ?>
+                            <p id="bidder"><?= $loyal->get_pseudo() ?></p>
+                        <?php else: ?>
+                            <p id="bidder">None</p>
+                        <?php endif; ?>
                         <p id="sales-infos">Most recurring winning bidder</p>
                     </div>
                 </div>
