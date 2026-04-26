@@ -221,6 +221,9 @@
                 $.post('item/decode_filter_service', {encoded_filter: lastPart}, function (response) {
                     if (response && response.decoded && $searchInput.length) {
                         $searchInput.val(response.decoded.trim());
+                        setTimeout(() => {
+                            $searchInput.trigger('input');
+                        }, 50);
                     }
                 }, 'json');
             }
