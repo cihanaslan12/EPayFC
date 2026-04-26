@@ -701,12 +701,14 @@ class ControllerItem extends Controller {
     }
 
     public function encode_filter_service() : void {
-        $filter = $_POST['filter'];
-        echo Functions::url_safe_encode($filter);
+        $filter = $_POST['filter'] ?? '';
+        $encoded = Functions::url_safe_encode($filter);
+        $this->json_response(['encoded' => $encoded]);
     }
 
     public function decode_filter_service() :void {
-        $filter = $_POST['encoded_filter'];
-        echo Functions::url_safe_decode($filter);
+        $encoded = $_POST['encoded_filter'] ?? '';
+        $decoded = Functions::url_safe_decode($encoded);
+        $this->json_response(['decoded' => $decoded]);
     }
 }

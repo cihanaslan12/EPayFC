@@ -183,7 +183,7 @@
                     url: searchUrl,
                     method: 'POST',
                     dataType: 'json',
-                    data: { query: query }
+                    data: {query: query}
                 })
                     .done(function (response) {
                         renderSections(response.sections || [], openFrom);
@@ -195,31 +195,35 @@
         });
 
         // propagation du filtre sur la page suivante
-        $(document).on('click', '.item-card-link', function (e) {
-            e.preventDefault();
+            $(document).on('click', '.item-card-link', function (e) {
+                e.preventDefault();
 
-            const currentUrl = $(this).attr('href');
-            const filterValue = $searchInput.val().trim();
+                const currentUrl = $(this).attr('href');
+                const filterValue = ($searchInput.length > 0) ? $searchInput.val().trim() : '';
 
-            if (filterValue === '') {
-                window.location.href = currentUrl;
-            } else {
-                $.post('item/encode_filter_service', {filter: filterValue}, function (encodedFilter) {
-                    window.location.href = currentUrl + '/' + encodedFilter;
-                });
-            }
-        });
-
-        // propagation inverse (btn back)
-        const parts = window.location.pathname.split('/');
-        const lastPart = parts[parts.length - 1];
-        if (lastPart !== openFrom && lastPart !== '') {
-            $.post('item/decode_filter_service', {encoded_filter: lastPart}, function (decoded_filter) {
-                if (decoded_filter) {
-                    $searchInput.val(decoded_filter.trim()).trigger('input');
+                if (filterValue === '') {
+                    window.location.href = currentUrl;
+                } else {
+                    $.post('item/encode_filter_service', {filter: filterValue}, function (response) {
+                        if (response && response.encoded) {
+                            window.location.href = currentUrl + '/' + response.encoded;
+                        } else {
+                            window.location.href = currentUrl;
+                        }
+                    }, 'json');
                 }
             });
-        }
+
+            // propagation inverse (btn back)
+            const parts = window.location.pathname.split('/');
+            const lastPart = parts[parts.length - 1];
+            if (lastPart !== openFrom && lastPart !== '') {
+                $.post('item/decode_filter_service', {encoded_filter: lastPart}, function (response) {
+                    if (response && response.decoded && $searchInput.length) {
+                        $searchInput.val(response.decoded.trim());
+                    }
+                }, 'json');
+            }
     }
 
     $(initItemSearch);
