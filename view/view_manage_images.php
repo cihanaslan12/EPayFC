@@ -74,6 +74,6 @@
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
-        <script src="<?= Configuration::get("web_root") ?>js/manage_images_sortable.js"></script>
+        <script src="<?= Configuration::get("web_root") ?>js/manage_images_sortable.js?v=<?= filemtime("js/manage_images_sortable.js") ?>"></script>
     </body>
 </html>
