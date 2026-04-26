@@ -465,7 +465,7 @@ class ControllerItem extends Controller {
                 else if ($instant_purchase_price && !$direct_sale_price)
                     $instant_or_direct = $instant_purchase_price;
                 $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                $this->redirect("item", "open", $new_item_id);
+                $this->redirect_to_open($new_item_id, 'my_items', null);
             }
         }
         $add_item = [
