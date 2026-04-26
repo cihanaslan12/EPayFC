@@ -163,14 +163,16 @@ class ControllerUser extends Controller {
             if (!$check) {
                 $errors['current'] = "Current password is wrong ! ";
             }
-            if ($new_password === '' || $confirm_new_password === '') {
+            if ($current_password === $new_password) {
+                $errors['current_same_new'] = "Your new password is same than current!";
+            } else if ($new_password === '' || $confirm_new_password === '') {
                 $errors['confirm_new_password'] = "Your new password is empty! ";
-            } else if ($user->valid_password($new_password)) {
+            } else if (!$user->valid_password($new_password)) {
                 $errors['confirm_new_password'] = "Password must be 8-16 characters with uppercase, number, and punctuation";
             } else if ($new_password !== $confirm_new_password) {
                 $errors['confirm_new_password'] = "You have to enter twice the same password. ";
             }
-            if (!$errors) {
+            if (empty($errors)) {
                 $user->update_password(password_hash($new_password, PASSWORD_BCRYPT));
                 $this->redirect("user", "profile");
             }
@@ -252,7 +254,7 @@ class ControllerUser extends Controller {
                 $errors["pseudo"] = "This pseudo is already used.";
             }
 
-            if (!isset($errors["full_name"]) && User::exists_full_name($full_name)) {
+            if (empty($errors["full_name"]) && !User::is_full_name_unique($full_name, $user->get_id())) {
                 $errors["full_name"] = "This full name is already used.";
             }
 

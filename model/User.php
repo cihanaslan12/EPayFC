@@ -189,7 +189,10 @@ class User extends Model {
     }
 
     public function get_average_ticket(): float {
-        return (float)($this->get_my_sold_items_total() / count($this->get_my_sold_items()));
+        $sold_items_count = count($this->get_my_sold_items());
+        if ($sold_items_count === 0)
+            return 0.0;
+        return (float)($this->get_my_sold_items_total() / $sold_items_count);
     }
 
     public function get_loyal_bidder(): ?User {
@@ -209,7 +212,8 @@ class User extends Model {
               LIMIT 1 ";
         $query = self::execute($sql, ['id' => $this->get_id(), 'now' => AppTime::get_current_datetime()]);
         $res = $query->fetch();
-        return self::get_by_id($res['user_id']);
+        if (!$res) return null;
+        return self::get_by_id($res['user_id']) ?: null;
     }
 
     public static function is_mail_unique(string $mail, int $exclude_user_id): bool {
@@ -240,7 +244,14 @@ class User extends Model {
         ]);
     }
 
-    public static function exists_full_name(string $full_name): bool {
+    public static function is_full_name_unique(string $full_name, int $exclude_user_id): bool {
+        $sql = "SELECT COUNT(*) FROM users WHERE full_name = :full_name AND id <> :id";
+        $q = self::execute($sql, ["full_name" => $full_name, "id" => $exclude_user_id]);
+        return (int)$q->fetchColumn() === 0;
+    }
+
+    public static function exists_full_name(string $full_name): bool
+    {
         $q = self::execute(
             "SELECT COUNT(*) FROM users WHERE full_name = :fn",
             ["fn" => $full_name]
@@ -306,9 +317,18 @@ class User extends Model {
         $row = $q->fetch();
 
         if ($row && !empty($row["picture_path"])) {
-            $path = $row["picture_path"];
-            if (file_exists($path)) {
-                @unlink($path);
+            $relativePath = $row["picture_path"];
+
+            $absolutePath = __DIR__ . "/../" . $relativePath;
+
+            $thumbnailPath = preg_replace('/\.jpg$/', '_thumbnail.jpg', $absolutePath);
+
+            if (file_exists($absolutePath)) {
+                unlink($absolutePath);
+            }
+
+            if ($thumbnailPath && file_exists($thumbnailPath)) {
+                unlink($thumbnailPath);
             }
         }
 

@@ -228,4 +228,56 @@ class ItemPicture extends Model {
         $sql = "DELETE FROM item_pictures WHERE item = :item_id ";
         self::execute($sql, ['item_id' => $item_id]);
     }
+
+    public static function reorder_for_item(int $item_id, array $ordered_paths): void {
+        $current_pictures = self::get_item_pictures($item_id);
+
+        $current_paths = array_map(
+            fn(ItemPicture $picture) => $picture->get_picture_path(),
+            $current_pictures
+        );
+
+        sort($current_paths);
+        $sorted_ordered_paths = $ordered_paths;
+        sort($sorted_ordered_paths);
+
+        if ($current_paths !== $sorted_ordered_paths) {
+            throw new Exception('Invalid image set for reorder.');
+        }
+
+        self::execute("START TRANSACTION", []);
+
+        try {
+            foreach ($ordered_paths as $index => $path) {
+                self::execute(
+                    "UPDATE item_pictures
+                 SET priority = :temp_priority
+                 WHERE item = :item AND picture_path = :path",
+                    [
+                        'temp_priority' => 1000 + $index + 1,
+                        'item' => $item_id,
+                        'path' => $path
+                    ]
+                );
+            }
+
+            foreach ($ordered_paths as $index => $path) {
+                self::execute(
+                    "UPDATE item_pictures
+                 SET priority = :priority
+                 WHERE item = :item AND picture_path = :path",
+                    [
+                        'priority' => $index + 1,
+                        'item' => $item_id,
+                        'path' => $path
+                    ]
+                );
+            }
+
+            self::execute("COMMIT", []);
+        } catch (Exception $e) {
+            self::execute("ROLLBACK", []);
+            throw $e;
+        }
+    }
 }

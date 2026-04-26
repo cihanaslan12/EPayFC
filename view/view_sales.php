@@ -39,7 +39,11 @@
                 <div class="col">
                     <div class="card">
                         <h5>LOYAL BIDDER</h5>
-                        <p id="bidder"><?= $loyal->get_pseudo() ?></p>
+                        <?php if ($loyal): ?>
+                            <p id="bidder"><?= $loyal->get_pseudo() ?></p>
+                        <?php else: ?>
+                            <p id="bidder">None</p>
+                        <?php endif; ?>
                         <p id="sales-infos">Most recurring winning bidder</p>
                     </div>
                 </div>
@@ -50,11 +54,12 @@
             <div class="row row-cols-md-4 g-4">
                 <?php foreach ($sales as $item): ?>
                     <div class="card-item">
+                        <?php $open_from = 'sales'; ?>
                         <?php require 'item_card.php'; ?>
                         <div id="item-infos">
                             <p class="text-secondary"><i class="bi bi-currency-dollar"></i> Final price € <?= $item->get_max_bid() ?></p>
                             <p class="text-secondary"><i class="bi bi-trophy"></i> <?= $item->get_winner() ?></p>
-                            <p class="text-secondary"><i class="bi bi-clock"></i> Closed on <?= $item->get_end_at() ?></p>
+                            <p class="text-secondary"><i class="bi bi-clock"></i> Closed on <?= $item->get_finish_time() ?></p>
                         </div>
                     </div>
                 <?php endforeach;?>

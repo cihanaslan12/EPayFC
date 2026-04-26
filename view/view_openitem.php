@@ -26,53 +26,70 @@
 
     <div class="row g-4">
         <!-- Photos -->
-        <div class="col-lg-8">
+        <div class="col-lg-8" id="item-container" data-id="<?= $item->get_id() ?>">
             <div class="card">
-
-                    <?php if ($mainPicture): ?>
-                        <img src="<?= $mainPicture ?>"
-                             alt="Main picture"
-                             class="img-fluid rounded border mb-3"
-                             style="width:100%;max-height:480px;object-fit:contain;">
-
-                        <div class="bg-dark text-white p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <div>
-                                    <div class="fw-bold"><?= $item->get_title() ?></div>
-                                    <div class="small text-white-50">
-                                        <?= $item->get_description() ?>
-                                    </div>
-                                </div>
-
-                                <?php if ($item->get_is_auction() === 1): ?>
-                                    <span class="badge text-bg-secondary">Auction</span>
-                                <?php else: ?>
-                                    <span class="badge text-bg-secondary">Direct sale</span>
-                                <?php endif; ?>
+                <div id="carousel" class="carousel slide">
+                    <div class="carousel-inner">
+                        <?php foreach($pictures as $pic): ?>
+                            <?php $isMain = ($pic->get_picture_path() === $mainPicture); ?>
+                            <div class="carousel-item <?= $isMain ? 'active' : ''?>">
+                                <img src="<?= $pic->get_picture_path() ?>" class="d-block w-100" alt="Main picture">
                             </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
 
-                            <div class="small mt-2">
-                                <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
-                                <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                <div class="bg-dark text-white p-3 rounded">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold"><?= $item->get_title() ?></div>
+                            <div class="small text-white-50">
+                                <?= $item->get_description() ?>
                             </div>
                         </div>
-                    <?php else: ?>
-                        <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
-                    <?php endif; ?>
+
+                        <?php if ($item->get_is_auction() === 1): ?>
+                            <span class="badge text-bg-secondary">Auction</span>
+                        <?php else: ?>
+                            <span class="badge text-bg-secondary">Direct sale</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="small mt-2">
+                        <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
+                        <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
+                    </div>
+                </div>
+                <?php if (empty($pictures)): ?>
+                    <p class="text-muted mb-0"><em>No pictures for this item.</em></p>
+                <?php endif; ?>
             </div>
             <?php if (!empty($pictures)): ?>
                 <div class="card mt-4">
                     <div class="card-body">
                         <h5 class="card-title mb-3">Additional images</h5>
 
-                        <div class="d-flex gap-2 flex-wrap">
+                        <div class="d-flex gap-2 flex-wrap thumbnails-container">
                             <?php foreach ($pictures as $pic): ?>
                                 <?php
                                 $thumb = $pic->get_thumbnail_path();
                                 $prio  = $pic->get_priority();
+                                $param2 = $_GET['param2'] ?? '';
+                                $target = is_numeric($param2) ? $param2 : 1;
+                                $is_selected = $prio == $target;
+                                $border = $is_selected ? "border-4 border-info-subtle" : "";
                                 ?>
                                 <a href="item/open/<?= (int)$item->get_id() ?>/<?= $prio ?>"
-                                   class="d-inline-block border rounded p-1 bg-light">
+                                   data-bs-target="#carousel" data-bs-slide-to="<?= (int)$item->get_id() ?>/<?= $prio ?>"
+                                   class="d-inline-block border rounded p-1 bg-light <?= $border ?> ">
                                     <img src="<?= $thumb ?>"
                                          alt="thumbnail <?= $prio ?>"
                                          style="width:90px;height:90px;object-fit:cover;display:block;">
@@ -180,7 +197,8 @@
                                     <button class="btn btn-secondary w-100 mb-2" type="button" disabled>Place bid</button>
                                     <div class="text-muted small"><em>Login required to place a bid.</em></div>
                                 <?php else: ?>
-                                    <form method="post" action="item/place_bid/<?= $item->get_id() ?>">
+                                    <form method="post" action="item/place_bid/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <input
                                                 type="text"
                                                 name="amount"
@@ -211,7 +229,8 @@
                                     </button>
                                     <div class="text-muted small mt-1"><em>Login required to buy now.</em></div>
                                 <?php else: ?>
-                                    <form method="post" action="item/buy_now/<?= $item->get_id() ?>">
+                                    <form method="post" action="item/buy_now/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
+                                        <input type="hidden" name="from" value="<?= htmlspecialchars($from ?? 'browse') ?>">
                                         <?php if (isset($errors["buy_now"])): ?>
                                             <div class="text-danger small mb-1"><?= $errors["buy_now"] ?></div>
                                         <?php endif; ?>
@@ -254,10 +273,10 @@
 
                             <?php if ($canManage): ?>
                                 <div class="d-grid gap-2">
-                                    <a class="btn btn-outline-primary" href="item/edit/<?= $item->get_id() ?>">
+                                    <a class="btn btn-outline-primary" href="item/edit/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         Edit item details
                                     </a>
-                                    <a class="btn btn-outline-primary" href="item/manage_images/<?= $item->get_id() ?>">
+                                    <a class="btn btn-outline-primary" href="item/manage_images/<?= $item->get_id() ?>/<?= $from ?><?= $back_filter ? '/' . $back_filter : ''?>">
                                         Manage images
                                     </a>
                                     <a class="btn btn-outline-danger" href="item/delete/<?= $item->get_id() ?>">
@@ -281,5 +300,9 @@
 <footer>
     <?php require 'footer_menu.php'; ?>
 </footer>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
+<script src="js/carousel.js"></script>
 </body>
 </html>

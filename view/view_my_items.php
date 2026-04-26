@@ -16,10 +16,29 @@
 </header>
 
 <main class="p-3 m-3">
+    <div id="item-search-config"
+         data-search-url="item/search_my_items"
+         data-open-from="my_items"></div>
+
+    <div id="item-search-box" class="d-none pt-5 search-box-wrapper">
+        <input
+                type="text"
+                id="item-search-input"
+                class="form-control"
+                placeholder="Search my items...">
+    </div>
+
+    <div id="item-search-empty" class="d-none no-item-found mt-4">
+        No item found.
+    </div>
+
+    <div id="item-search-sections">
+
     <?php if (isset($active_items) && count($active_items) > 0): ?>
         <h2 class="pt-5">Active Items</h2>
         <div class="row row-cols-md-4 g-4">
             <?php foreach ($active_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
@@ -29,6 +48,7 @@
         <h2 class="pt-3">Closed Unsold Items</h2>
         <div class="row row-cols-md-4 g-4">
             <?php foreach ($closed_unsold_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
@@ -38,14 +58,18 @@
         <h2 class="pt-3">Sold Items</h2>
         <div class="row row-cols-md-4 g-4 pb-5">
             <?php foreach ($sold_items as $item): ?>
+                <?php $open_from = 'my_items'; ?>
                 <?php require 'item_card.php'; ?>
             <?php endforeach;?>
         </div>
     <?php endif; ?>
+    </div>
 </main>
 
 <footer>
     <?php require 'footer_menu.php'; ?>
 </footer>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="<?= Configuration::get("web_root") ?>js/item_search.js"></script>
 </body>
 </html>

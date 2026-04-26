@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <style>
-body { padding-top: 50px;}
+body { padding-top: 50px; padding-bottom: 150px;}
 </style>
 <body>
 <header>

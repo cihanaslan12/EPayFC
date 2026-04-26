@@ -14,6 +14,7 @@ class ControllerItem extends Controller {
 
     public function open(): void {
         $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
+        $encoded_filter = $_GET["param3"] ?? "";
 
         if ($id <= 0) {
             http_response_code(404);
@@ -31,20 +32,23 @@ class ControllerItem extends Controller {
         $user = $this->get_user_or_false(); // guest autorisé
 
 
-        (new View("openitem"))->show($this->build_openitem_view_data($item, $user));
+        (new View("openitem"))->show($this->build_openitem_view_data($item, $user, $encoded_filter));
     }
 
     private function build_openitem_view_data(
         Item $item,
              $user,
+        ?string $encoded_filter,
         ?array $errors = null,
         ?string $postedAmount = null
     ): array {
         $pictures = $item->get_pictures();
 
-        $selectedPriority = isset($_GET["param2"]) ? intval($_GET["param2"]) : 0;
+        $param2 = $_GET["param2"] ?? null;
+        $selectedPriority = (is_numeric($param2)) ? intval($param2) : 0;
 
-        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : null;
+        $placeholderPicture = 'img/item_placeholder/item_placeholder.jpg';
+        $mainPicture = count($pictures) > 0 ? $pictures[0]->get_picture_path() : $placeholderPicture;
         if ($selectedPriority > 0) {
             foreach ($pictures as $pic) {
                 if ($pic->get_priority() === $selectedPriority) {
@@ -71,9 +75,20 @@ class ControllerItem extends Controller {
             }
         }
 
+        $from = $this->get_open_from();
+        $source_back_url = $this->get_back_url_from_source($from);
+
+        $back_url_with_details = $source_back_url;
+        if ($encoded_filter !== '' && $encoded_filter != null) {
+            $back_url_with_details .= '/' . $encoded_filter;
+        }
+
         $data = [
             'show_back' => true,
-            'back_url' => 'item/browse',
+            'back_url' => $back_url_with_details,
+            'from' => $from,
+            'back_filter' => $encoded_filter,
+            'url' => $from . ($encoded_filter ? '/' . $encoded_filter : ''),
             'page_title' => "Item open",
             'show_save' => false,
 
@@ -103,6 +118,15 @@ class ControllerItem extends Controller {
         return $data;
     }
 
+    private function get_back_url_from_source(string $from): string {
+        return match ($from) {
+            'my_items' => 'item/my_items',
+            'sales' => 'item/sales',
+            'purchases' => 'item/purchases',
+            default => 'item/browse',
+        };
+    }
+
 
     public function place_bid(): void {
         $user = $this->get_user_or_false();
@@ -126,17 +150,18 @@ class ControllerItem extends Controller {
         }
 
         $now = AppTime::get_current_datetime();
-
+        $encoded_filter = ($_GET['param3'] ?? '');
         $amount = trim($_POST["amount"] ?? "");
         $errors = [];
 
         if (Bid::place_bid($user, $item, $amount, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from, $encoded_filter);
             return;
         }
 
         (new View("openitem"))->show(
-            $this->build_openitem_view_data($item, $user, $errors, $amount)
+            $this->build_openitem_view_data($item, $user, $encoded_filter, $errors, $amount)
         );
     }
 
@@ -163,16 +188,17 @@ class ControllerItem extends Controller {
         }
 
         $now = AppTime::get_current_datetime();
-
+        $encoded_filter = $_GET['param3'] ?? '';
         $errors = [];
 
         if (Bid::buy_now($user, $item, $now, $errors)) {
-            $this->redirect("item", "open", $id);
+            $from = $this->get_open_from();
+            $this->redirect_to_open($id, $from, $encoded_filter);
             return;
         }
 
         (new View("openitem"))->show(
-            $this->build_openitem_view_data($item, $user, $errors, null)
+            $this->build_openitem_view_data($item, $user, $encoded_filter, $errors, null)
         );
     }
 
@@ -226,11 +252,100 @@ class ControllerItem extends Controller {
         ]);
     }
 
+    private function json_response(array $data, int $status = 200): void {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    private function item_to_search_array(Item $item): array {
+        return [
+            'id' => $item->get_id(),
+            'title' => $item->get_title(),
+            'owner_pseudo' => $item->get_owner_pseudo(),
+            'time_left' => $item->get_time_left(),
+            'buy_now_price' => $item->get_buy_now_price(),
+            'starting_bid' => $item->get_starting_bid(),
+            'has_bids' => (int)($item->get_has_bids() ?? 0),
+            'max_bid' => $item->get_max_bid(),
+            'is_auction' => (int)($item->get_is_auction() ?? 0),
+            'thumbnail' => $item->get_thumbnail() ?: 'img/item_placeholder/item_placeholder.jpg',
+            'bidder' => (bool)($item->get_bidder() ?? false),
+            'highest_bidder' => (bool)($item->get_highest_bidder() ?? false),
+            'picture_count' => count($item->get_item_pictures())
+        ];
+    }
+
+    private function items_to_search_array(array $items): array {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = $this->item_to_search_array($item);
+        }
+        return $result;
+    }
+
+    public function search_browse(): void {
+        $query = trim($_POST['query'] ?? '');
+        $user = $this->get_user_or_false();
+
+        if ($user) {
+            $sections = [
+                [
+                    'title' => "Items I'm Participating In",
+                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query))
+                ],
+                [
+                    'title' => "Other Available Items",
+                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query))
+                ]
+            ];
+        } else {
+            $sections = [
+                [
+                    'title' => "Available Items",
+                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query))
+                ]
+            ];
+        }
+
+        $this->json_response(['sections' => $sections]);
+    }
+
+    public function search_my_items(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $query = trim($_POST['query'] ?? '');
+
+        $sections = [
+            [
+                'title' => 'Active Items',
+                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query))
+            ],
+            [
+                'title' => 'Closed Unsold Items',
+                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query))
+            ],
+            [
+                'title' => 'Sold Items',
+                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query))
+            ]
+        ];
+
+        $this->json_response(['sections' => $sections]);
+    }
+
 
     public function manage_images(): void {
         $user = $this->get_user_or_redirect();
-        $item = Item::get_by_id($_GET['param1']);       // param1 !!! -> id de open item?
+        $item = Item::get_by_id($_GET['param1']);
         $error = null;
+
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
 
         if (isset($_POST['upload_images'])) {
             if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
@@ -264,7 +379,9 @@ class ControllerItem extends Controller {
         $manage_images = [
             'user' => $user,
             'show_back' => true,
-            'back_url' => 'item/open/' . $item->get_id(),
+            'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
             'page_title' => "Manage Images",
             'show_save' => false,
             'item' => $item,
@@ -279,6 +396,8 @@ class ControllerItem extends Controller {
         $item_id = $_POST['item'];
         $priority = $_POST['priority'];
         $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
 
         if($picture) {
             if (isset($_POST['btn-left'])) {
@@ -289,7 +408,34 @@ class ControllerItem extends Controller {
                 $picture->delete_picture();
             }
         }
-        $this->redirect("item", "manage_images", $item_id);
+        $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
+    }
+
+    public function reorder_pictures(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['success' => false, 'error' => 'Authentication required.'], 401);
+        }
+
+        $item_id = isset($_POST['item_id']) ? (int) $_POST['item_id'] : 0;
+        $ordered_paths = $_POST['ordered_paths'] ?? [];
+
+        $item = Item::get_by_id($item_id);
+        if (!$item) {
+            $this->json_response(['success' => false, 'error' => 'Item not found.'], 404);
+        }
+
+        if ($item->get_owner() !== $user->get_id()) {
+            $this->json_response(['success' => false, 'error' => 'Forbidden.'], 403);
+        }
+
+        if (!is_array($ordered_paths) || empty($ordered_paths)) {
+            $this->json_response(['success' => false, 'error' => 'Invalid image order.'], 400);
+        }
+
+        ItemPicture::reorder_for_item($item_id, $ordered_paths);
+
+        $this->json_response(['success' => true]);
     }
 
     public function add(): void {
@@ -312,14 +458,14 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($title,$description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($user_id, $title,$description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;
                 else if ($instant_purchase_price && !$direct_sale_price)
                     $instant_or_direct = $instant_purchase_price;
                 $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                $this->redirect("item", "open", $new_item_id);
+                $this->redirect_to_open($new_item_id, 'my_items', null);
             }
         }
         $add_item = [
@@ -341,8 +487,12 @@ class ControllerItem extends Controller {
 
     public function edit(): void {
         $user = $this->get_user_or_false();
+        $user_id = $user->get_id();
         $item_id = $_GET['param1'];
         $item = Item::get_by_id($item_id);
+
+        $from = $_GET['param2'];
+        $encoded_filter = $_GET['param3'] ?? '';
 
         $title = $item->get_title();
         $description = $item->get_description();
@@ -373,21 +523,23 @@ class ControllerItem extends Controller {
             $instant_purchase_price = (float)$_POST['inst_purch_price'];
             $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($title, $description, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price)
                     $instant_or_direct = $direct_sale_price;
                 else if ($instant_purchase_price && !$direct_sale_price)
                     $instant_or_direct = $instant_purchase_price;
                 Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                $this->redirect("item", "open", $item_id);
+                $this->redirect_to_open($item_id, $from, $encoded_filter);
             }
         }
 
         $edit_item = [
             'user' => $user,
             'show_back' => true,
-            'back_url' => 'item/open/' . $item->get_id(),
+            'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
             'page_title' => "Edit item",
             'show_save' => true,
             'item' => $item,
@@ -400,6 +552,44 @@ class ControllerItem extends Controller {
             'errors' => $errors,
         ];
         (new View("add_edit_item"))->show($edit_item);
+    }
+
+    public function validation_config(): void {
+        $this->json_response([
+            'title' => [
+                'min' => (int) Configuration::get('TITLE_MIN_LENGTH'),
+                'max' => (int) Configuration::get('TITLE_MAX_LENGTH'),
+            ],
+            'description' => [
+                'min' => (int) Configuration::get('DESCR_MIN_LENGTH'),
+            ],
+            'duration' => [
+                'min' => (int) Configuration::get('DURATION_MIN'),
+                'max' => (int) Configuration::get('DURATION_MAX'),
+            ],
+            'price' => [
+                'min' => (float) Configuration::get('PRICE_MIN'),
+            ],
+        ]);
+    }
+
+    public function validate_title(): void {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        $item_id = isset($_POST['item_id']) && $_POST['item_id'] !== ''
+            ? (int) $_POST['item_id']
+            : null;
+
+        $errors = Item::validate_title_uniqueness($user->get_id(), $title, $item_id);
+
+        $this->json_response([
+            'valid' => empty($errors),
+            'errors' => $errors
+        ]);
     }
 
     public function delete(): void {
@@ -455,4 +645,70 @@ class ControllerItem extends Controller {
         ]);
     }
 
+    private function get_open_from(): string {
+        $allowed = ['browse', 'my_items', 'sales', 'purchases'];
+
+        $param2 = $_GET['param2'] ?? null;
+        $param3 = $_GET['param3'] ?? null;
+        $postFrom = $_POST['from'] ?? null;
+
+        if (is_string($param3) && in_array($param3, $allowed, true)) {
+            return $param3;
+        }
+
+        if (is_string($param2) && in_array($param2, $allowed, true)) {
+            return $param2;
+        }
+
+        if (is_string($postFrom) && in_array($postFrom, $allowed, true)) {
+            return $postFrom;
+        }
+
+        return 'browse';
+    }
+
+    private function redirect_to_open(int $itemId, string $from, ?string $encoded_filter, ?int $priority = null): void {
+        $web_root = Configuration::get("web_root");
+
+        $url = $web_root . "item/open/" . $itemId;
+
+        if ($priority !== null) {
+            $url .= "/" . $priority . "/" . $from;
+        } else {
+            $url .= "/" . $from;
+            if ($encoded_filter !== null) {
+                $url .= "/" . $encoded_filter;
+            }
+        }
+
+        header("Location: $url", true, 303);
+        die();
+    }
+
+    public function get_pictures_service() {
+        $item_id = '';
+        if (isset($_GET['param1'])) {
+            $item_id = $_GET['param1'];
+        }
+        $item = Item::get_by_id($item_id);
+        $pictures = $item->get_item_pictures();
+        $pictures_paths = [];
+        foreach ($pictures as $picture) {
+            $pictures_paths[] = $picture->get_picture_path();
+        }
+        header('Content-Type: application/json');
+        echo json_encode($pictures_paths);
+    }
+
+    public function encode_filter_service() : void {
+        $filter = $_POST['filter'] ?? '';
+        $encoded = Functions::url_safe_encode($filter);
+        $this->json_response(['encoded' => $encoded]);
+    }
+
+    public function decode_filter_service() :void {
+        $encoded = $_POST['encoded_filter'] ?? '';
+        $decoded = Functions::url_safe_decode($encoded);
+        $this->json_response(['decoded' => $decoded]);
+    }
 }
