@@ -24,8 +24,8 @@ En développement, donnez les permissions d'écriture aux dossiers uploads et da
 ### URLs deploiement
 
 * étudiant Nom Prenom : Boughanem Bilal
-  * URL :
-  * Mot de passe :
+  * URL : http://infolab.epfc.eu:58332/prwb_2526_c06/
+  * Mot de passe : PasswordStudent
 * étudiant Nom Prenom :Aslan Cihan
   * URL :
   * Mot de passe :
