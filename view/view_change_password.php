@@ -31,7 +31,11 @@
             <div class="card-body">
                 <label for="new_password">New Password *</label>
                 <input type="password" name="new_password" id="new_password" value="<?= $new_password ?? '' ?>" class="form-control" placeholder="Enter your new password">
-                <p class="text-danger"><?php if (isset($errors['confirm_new_password'])) echo $errors['confirm_new_password'] ?></p>
+                <?php if (isset($errors['current_same_new'])): ?>
+                    <p class="text-danger"> <?= $errors['current_same_new'] ?></p>
+                <?php elseif (isset($errors['confirm_new_password'])): ?>
+                    <p class="text-danger"> <?= $errors['confirm_new_password'] ?></p>
+                <?php endif; ?>
                 <p id="info">Password must be 8-16 characters with uppercase, number, and punctuation</p>
                 <label for="confirm_new_password">Confirm New Password *</label>
                 <input type="password" name="confirm_new_password" id="confirm_new_password" value="<?= $confirm_new_password ?? '' ?>" class="form-control" placeholder="Confirm your new password">

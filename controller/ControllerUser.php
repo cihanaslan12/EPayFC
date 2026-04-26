@@ -163,7 +163,9 @@ class ControllerUser extends Controller {
             if (!$check) {
                 $errors['current'] = "Current password is wrong ! ";
             }
-            if ($new_password === '' || $confirm_new_password === '') {
+            if ($current_password === $new_password) {
+                $errors['current_same_new'] = "Your new password is same than current!";
+            } else if ($new_password === '' || $confirm_new_password === '') {
                 $errors['confirm_new_password'] = "Your new password is empty! ";
             } else if (!$user->valid_password($new_password)) {
                 $errors['confirm_new_password'] = "Password must be 8-16 characters with uppercase, number, and punctuation";
