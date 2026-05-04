@@ -2,9 +2,9 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-DROP DATABASE IF EXISTS `prwb_2526_c06`;
-CREATE DATABASE IF NOT EXISTS `prwb_2526_c06` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `prwb_2526_c06`;
+DROP DATABASE IF EXISTS `prwb_2526_b00`;
+CREATE DATABASE IF NOT EXISTS `prwb_2526_b00` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `prwb_2526_b00`;
 
 DROP TABLE IF EXISTS `bids`;
 CREATE TABLE IF NOT EXISTS `bids` (
@@ -29,6 +29,25 @@ CREATE TABLE IF NOT EXISTS `items` (
   UNIQUE(`title`, `owner`),
   PRIMARY KEY (`id`),
   KEY `owner` (`owner`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+DROP TABLE IF EXISTS `categories`;
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(25) NOT NULL,
+  `priority` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_categories_name` (`name`),
+  UNIQUE KEY `uq_categories_priority` (`priority`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+DROP TABLE IF EXISTS `item_categories`;
+CREATE TABLE IF NOT EXISTS `item_categories` (
+  `item` int(11) NOT NULL,
+  `category` int(11) NOT NULL,
+  PRIMARY KEY (`item`,`category`),
+  KEY `idx_item_categories_item` (`item`),
+  KEY `idx_item_categories_category` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 DROP TABLE IF EXISTS `item_pictures`;
@@ -61,6 +80,10 @@ ALTER TABLE `bids`
 
 ALTER TABLE `items`
   ADD CONSTRAINT `items_ibfk_1` FOREIGN KEY (`owner`) REFERENCES `users` (`id`);
+
+ALTER TABLE `item_categories`
+  ADD CONSTRAINT `item_categories_ibfk_1` FOREIGN KEY (`item`) REFERENCES `items` (`id`) ON DELETE RESTRICT,
+  ADD CONSTRAINT `item_categories_ibfk_2` FOREIGN KEY (`category`) REFERENCES `categories` (`id`) ON DELETE RESTRICT;
 
 ALTER TABLE `item_pictures`
   ADD CONSTRAINT `item_pictures_ibfk_1` FOREIGN KEY (`item`) REFERENCES `items` (`id`);
