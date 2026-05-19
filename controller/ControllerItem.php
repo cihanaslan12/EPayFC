@@ -6,13 +6,16 @@ require_once "model/Item.php";
 require_once "model/ItemPicture.php";
 require_once "utils/AppTime.php";
 
-class ControllerItem extends Controller {
-    public function index(): void {
+class ControllerItem extends Controller
+{
+    public function index(): void
+    {
         $this->get_user_or_redirect();
         $this->browse();
     }
 
-    public function open(): void {
+    public function open(): void
+    {
         $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
         $encoded_filter = $_GET["param3"] ?? "";
 
@@ -36,12 +39,13 @@ class ControllerItem extends Controller {
     }
 
     private function build_openitem_view_data(
-        Item $item,
-             $user,
+        Item    $item,
+                $user,
         ?string $encoded_filter,
-        ?array $errors = null,
+        ?array  $errors = null,
         ?string $postedAmount = null
-    ): array {
+    ): array
+    {
         $pictures = $item->get_pictures();
 
         $param2 = $_GET["param2"] ?? null;
@@ -118,7 +122,8 @@ class ControllerItem extends Controller {
         return $data;
     }
 
-    private function get_back_url_from_source(string $from): string {
+    private function get_back_url_from_source(string $from): string
+    {
         return match ($from) {
             'my_items' => 'item/my_items',
             'sales' => 'item/sales',
@@ -128,7 +133,8 @@ class ControllerItem extends Controller {
     }
 
 
-    public function place_bid(): void {
+    public function place_bid(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->redirect("user", "login");
@@ -166,7 +172,8 @@ class ControllerItem extends Controller {
     }
 
 
-    public function buy_now(): void {
+    public function buy_now(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->redirect("user", "login");
@@ -203,7 +210,8 @@ class ControllerItem extends Controller {
     }
 
 
-    public function browse(): void {
+    public function browse(): void
+    {
         $user = $this->get_user_or_false();
         if ($user) {
             $my_participations = $user->get_participating_items();
@@ -229,7 +237,8 @@ class ControllerItem extends Controller {
         (new View("browse_items"))->show($browse_view);
     }
 
-    public function my_items(): void {
+    public function my_items(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->redirect("user", "login");
@@ -252,14 +261,16 @@ class ControllerItem extends Controller {
         ]);
     }
 
-    private function json_response(array $data, int $status = 200): void {
+    private function json_response(array $data, int $status = 200): void
+    {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
 
-    private function item_to_search_array(Item $item): array {
+    private function item_to_search_array(Item $item): array
+    {
         return [
             'id' => $item->get_id(),
             'title' => $item->get_title(),
@@ -277,7 +288,8 @@ class ControllerItem extends Controller {
         ];
     }
 
-    private function items_to_search_array(array $items): array {
+    private function items_to_search_array(array $items): array
+    {
         $result = [];
         foreach ($items as $item) {
             $result[] = $this->item_to_search_array($item);
@@ -285,7 +297,8 @@ class ControllerItem extends Controller {
         return $result;
     }
 
-    public function search_browse(): void {
+    public function search_browse(): void
+    {
         $query = trim($_POST['query'] ?? '');
         $user = $this->get_user_or_false();
 
@@ -312,7 +325,8 @@ class ControllerItem extends Controller {
         $this->json_response(['sections' => $sections]);
     }
 
-    public function search_my_items(): void {
+    public function search_my_items(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->json_response(['error' => 'Authentication required.'], 401);
@@ -339,7 +353,8 @@ class ControllerItem extends Controller {
     }
 
 
-    public function manage_images(): void {
+    public function manage_images(): void
+    {
         $user = $this->get_user_or_redirect();
         $item = Item::get_by_id($_GET['param1']);
         $error = null;
@@ -391,7 +406,8 @@ class ControllerItem extends Controller {
         (new View("manage_images"))->show($manage_images);
     }
 
-    public function move_picture(): void {
+    public function move_picture(): void
+    {
         $this->get_user_or_redirect();
         $item_id = $_POST['item'];
         $priority = $_POST['priority'];
@@ -399,7 +415,7 @@ class ControllerItem extends Controller {
         $from = $_GET['param2'] ?? '';
         $encoded_filter = $_GET['param3'] ?? '';
 
-        if($picture) {
+        if ($picture) {
             if (isset($_POST['btn-left'])) {
                 $picture->priority_minus();
             } else if (isset($_POST['btn-right'])) {
@@ -411,13 +427,14 @@ class ControllerItem extends Controller {
         $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
     }
 
-    public function reorder_pictures(): void {
+    public function reorder_pictures(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->json_response(['success' => false, 'error' => 'Authentication required.'], 401);
         }
 
-        $item_id = isset($_POST['item_id']) ? (int) $_POST['item_id'] : 0;
+        $item_id = isset($_POST['item_id']) ? (int)$_POST['item_id'] : 0;
         $ordered_paths = $_POST['ordered_paths'] ?? [];
 
         $item = Item::get_by_id($item_id);
@@ -440,49 +457,53 @@ class ControllerItem extends Controller {
 
     public function add(): void {
         $user = $this->get_user_or_false();
-        $user_id = $user->get_id();
-        $title = '';
-        $description = '';
-        $duration = 7;
-        $starting_bid = 0.0;
-        $instant_purchase_price = 0.0;
-        $direct_sale_price = 0.0;
-        $instant_or_direct = 0.0;
-        $errors = [];
+        if (!$user) {
+            throw new Exception("Veuillez vous connecter pour ajouter un item");
+        } else {
+            $user_id = $user->get_id();
+            $title = '';
+            $description = '';
+            $duration = 7;
+            $starting_bid = 0.0;
+            $instant_purchase_price = 0.0;
+            $direct_sale_price = 0.0;
+            $instant_or_direct = 0.0;
+            $errors = [];
 
-        if (isset($_POST['save'])) {
-            $title = $_POST['title'];
-            $description = $_POST['description'];
-            $duration = $_POST['duration'];
-            $starting_bid = (float)$_POST['start_bid'];
-            $instant_purchase_price = (float)$_POST['inst_purch_price'];
-            $direct_sale_price = (float)$_POST['dir_sale_price'];
+            if (isset($_POST['save'])) {
+                $title = $_POST['title'];
+                $description = $_POST['description'];
+                $duration = $_POST['duration'];
+                $starting_bid = (float)$_POST['start_bid'];
+                $instant_purchase_price = (float)$_POST['inst_purch_price'];
+                $direct_sale_price = (float)$_POST['dir_sale_price'];
 
-            $errors = Item::validations($user_id, $title,$description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
-            if (empty($errors)) {
-                if ($direct_sale_price && !$instant_purchase_price)
-                    $instant_or_direct = $direct_sale_price;
-                else if ($instant_purchase_price && !$direct_sale_price)
-                    $instant_or_direct = $instant_purchase_price;
-                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                $this->redirect_to_open($new_item_id, 'my_items', null);
+                $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
+                if (empty($errors)) {
+                    if ($direct_sale_price && !$instant_purchase_price)
+                        $instant_or_direct = $direct_sale_price;
+                    else if ($instant_purchase_price && !$direct_sale_price)
+                        $instant_or_direct = $instant_purchase_price;
+                    $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                    $this->redirect_to_open($new_item_id, 'my_items', null);
+                }
             }
-        }
-        $add_item = [
-            'user' => $user,
-            'show_back' => true,
-            'page_title' => "Add item",
-            'show_save' => true,
-            'title' => $title,
-            'description' => $description,
-            'duration' => $duration,
-            'starting_bid' => $starting_bid,
-            'instant_purchase_price' => $instant_purchase_price,
-            'direct_sale_price' => $direct_sale_price,
-            'errors' => $errors,
-        ];
+            $add_item = [
+                'user' => $user,
+                'show_back' => true,
+                'page_title' => "Add item",
+                'show_save' => true,
+                'title' => $title,
+                'description' => $description,
+                'duration' => $duration,
+                'starting_bid' => $starting_bid,
+                'instant_purchase_price' => $instant_purchase_price,
+                'direct_sale_price' => $direct_sale_price,
+                'errors' => $errors,
+            ];
 
-        (new View("add_edit_item"))->show($add_item);
+            (new View("add_edit_item"))->show($add_item);
+        }
     }
 
     public function edit(): void {
@@ -492,7 +513,7 @@ class ControllerItem extends Controller {
         $item_id = $_GET['param1'];
         $item = Item::get_by_id($item_id);
         if(!$item) {
-            die("cet item n'existe pas");
+            throw new Exception("cet item n'existe pas");
         }
 
         $from = $_GET['param2'];
@@ -559,10 +580,10 @@ class ControllerItem extends Controller {
                 ];
                 (new View("add_edit_item"))->show($edit_item);
             } else {
-                 die("L'item n'est pas modifiable");
+                 throw new Exception("L'item n'est pas modifiable");
             }
         } else {
-            die("Impossible de modifier un item qui ne vous appartient pas");
+            throw new Exception("Impossible de modifier un item qui ne vous appartient pas");
         }
     }
 
