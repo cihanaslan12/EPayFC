@@ -148,8 +148,10 @@ class ControllerUser extends Controller {
     }
 
     public function change_password(): void {
-        $session = $this->get_user_or_redirect();
-        $user = User::get_by_id($session->get_id());    // on récupère le user (et ses infos actuels)
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            throw new Exception ("Vous en pouvez pas modifier le mot de passe sans vous connecter!");
+        }
         $current_password = '';
         $new_password = '';
         $confirm_new_password = '';

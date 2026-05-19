@@ -355,76 +355,84 @@ class ControllerItem extends Controller
 
     public function manage_images(): void
     {
-        $user = $this->get_user_or_redirect();
-        $item = Item::get_by_id($_GET['param1']);
-        $error = null;
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            throw new Exception("Veuillez vous connecter...");
+        } else {
+            $item = Item::get_by_id($_GET['param1']);
+            $error = null;
 
-        $from = $_GET['param2'] ?? '';
-        $encoded_filter = $_GET['param3'] ?? '';
+            $from = $_GET['param2'] ?? '';
+            $encoded_filter = $_GET['param3'] ?? '';
 
-        if (isset($_POST['upload_images'])) {
-            if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
-                $files = $_FILES['image']['name'];
+            if (isset($_POST['upload_images'])) {
+                if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
+                    $files = $_FILES['image']['name'];
 
-                foreach ($files as $index => $name) {
-                    $file_name = $_FILES['image']['name'][$index];
-                    $tmp_name = $_FILES['image']['tmp_name'][$index];
-                    $size = $_FILES['image']['size'][$index];
-                    $file_error = $_FILES['image']['error'][$index];
+                    foreach ($files as $index => $name) {
+                        $file_name = $_FILES['image']['name'][$index];
+                        $tmp_name = $_FILES['image']['tmp_name'][$index];
+                        $size = $_FILES['image']['size'][$index];
+                        $file_error = $_FILES['image']['error'][$index];
 
-                    if ($file_error === 0) {
-                        $extension = Uploader::check_extension($file_name);
-                        $size = Uploader::check_size($size);
-                        if (!$extension) {
-                            $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
-                        } else if (!$size) {
-                            $error = "Image size is max 5MB";
-                        } else {
-                            $item->add_pictures($tmp_name, $file_name);
+                        if ($file_error === 0) {
+                            $extension = Uploader::check_extension($file_name);
+                            $size = Uploader::check_size($size);
+                            if (!$extension) {
+                                $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+                            } else if (!$size) {
+                                $error = "Image size is max 5MB";
+                            } else {
+                                $item->add_pictures($tmp_name, $file_name);
+                            }
                         }
                     }
+                } else {
+                    $error = "Error while uploading file.";
                 }
-            } else {
-                $error = "Error while uploading file.";
             }
+
+            $images = $item->get_item_pictures();
+
+            $manage_images = [
+                'user' => $user,
+                'show_back' => true,
+                'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+                'from' => $from,
+                'back_filter' => $encoded_filter,
+                'page_title' => "Manage Images",
+                'show_save' => false,
+                'item' => $item,
+                'error' => $error,
+                'images' => $images,
+            ];
+            (new View("manage_images"))->show($manage_images);
         }
-
-        $images = $item->get_item_pictures();
-
-        $manage_images = [
-            'user' => $user,
-            'show_back' => true,
-            'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
-            'from' => $from,
-            'back_filter' => $encoded_filter,
-            'page_title' => "Manage Images",
-            'show_save' => false,
-            'item' => $item,
-            'error' => $error,
-            'images' => $images,
-        ];
-        (new View("manage_images"))->show($manage_images);
     }
 
     public function move_picture(): void
     {
-        $this->get_user_or_redirect();
-        $item_id = $_POST['item'];
-        $priority = $_POST['priority'];
-        $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
-        $from = $_GET['param2'] ?? '';
-        $encoded_filter = $_GET['param3'] ?? '';
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            throw new Exception("Veuillez vous connecter...");
+        } else {
+            $item_id = $_POST['item'];
+            $priority = $_POST['priority'];
+            $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+            $from = $_GET['param2'] ?? '';
+            $encoded_filter = $_GET['param3'] ?? '';
 
-        if ($picture) {
-            if (isset($_POST['btn-left'])) {
-                $picture->priority_minus();
-            } else if (isset($_POST['btn-right'])) {
-                $picture->priority_plus();
-            } else if (isset($_POST['btn-delete'])) {
-                $picture->delete_picture();
+            if ($picture) {
+                if (isset($_POST['btn-left'])) {
+                    $picture->priority_minus();
+                } else if (isset($_POST['btn-right'])) {
+                    $picture->priority_plus();
+                } else if (isset($_POST['btn-delete'])) {
+                    $picture->delete_picture();
+                }
             }
+            $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
         }
-        $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
     }
 
     public function reorder_pictures(): void
@@ -455,7 +463,8 @@ class ControllerItem extends Controller
         $this->json_response(['success' => true]);
     }
 
-    public function add(): void {
+    public function add(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
             throw new Exception("Veuillez vous connecter pour ajouter un item");
@@ -506,84 +515,89 @@ class ControllerItem extends Controller
         }
     }
 
-    public function edit(): void {
-        $user = $this->get_user_or_redirect();
-        $user_id = $user->get_id();
-
-        $item_id = $_GET['param1'];
-        $item = Item::get_by_id($item_id);
-        if(!$item) {
-            throw new Exception("cet item n'existe pas");
-        }
-
-        $from = $_GET['param2'];
-        $encoded_filter = $_GET['param3'] ?? '';
-
-        if ($user_id == $item->get_owner()) {
-            if ($item->get_has_bids() == 0) {
-                $title = $item->get_title();
-                $description = $item->get_description();
-                $duration = $item->get_duration_days();
-                $starting_bid = $item->get_starting_bid();
-
-                $instant_purchase_price = 0.0;
-                $direct_sale_price = 0.0;
-                $instant_or_direct = 0.0;
-
-                $buy_now_price = $item->get_buy_now_price();
-                $is_auction = $item->get_is_auction();
-                $is_direct_sale = $item->get_is_direct_sale();
-                if ($buy_now_price > 0) {
-                    if ($is_auction === 1) {
-                        $instant_purchase_price = $buy_now_price;
-                    } else if ($is_direct_sale === 1) {
-                        $direct_sale_price = $buy_now_price;
-                    }
-                }
-                $errors = [];
-
-                if (isset($_POST['save'])) {
-                    $title = $_POST['title'];
-                    $description = $_POST['description'];
-                    $duration = $_POST['duration'];
-                    $starting_bid = (float)$_POST['start_bid'];
-                    $instant_purchase_price = (float)$_POST['inst_purch_price'];
-                    $direct_sale_price = (float)$_POST['dir_sale_price'];
-
-                    $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
-                    if (empty($errors)) {
-                        if ($direct_sale_price && !$instant_purchase_price)
-                            $instant_or_direct = $direct_sale_price;
-                        else if ($instant_purchase_price && !$direct_sale_price)
-                            $instant_or_direct = $instant_purchase_price;
-                        Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                        $this->redirect_to_open($item_id, $from, $encoded_filter);
-                    }
-                }
-
-                $edit_item = [
-                    'user' => $user,
-                    'show_back' => true,
-                    'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
-                    'from' => $from,
-                    'back_filter' => $encoded_filter,
-                    'page_title' => "Edit item",
-                    'show_save' => true,
-                    'item' => $item,
-                    'title' => $title,
-                    'description' => $description,
-                    'duration' => $duration,
-                    'starting_bid' => $starting_bid,
-                    'instant_purchase_price' => $instant_purchase_price,
-                    'direct_sale_price' => $direct_sale_price,
-                    'errors' => $errors,
-                ];
-                (new View("add_edit_item"))->show($edit_item);
-            } else {
-                 throw new Exception("L'item n'est pas modifiable");
-            }
+    public function edit(): void
+    {
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            throw new Exception('Veuillez vous connecter pour modifier vos items');
         } else {
-            throw new Exception("Impossible de modifier un item qui ne vous appartient pas");
+            $user_id = $user->get_id();
+
+            $item_id = $_GET['param1'];
+            $item = Item::get_by_id($item_id);
+            if (!$item) {
+                throw new Exception("cet item n'existe pas");
+            }
+
+            $from = $_GET['param2'];
+            $encoded_filter = $_GET['param3'] ?? '';
+
+            if ($user_id == $item->get_owner()) {
+                if ($item->get_has_bids() == 0) {
+                    $title = $item->get_title();
+                    $description = $item->get_description();
+                    $duration = $item->get_duration_days();
+                    $starting_bid = $item->get_starting_bid();
+
+                    $instant_purchase_price = 0.0;
+                    $direct_sale_price = 0.0;
+                    $instant_or_direct = 0.0;
+
+                    $buy_now_price = $item->get_buy_now_price();
+                    $is_auction = $item->get_is_auction();
+                    $is_direct_sale = $item->get_is_direct_sale();
+                    if ($buy_now_price > 0) {
+                        if ($is_auction === 1) {
+                            $instant_purchase_price = $buy_now_price;
+                        } else if ($is_direct_sale === 1) {
+                            $direct_sale_price = $buy_now_price;
+                        }
+                    }
+                    $errors = [];
+
+                    if (isset($_POST['save'])) {
+                        $title = $_POST['title'];
+                        $description = $_POST['description'];
+                        $duration = $_POST['duration'];
+                        $starting_bid = (float)$_POST['start_bid'];
+                        $instant_purchase_price = (float)$_POST['inst_purch_price'];
+                        $direct_sale_price = (float)$_POST['dir_sale_price'];
+
+                        $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
+                        if (empty($errors)) {
+                            if ($direct_sale_price && !$instant_purchase_price)
+                                $instant_or_direct = $direct_sale_price;
+                            else if ($instant_purchase_price && !$direct_sale_price)
+                                $instant_or_direct = $instant_purchase_price;
+                            Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                            $this->redirect_to_open($item_id, $from, $encoded_filter);
+                        }
+                    }
+
+                    $edit_item = [
+                        'user' => $user,
+                        'show_back' => true,
+                        'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+                        'from' => $from,
+                        'back_filter' => $encoded_filter,
+                        'page_title' => "Edit item",
+                        'show_save' => true,
+                        'item' => $item,
+                        'title' => $title,
+                        'description' => $description,
+                        'duration' => $duration,
+                        'starting_bid' => $starting_bid,
+                        'instant_purchase_price' => $instant_purchase_price,
+                        'direct_sale_price' => $direct_sale_price,
+                        'errors' => $errors,
+                    ];
+                    (new View("add_edit_item"))->show($edit_item);
+                } else {
+                    throw new Exception("L'item n'est pas modifiable");
+                }
+            } else {
+                throw new Exception("Impossible de modifier un item qui ne vous appartient pas");
+            }
         }
     }
 
@@ -626,34 +640,42 @@ class ControllerItem extends Controller
     }
 
     public function delete(): void {
-        $this->get_user_or_redirect();
-        $item_id = $_GET['param1'];
-        $item = Item::get_by_id($item_id);
-        (new View("delete_confirm"))->show(['item' => $item]);
+        $user = $this->get_user_or_false();
+        if (!$user) {
+            throw new Exception("Veuillez vous connecter pour delete un item");
+        } else {
+            $item_id = $_GET['param1'];
+            $item = Item::get_by_id($item_id);
+            (new View("delete_confirm"))->show(['item' => $item]);
 
-        if (isset($_POST['delete'])) {
-            $item->delete_item_with_dependencies();
-            $this->redirect("item", "my_items");
+            if (isset($_POST['delete'])) {
+                $item->delete_item_with_dependencies();
+                $this->redirect("item", "my_items");
+            }
         }
     }
 
     public function sales(): void {
         $user = $this->get_user_or_redirect();
-        $sales = $user->get_my_sold_items();
-        $total = $user->get_my_sold_items_total();
-        $average = $user->get_average_ticket();
-        $loyal = $user->get_loyal_bidder();
-        (new View("sales"))->show([
-            'user' => $user,
-            'show_back' => true,
-            'back_url' => 'user/profile',
-            'page_title' => 'Sales',
-            'show_save' => false,
-            'sales' => $sales,
-            'total' => $total,
-            'average' => $average,
-            'loyal' => $loyal
-        ]);
+        if (!$user) {
+            throw new Exception("Veuillez vous connecter pour visualiser vos ventes");
+        } else {
+            $sales = $user->get_my_sold_items();
+            $total = $user->get_my_sold_items_total();
+            $average = $user->get_average_ticket();
+            $loyal = $user->get_loyal_bidder();
+            (new View("sales"))->show([
+                'user' => $user,
+                'show_back' => true,
+                'back_url' => 'user/profile',
+                'page_title' => 'Sales',
+                'show_save' => false,
+                'sales' => $sales,
+                'total' => $total,
+                'average' => $average,
+                'loyal' => $loyal
+            ]);
+        }
     }
 
     public function purchases(): void {
