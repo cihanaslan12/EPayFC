@@ -194,6 +194,24 @@
             }, 250);
         });
 
+        // propagation filtre url en bas à gauche lors du survol de l'item dans browse & my_items
+            $(document).on('mouseenter', '.item-card-link', function (e) {
+                const $link = $(this);
+                const filterValue = ($searchInput.length > 0) ? $searchInput.val().trim() : '';
+
+                if (filterValue === '') {
+                    $link.attr('href', baseUrl);
+                } else {
+                    $.post('item/encode_filter_service', {filter: filterValue}, function (response) {
+                        if (response && response.encoded) {
+                            const baseUrl = $link.attr('href');
+                            $link.attr('href', baseUrl + '/' + response.encoded);
+                            $link.data('filtered', true);
+                        }
+                    }, 'json');
+                }
+            });
+
         // propagation du filtre sur la page suivante
             $(document).on('click', '.item-card-link', function (e) {
                 e.preventDefault();
