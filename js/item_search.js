@@ -195,13 +195,11 @@
         });
 
         // propagation filtre url en bas à gauche lors du survol de l'item dans browse & my_items
-            $(document).on('mouseenter', '.item-card-link', function (e) {
+            $(document).on('mouseenter', '.item-card-link', function () {
                 const $link = $(this);
+                if ($link.data('filtered') === true) return;
                 const filterValue = ($searchInput.length > 0) ? $searchInput.val().trim() : '';
-
-                if (filterValue === '') {
-                    $link.attr('href', baseUrl);
-                } else {
+                if (filterValue !== '') {
                     $.post('item/encode_filter_service', {filter: filterValue}, function (response) {
                         if (response && response.encoded) {
                             const baseUrl = $link.attr('href');
@@ -214,6 +212,7 @@
 
         // propagation du filtre sur la page suivante
             $(document).on('click', '.item-card-link', function (e) {
+                if ($(this).data('filtered') === true) return;
                 e.preventDefault();
 
                 const currentUrl = $(this).attr('href');
