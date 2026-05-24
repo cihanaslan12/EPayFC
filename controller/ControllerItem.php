@@ -4,6 +4,7 @@ require_once "framework/Controller.php";
 require_once "model/User.php";
 require_once "model/Item.php";
 require_once "model/ItemPicture.php";
+require_once "model/Category.php";
 require_once "utils/AppTime.php";
 
 class ControllerItem extends Controller
@@ -69,6 +70,7 @@ class ControllerItem extends Controller
 
         $bids = $item->get_bids();
         $highestBid = Bid::get_highest_for_item($item->get_id());
+        $categories = Category::get_by_item_alphabetically((int)$item->get_id());
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -104,6 +106,7 @@ class ControllerItem extends Controller
 
             "bids" => $bids,
             "highestBid" => $highestBid,
+            "categories" => $categories,
 
             "now" => $now,
             "isOpen" => $isOpen,
