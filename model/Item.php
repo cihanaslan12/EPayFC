@@ -3,6 +3,7 @@
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
+require_once "model/Category.php";
 require_once "utils/AppTime.php";
 require_once "utils/Uploader.php";
 require_once "utils/Functions.php";
@@ -621,6 +622,7 @@ class Item extends Model
     public function delete_item_with_dependencies(): void {
         $this->delete_bids_dependencies();
         $this->delete_pictures_dependencies();
+        $this->delete_categories_dependencies();
         $this->delete_item();
         $this->delete_uploads();
     }
@@ -631,6 +633,10 @@ class Item extends Model
 
     private function delete_pictures_dependencies(): void {
         ItemPicture::delete_all_pictures_for($this->get_id());
+    }
+
+    private function delete_categories_dependencies(): void {
+        Category::delete_all_for_item((int)$this->get_id());
     }
 
     private function delete_item(): void {
