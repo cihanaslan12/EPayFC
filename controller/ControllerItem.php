@@ -6,6 +6,7 @@ require_once "model/Item.php";
 require_once "model/ItemPicture.php";
 require_once "model/Category.php";
 require_once "utils/AppTime.php";
+require_once "utils/Functions.php";
 
 class ControllerItem extends Controller
 {
@@ -216,6 +217,7 @@ class ControllerItem extends Controller
     public function browse(): void
     {
         $user = $this->get_user_or_false();
+        $encoded_filter = $_GET['param1'] ?? '';
         if ($user) {
             $my_participations = $user->get_participating_items();
             $others_available = $user->get_other_available_items();
@@ -223,6 +225,8 @@ class ControllerItem extends Controller
                 'user' => $user,
                 'my_participations' => $my_participations,
                 'others_available' => $others_available,
+                'categories' => Category::get_all_by_priority(),
+                'encoded_filter' => $encoded_filter,
                 'show_back' => false,
                 'page_title' => "Browse",
                 'show_save' => false
@@ -232,6 +236,8 @@ class ControllerItem extends Controller
             $browse_view = [
                 'user' => null,
                 'all_available_items' => $all_available_items,
+                'categories' => Category::get_all_by_priority(),
+                'encoded_filter' => $encoded_filter,
                 'show_back' => false,
                 'page_title' => "Browse",
                 'show_save' => false
@@ -248,6 +254,8 @@ class ControllerItem extends Controller
             return;
         }
 
+        $encoded_filter = $_GET['param1'] ?? '';
+
         $active_items = Item::get_my_active_items($user);
         $closed_unsold_items = Item::get_my_closed_unsold_items($user);
         $sold_items = Item::get_my_sold_items($user);
@@ -257,6 +265,8 @@ class ControllerItem extends Controller
             "active_items" => $active_items,
             "closed_unsold_items" => $closed_unsold_items,
             "sold_items" => $sold_items,
+            "categories" => Category::get_all_by_priority(),
+            "encoded_filter" => $encoded_filter,
 
             "show_back" => false,
             "page_title" => "My Items",
@@ -303,6 +313,7 @@ class ControllerItem extends Controller
     public function search_browse(): void
     {
         $query = trim($_POST['query'] ?? '');
+        $category_id = max(0, (int)($_POST['category'] ?? 0));
         $user = $this->get_user_or_false();
 
         if ($user) {
@@ -336,6 +347,7 @@ class ControllerItem extends Controller
         }
 
         $query = trim($_POST['query'] ?? '');
+        $category_id = max(0, (int)($_POST['category'] ?? 0));
 
         $sections = [
             [
@@ -774,15 +786,58 @@ class ControllerItem extends Controller
         echo json_encode($pictures_paths);
     }
 
-    public function encode_filter_service() : void {
-        $filter = $_POST['filter'] ?? '';
-        $encoded = Functions::url_safe_encode($filter);
+    public function encode_filter_service(): void
+    {
+        $query = trim($_POST['query'] ?? ($_POST['filter'] ?? ''));
+        $category = max(0, (int)($_POST['category'] ?? 0));
+
+        if ($query === '' && $category === 0) {
+            $this->json_response(['encoded' => '']);
+        }
+
+        $filter_state = [
+            'query' => $query,
+            'category' => $category
+        ];
+
+        $encoded = Functions::url_safe_encode($filter_state);
         $this->json_response(['encoded' => $encoded]);
     }
 
-    public function decode_filter_service() :void {
+    public function decode_filter_service(): void
+    {
         $encoded = $_POST['encoded_filter'] ?? '';
+
+        if ($encoded === '') {
+            $this->json_response([
+                'decoded' => [
+                    'query' => '',
+                    'category' => 0
+                ]
+            ]);
+        }
+
         $decoded = Functions::url_safe_decode($encoded);
+        
+        if (is_string($decoded)) {
+            $decoded = [
+                'query' => $decoded,
+                'category' => 0
+            ];
+        }
+
+        if (!is_array($decoded)) {
+            $decoded = [
+                'query' => '',
+                'category' => 0
+            ];
+        }
+
+        $decoded = [
+            'query' => trim((string)($decoded['query'] ?? '')),
+            'category' => max(0, (int)($decoded['category'] ?? 0))
+        ];
+
         $this->json_response(['decoded' => $decoded]);
     }
 }
