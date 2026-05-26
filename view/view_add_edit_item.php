@@ -132,6 +132,47 @@
                 </div>
                 </div>
             </div>
+            <div class="card mb-2 bg-dark text-white border-secondary" id="categories-card">
+                <div class="card-header text-white fw-bold" style="background-color: #4f6380;">
+                    Categories
+                </div>
+
+                <div class="card-body bg-dark text-white">
+                    <p class="small text-white-50 mb-3">Choose up to 3 categories.</p>
+
+                    <div id="categories-error" class="text-danger small mb-2">
+                        <?php if (isset($errors['categories'])) echo "<div>" . htmlspecialchars($errors['categories']) . "</div>"; ?>
+                    </div>
+
+                    <?php if (!empty($categories)): ?>
+                        <div class="row g-2">
+                            <?php foreach ($categories as $category): ?>
+                                <?php $category_id = (int)$category->get_id(); ?>
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="form-check rounded border px-3 py-2"
+                                         style="background-color: #252424; border-color: #6c757d !important;">
+
+                                        <input
+                                                class="form-check-input category-checkbox"
+                                                type="checkbox"
+                                                name="categories[]"
+                                                id="category-<?= $category_id ?>"
+                                                value="<?= $category_id ?>"
+                                                <?= in_array($category_id, $selected_category_ids ?? [], true) ? 'checked' : '' ?>>
+
+                                        <label class="form-check-label text-white ms-1" for="category-<?= $category_id ?>">
+                                            <?= htmlspecialchars($category->get_name()) ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="small text-white-50">No category available.</div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
         </form>
     </main>
