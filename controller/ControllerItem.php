@@ -480,6 +480,7 @@ class ControllerItem extends Controller
             $instant_purchase_price = 0.0;
             $direct_sale_price = 0.0;
             $instant_or_direct = 0.0;
+            $selected_category_ids = [];
             $errors = [];
 
             if (isset($_POST['save'])) {
@@ -489,14 +490,19 @@ class ControllerItem extends Controller
                 $starting_bid = (float)$_POST['start_bid'];
                 $instant_purchase_price = (float)$_POST['inst_purch_price'];
                 $direct_sale_price = (float)$_POST['dir_sale_price'];
+                $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
 
                 $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
+                if ($category_error = Category::validate_item_categories($selected_category_ids)) {
+                    $errors['categories'] = $category_error;
+                }
                 if (empty($errors)) {
                     if ($direct_sale_price && !$instant_purchase_price)
                         $instant_or_direct = $direct_sale_price;
                     else if ($instant_purchase_price && !$direct_sale_price)
                         $instant_or_direct = $instant_purchase_price;
                     $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                    Category::set_for_item($new_item_id, $selected_category_ids);
                     $this->redirect_to_open($new_item_id, 'my_items', null);
                 }
             }
@@ -511,6 +517,8 @@ class ControllerItem extends Controller
                 'starting_bid' => $starting_bid,
                 'instant_purchase_price' => $instant_purchase_price,
                 'direct_sale_price' => $direct_sale_price,
+                'categories' => Category::get_all_by_priority(),
+                'selected_category_ids' => $selected_category_ids,
                 'errors' => $errors,
             ];
 
@@ -541,6 +549,7 @@ class ControllerItem extends Controller
                     $description = $item->get_description();
                     $duration = $item->get_duration_days();
                     $starting_bid = $item->get_starting_bid();
+                    $selected_category_ids = Category::get_ids_for_item((int)$item_id);
 
                     $instant_purchase_price = 0.0;
                     $direct_sale_price = 0.0;
@@ -565,14 +574,19 @@ class ControllerItem extends Controller
                         $starting_bid = (float)$_POST['start_bid'];
                         $instant_purchase_price = (float)$_POST['inst_purch_price'];
                         $direct_sale_price = (float)$_POST['dir_sale_price'];
+                        $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
 
                         $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
+                        if ($category_error = Category::validate_item_categories($selected_category_ids)) {
+                            $errors['categories'] = $category_error;
+                        }
                         if (empty($errors)) {
                             if ($direct_sale_price && !$instant_purchase_price)
                                 $instant_or_direct = $direct_sale_price;
                             else if ($instant_purchase_price && !$direct_sale_price)
                                 $instant_or_direct = $instant_purchase_price;
                             Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                            Category::set_for_item((int)$item_id, $selected_category_ids);
                             $this->redirect_to_open($item_id, $from, $encoded_filter);
                         }
                     }
@@ -592,6 +606,8 @@ class ControllerItem extends Controller
                         'starting_bid' => $starting_bid,
                         'instant_purchase_price' => $instant_purchase_price,
                         'direct_sale_price' => $direct_sale_price,
+                        'categories' => Category::get_all_by_priority(),
+                        'selected_category_ids' => $selected_category_ids,
                         'errors' => $errors,
                     ];
                     (new View("add_edit_item"))->show($edit_item);
