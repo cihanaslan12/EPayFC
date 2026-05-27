@@ -818,7 +818,7 @@ class ControllerItem extends Controller
         }
 
         $decoded = Functions::url_safe_decode($encoded);
-        
+
         if (is_string($decoded)) {
             $decoded = [
                 'query' => $decoded,
