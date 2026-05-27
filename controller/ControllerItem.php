@@ -320,18 +320,18 @@ class ControllerItem extends Controller
             $sections = [
                 [
                     'title' => "Items I'm Participating In",
-                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query))
+                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query, $category_id))
                 ],
                 [
                     'title' => "Other Available Items",
-                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query))
+                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query, $category_id))
                 ]
             ];
         } else {
             $sections = [
                 [
                     'title' => "Available Items",
-                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query))
+                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query, $category_id))
                 ]
             ];
         }
@@ -352,15 +352,15 @@ class ControllerItem extends Controller
         $sections = [
             [
                 'title' => 'Active Items',
-                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query, $category_id))
             ],
             [
                 'title' => 'Closed Unsold Items',
-                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query, $category_id))
             ],
             [
                 'title' => 'Sold Items',
-                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query, $category_id))
             ]
         ];
 
