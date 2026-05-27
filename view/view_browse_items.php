@@ -18,14 +18,31 @@
         <main class="p-3 m-3">
             <div id="item-search-config"
                  data-search-url="item/search_browse"
-                 data-open-from="browse"></div>
+                 data-open-from="browse"
+                 data-initial-filter="<?= htmlspecialchars($encoded_filter ?? '') ?>"></div>
 
             <div id="item-search-box" class="d-none pt-5 search-box-wrapper">
-                <input
-                        type="text"
-                        id="item-search-input"
-                        class="form-control"
-                        placeholder="Search items...">
+                <div class="row g-2">
+                    <div class="col-12 col-md-8">
+                        <input
+                                type="text"
+                                id="item-search-input"
+                                class="form-control"
+                                placeholder="Search items...">
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <select id="item-category-filter" class="form-select">
+                            <option value="0">All categories</option>
+
+                            <?php foreach (($categories ?? []) as $category): ?>
+                                <option value="<?= (int)$category->get_id() ?>">
+                                    <?= htmlspecialchars($category->get_name()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div id="item-search-empty" class="d-none no-item-found mt-4">
