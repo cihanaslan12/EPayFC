@@ -269,6 +269,49 @@ class ControllerItem extends Controller
         exit;
     }
 
+    private function error_response(string $message, int $status = 403): void
+    {
+        http_response_code($status);
+        (new View("error"))->show(["error" => $message]);
+        exit;
+    }
+
+    private function get_item_or_error(int $item_id): Item
+    {
+        if ($item_id <= 0) {
+            $this->error_response("Item not found.", 404);
+        }
+
+        $item = Item::get_by_id($item_id);
+        if (!$item) {
+            $this->error_response("Item not found.", 404);
+        }
+
+        return $item;
+    }
+
+    private function require_item_manager(User $user, Item $item): void
+    {
+        if ((int)$item->get_owner() !== (int)$user->get_id()) {
+            $this->error_response("You are not allowed to manage this item.", 403);
+        }
+
+        if ((int)($item->get_has_bids() ?? 0) !== 0) {
+            $this->error_response("This item can no longer be modified or deleted because bids have been placed.", 403);
+        }
+    }
+
+    private function json_require_item_manager(User $user, Item $item): void
+    {
+        if ((int)$item->get_owner() !== (int)$user->get_id()) {
+            $this->json_response(['success' => false, 'error' => 'Forbidden.'], 403);
+        }
+
+        if ((int)($item->get_has_bids() ?? 0) !== 0) {
+            $this->json_response(['success' => false, 'error' => 'This item can no longer be modified because bids have been placed.'], 403);
+        }
+    }
+
     private function item_to_search_array(Item $item): array
     {
         return [
@@ -357,57 +400,62 @@ class ControllerItem extends Controller
     {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception("Veuillez vous connecter...");
-        } else {
-            $item = Item::get_by_id($_GET['param1']);
-            $error = null;
+            $this->redirect("user", "login");
+            return;
+        }
 
-            $from = $_GET['param2'] ?? '';
-            $encoded_filter = $_GET['param3'] ?? '';
+        $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
+        $item = $this->get_item_or_error($item_id);
+        $this->require_item_manager($user, $item);
 
-            if (isset($_POST['upload_images'])) {
-                if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
-                    $files = $_FILES['image']['name'];
+        $error = null;
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
 
-                    foreach ($files as $index => $name) {
-                        $file_name = $_FILES['image']['name'][$index];
-                        $tmp_name = $_FILES['image']['tmp_name'][$index];
-                        $size = $_FILES['image']['size'][$index];
-                        $file_error = $_FILES['image']['error'][$index];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_images'])) {
+            if (isset($_FILES['image']) && is_array($_FILES['image']['name'])) {
+                $files = $_FILES['image']['name'];
 
-                        if ($file_error === 0) {
-                            $extension = Uploader::check_extension($file_name);
-                            $size = Uploader::check_size($size);
-                            if (!$extension) {
-                                $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
-                            } else if (!$size) {
-                                $error = "Image size is max 5MB";
-                            } else {
-                                $item->add_pictures($tmp_name, $file_name);
-                            }
+                foreach ($files as $index => $name) {
+                    $file_name = $_FILES['image']['name'][$index];
+                    $tmp_name = $_FILES['image']['tmp_name'][$index];
+                    $size = $_FILES['image']['size'][$index];
+                    $file_error = $_FILES['image']['error'][$index];
+
+                    if ($file_error === UPLOAD_ERR_OK) {
+                        $extension = Uploader::check_extension($file_name);
+                        $valid_size = Uploader::check_size($size);
+
+                        if (!$extension) {
+                            $error = "Unsupported image format : jpg/jpeg, png, gif or webp !";
+                        } else if (!$valid_size) {
+                            $error = "Image size is max 5MB";
+                        } else {
+                            $item->add_pictures($tmp_name, $file_name);
                         }
                     }
-                } else {
-                    $error = "Error while uploading file.";
                 }
+            } else {
+                $error = "Error while uploading file.";
             }
-
-            $images = $item->get_item_pictures();
-
-            $manage_images = [
-                'user' => $user,
-                'show_back' => true,
-                'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
-                'from' => $from,
-                'back_filter' => $encoded_filter,
-                'page_title' => "Manage Images",
-                'show_save' => false,
-                'item' => $item,
-                'error' => $error,
-                'images' => $images,
-            ];
-            (new View("manage_images"))->show($manage_images);
         }
+
+        $images = $item->get_item_pictures();
+
+        $manage_images = [
+            'user' => $user,
+            'show_back' => true,
+            'back_url' => 'item/open/' . $item->get_id() . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
+            'page_title' => "Manage Images",
+            'show_save' => false,
+            'item' => $item,
+            'error' => $error,
+            'images' => $images,
+        ];
+
+        (new View("manage_images"))->show($manage_images);
     }
 
     public function move_picture(): void
