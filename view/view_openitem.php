@@ -67,6 +67,21 @@
                         <div><strong>Start:</strong> <?= $item->get_created_at() ?></div>
                         <div><strong>Ends:</strong> <?= $item->get_end_at() ?></div>
                     </div>
+                    <div class="mt-3">
+                        <div class="small text-white-50 mb-1">Categories</div>
+
+                        <?php if (!empty($categories)): ?>
+                            <div class="d-flex flex-wrap gap-1">
+                                <?php foreach ($categories as $category): ?>
+                                    <span class="badge text-bg-light">
+                                        <?= htmlspecialchars($category->get_name()) ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="small text-white-50"><em>No category.</em></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php if (empty($pictures)): ?>
                     <p class="text-muted mb-0"><em>No pictures for this item.</em></p>

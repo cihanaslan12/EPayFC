@@ -4,7 +4,9 @@ require_once "framework/Controller.php";
 require_once "model/User.php";
 require_once "model/Item.php";
 require_once "model/ItemPicture.php";
+require_once "model/Category.php";
 require_once "utils/AppTime.php";
+require_once "utils/Functions.php";
 
 class ControllerItem extends Controller
 {
@@ -69,6 +71,7 @@ class ControllerItem extends Controller
 
         $bids = $item->get_bids();
         $highestBid = Bid::get_highest_for_item($item->get_id());
+        $categories = Category::get_by_item_alphabetically((int)$item->get_id());
 
         $defaultBid = null;
         if ($item->get_is_auction() === 1 && $isOpen && !$isOwner) {
@@ -104,6 +107,7 @@ class ControllerItem extends Controller
 
             "bids" => $bids,
             "highestBid" => $highestBid,
+            "categories" => $categories,
 
             "now" => $now,
             "isOpen" => $isOpen,
@@ -217,6 +221,7 @@ class ControllerItem extends Controller
     public function browse(): void
     {
         $user = $this->get_user_or_false();
+        $encoded_filter = $_GET['param1'] ?? '';
         if ($user) {
             $my_participations = $user->get_participating_items();
             $others_available = $user->get_other_available_items();
@@ -224,6 +229,8 @@ class ControllerItem extends Controller
                 'user' => $user,
                 'my_participations' => $my_participations,
                 'others_available' => $others_available,
+                'categories' => Category::get_all_by_priority(),
+                'encoded_filter' => $encoded_filter,
                 'show_back' => false,
                 'page_title' => "Browse",
                 'show_save' => false
@@ -233,6 +240,8 @@ class ControllerItem extends Controller
             $browse_view = [
                 'user' => null,
                 'all_available_items' => $all_available_items,
+                'categories' => Category::get_all_by_priority(),
+                'encoded_filter' => $encoded_filter,
                 'show_back' => false,
                 'page_title' => "Browse",
                 'show_save' => false
@@ -249,6 +258,8 @@ class ControllerItem extends Controller
             return;
         }
 
+        $encoded_filter = $_GET['param1'] ?? '';
+
         $active_items = Item::get_my_active_items($user);
         $closed_unsold_items = Item::get_my_closed_unsold_items($user);
         $sold_items = Item::get_my_sold_items($user);
@@ -258,6 +269,8 @@ class ControllerItem extends Controller
             "active_items" => $active_items,
             "closed_unsold_items" => $closed_unsold_items,
             "sold_items" => $sold_items,
+            "categories" => Category::get_all_by_priority(),
+            "encoded_filter" => $encoded_filter,
 
             "show_back" => false,
             "page_title" => "My Items",
@@ -358,24 +371,25 @@ class ControllerItem extends Controller
     public function search_browse(): void
     {
         $query = trim($_POST['query'] ?? '');
+        $category_id = max(0, (int)($_POST['category'] ?? 0));
         $user = $this->get_user_or_false();
 
         if ($user) {
             $sections = [
                 [
                     'title' => "Items I'm Participating In",
-                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query))
+                    'items' => $this->items_to_search_array(Item::search_participating_items($user, $query, $category_id))
                 ],
                 [
                     'title' => "Other Available Items",
-                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query))
+                    'items' => $this->items_to_search_array(Item::search_other_available_items($user, $query, $category_id))
                 ]
             ];
         } else {
             $sections = [
                 [
                     'title' => "Available Items",
-                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query))
+                    'items' => $this->items_to_search_array(Item::search_available_items_for_guest($query, $category_id))
                 ]
             ];
         }
@@ -391,19 +405,20 @@ class ControllerItem extends Controller
         }
 
         $query = trim($_POST['query'] ?? '');
+        $category_id = max(0, (int)($_POST['category'] ?? 0));
 
         $sections = [
             [
                 'title' => 'Active Items',
-                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_active_items($user, $query, $category_id))
             ],
             [
                 'title' => 'Closed Unsold Items',
-                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_closed_unsold_items($user, $query, $category_id))
             ],
             [
                 'title' => 'Sold Items',
-                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query))
+                'items' => $this->items_to_search_array(Item::search_my_sold_items($user, $query, $category_id))
             ]
         ];
 
@@ -562,6 +577,7 @@ class ControllerItem extends Controller
             $instant_purchase_price = 0.0;
             $direct_sale_price = 0.0;
             $instant_or_direct = 0.0;
+            $selected_category_ids = [];
             $errors = [];
 
             if (isset($_POST['save'])) {
@@ -571,14 +587,19 @@ class ControllerItem extends Controller
                 $starting_bid = (float)$_POST['start_bid'];
                 $instant_purchase_price = (float)$_POST['inst_purch_price'];
                 $direct_sale_price = (float)$_POST['dir_sale_price'];
+                $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
 
                 $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
+                if ($category_error = Category::validate_item_categories($selected_category_ids)) {
+                    $errors['categories'] = $category_error;
+                }
                 if (empty($errors)) {
                     if ($direct_sale_price && !$instant_purchase_price)
                         $instant_or_direct = $direct_sale_price;
                     else if ($instant_purchase_price && !$direct_sale_price)
                         $instant_or_direct = $instant_purchase_price;
                     $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                    Category::set_for_item($new_item_id, $selected_category_ids);
                     $this->redirect_to_open($new_item_id, 'my_items', null);
                 }
             }
@@ -593,6 +614,8 @@ class ControllerItem extends Controller
                 'starting_bid' => $starting_bid,
                 'instant_purchase_price' => $instant_purchase_price,
                 'direct_sale_price' => $direct_sale_price,
+                'categories' => Category::get_all_by_priority(),
+                'selected_category_ids' => $selected_category_ids,
                 'errors' => $errors,
             ];
 
@@ -619,6 +642,7 @@ class ControllerItem extends Controller
         $description = $item->get_description();
         $duration = $item->get_duration_days();
         $starting_bid = $item->get_starting_bid();
+        $selected_category_ids = Category::get_ids_for_item((int)$item_id);
 
         $instant_purchase_price = 0.0;
         $direct_sale_price = 0.0;
@@ -642,6 +666,7 @@ class ControllerItem extends Controller
             $starting_bid = (float)($_POST['start_bid'] ?? 0);
             $instant_purchase_price = (float)($_POST['inst_purch_price'] ?? 0);
             $direct_sale_price = (float)($_POST['dir_sale_price'] ?? 0);
+            $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
 
             $errors = Item::validations(
                 $user->get_id(),
@@ -653,6 +678,9 @@ class ControllerItem extends Controller
                 $direct_sale_price,
                 $item_id
             );
+            if ($category_error = Category::validate_item_categories($selected_category_ids)) {
+                $errors['categories'] = $category_error;
+            }
 
             if (empty($errors)) {
                 if ($direct_sale_price && !$instant_purchase_price) {
@@ -660,6 +688,7 @@ class ControllerItem extends Controller
                 } else if ($instant_purchase_price && !$direct_sale_price) {
                     $instant_or_direct = $instant_purchase_price;
                 }
+                Category::set_for_item((int)$item_id, $selected_category_ids);
 
                 Item::update_into_db($item_id, $title, $description, (int)$duration, $starting_bid, $instant_or_direct);
                 $this->redirect_to_open($item_id, $from, $encoded_filter);
@@ -682,6 +711,8 @@ class ControllerItem extends Controller
             'starting_bid' => $starting_bid,
             'instant_purchase_price' => $instant_purchase_price,
             'direct_sale_price' => $direct_sale_price,
+            'categories' => Category::get_all_by_priority(),
+            'selected_category_ids' => $selected_category_ids,
             'errors' => $errors,
         ]);
     }
@@ -852,15 +883,58 @@ class ControllerItem extends Controller
         $this->json_response($pictures_paths);
     }
 
-    public function encode_filter_service() : void {
-        $filter = $_POST['filter'] ?? '';
-        $encoded = Functions::url_safe_encode($filter);
+    public function encode_filter_service(): void
+    {
+        $query = trim($_POST['query'] ?? ($_POST['filter'] ?? ''));
+        $category = max(0, (int)($_POST['category'] ?? 0));
+
+        if ($query === '' && $category === 0) {
+            $this->json_response(['encoded' => '']);
+        }
+
+        $filter_state = [
+            'query' => $query,
+            'category' => $category
+        ];
+
+        $encoded = Functions::url_safe_encode($filter_state);
         $this->json_response(['encoded' => $encoded]);
     }
 
-    public function decode_filter_service() :void {
+    public function decode_filter_service(): void
+    {
         $encoded = $_POST['encoded_filter'] ?? '';
+
+        if ($encoded === '') {
+            $this->json_response([
+                'decoded' => [
+                    'query' => '',
+                    'category' => 0
+                ]
+            ]);
+        }
+
         $decoded = Functions::url_safe_decode($encoded);
+
+        if (is_string($decoded)) {
+            $decoded = [
+                'query' => $decoded,
+                'category' => 0
+            ];
+        }
+
+        if (!is_array($decoded)) {
+            $decoded = [
+                'query' => '',
+                'category' => 0
+            ];
+        }
+
+        $decoded = [
+            'query' => trim((string)($decoded['query'] ?? '')),
+            'category' => max(0, (int)($decoded['category'] ?? 0))
+        ];
+
         $this->json_response(['decoded' => $decoded]);
     }
 }

@@ -88,10 +88,13 @@
 
     function buildItemCard(item, openFrom) {
         const thumbnail = item.thumbnail || 'img/item_placeholder/item_placeholder.jpg';
+        const baseUrl = `item/open/${item.id}/${encodeURIComponent(openFrom)}`;
 
         return `
-            <div class="col">
-                <a href="item/open/${item.id}/${encodeURIComponent(openFrom)}" class="text-decoration-none item-card-link">
+        <div class="col">
+            <a href="${baseUrl}"
+               data-base-url="${baseUrl}"
+               class="text-decoration-none item-card-link">
                     <div class="card">
                         <div class="position-relative">
                             <img src="${escapeHtml(thumbnail)}"
@@ -144,7 +147,7 @@
             html += `
                 <section>
                     <h2 class="${renderedSectionIndex === 0 ? 'pt-5' : 'pt-3'}">${escapeHtml(section.title)}</h2>
-                    <div class="row row-cols-md-4 g-4 ${renderedSectionIndex === sections.length - 1 ? 'pb-5' : ''}">
+                    <div class="row row-cols-md-4 g-4 pb-5">
                         ${cards}
                     </div>
                 </section>
@@ -157,6 +160,56 @@
         $emptyMessage.toggleClass('d-none', hasItems);
     }
 
+    function getCurrentFilterState() {
+        return {
+            query: ($('#item-search-input').val() || '').trim(),
+            category: parseInt($('#item-category-filter').val() || '0', 10)
+        };
+    }
+
+    function isEmptyFilterState(state) {
+        return state.query === '' && state.category === 0;
+    }
+
+    function runSearch(searchUrl, openFrom) {
+        const state = getCurrentFilterState();
+
+        $.ajax({
+            url: searchUrl,
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                query: state.query,
+                category: state.category
+            }
+        })
+            .done(function (response) {
+                renderSections(response.sections || [], openFrom);
+            })
+            .fail(function () {
+                console.error('Item search request failed.');
+            });
+    }
+
+    function applyDecodedFilter(decoded, searchUrl, openFrom) {
+        if (typeof decoded === 'string') {
+            decoded = {
+                query: decoded,
+                category: 0
+            };
+        }
+
+        decoded = decoded || {};
+
+        const query = decoded.query || '';
+        const category = parseInt(decoded.category || '0', 10);
+
+        $('#item-search-input').val(query);
+        $('#item-category-filter').val(String(category));
+
+        runSearch(searchUrl, openFrom);
+    }
+
     function initItemSearch() {
         const $config = $('#item-search-config');
 
@@ -166,84 +219,57 @@
 
         const searchUrl = $config.data('searchUrl');
         const openFrom = $config.data('openFrom');
+        const initialFilter = $config.data('initialFilter') || '';
+
         const $searchBox = $('#item-search-box');
         const $searchInput = $('#item-search-input');
+        const $categoryFilter = $('#item-category-filter');
 
         $searchBox.removeClass('d-none');
 
         let debounceTimer = null;
 
-        $searchInput.on('input', function () {
-            const query = $(this).val();
-
+        function scheduleSearch() {
             clearTimeout(debounceTimer);
 
             debounceTimer = setTimeout(function () {
-                $.ajax({
-                    url: searchUrl,
-                    method: 'POST',
-                    dataType: 'json',
-                    data: {query: query}
-                })
-                    .done(function (response) {
-                        renderSections(response.sections || [], openFrom);
-                    })
-                    .fail(function () {
-                        console.error('Item search request failed.');
-                    });
+                runSearch(searchUrl, openFrom);
             }, 250);
+        }
+
+        $searchInput.on('input', scheduleSearch);
+        $categoryFilter.on('change', scheduleSearch);
+
+        $(document).on('click', '.item-card-link', function (e) {
+            e.preventDefault();
+
+            const $link = $(this);
+            const baseUrl = $link.attr('data-base-url') || $link.attr('href');
+            const state = getCurrentFilterState();
+
+            if (isEmptyFilterState(state)) {
+                window.location.href = baseUrl;
+                return;
+            }
+
+            $.post('item/encode_filter_service', state, function (response) {
+                if (response && response.encoded) {
+                    window.location.href = baseUrl + '/' + response.encoded;
+                } else {
+                    window.location.href = baseUrl;
+                }
+            }, 'json').fail(function () {
+                window.location.href = baseUrl;
+            });
         });
 
-        // propagation filtre url en bas à gauche lors du survol de l'item dans browse & my_items
-            $(document).on('mouseenter', '.item-card-link', function () {
-                const $link = $(this);
-                if ($link.data('filtered') === true) return;
-                const filterValue = ($searchInput.length > 0) ? $searchInput.val().trim() : '';
-                if (filterValue !== '') {
-                    $.post('item/encode_filter_service', {filter: filterValue}, function (response) {
-                        if (response && response.encoded) {
-                            const baseUrl = $link.attr('href');
-                            $link.attr('href', baseUrl + '/' + response.encoded);
-                            $link.data('filtered', true);
-                        }
-                    }, 'json');
+        if (initialFilter !== '') {
+            $.post('item/decode_filter_service', {encoded_filter: initialFilter}, function (response) {
+                if (response && response.decoded) {
+                    applyDecodedFilter(response.decoded, searchUrl, openFrom);
                 }
-            });
-
-        // propagation du filtre sur la page suivante
-            $(document).on('click', '.item-card-link', function (e) {
-                if ($(this).data('filtered') === true) return;
-                e.preventDefault();
-
-                const currentUrl = $(this).attr('href');
-                const filterValue = ($searchInput.length > 0) ? $searchInput.val().trim() : '';
-
-                if (filterValue === '') {
-                    window.location.href = currentUrl;
-                } else {
-                    $.post('item/encode_filter_service', {filter: filterValue}, function (response) {
-                        if (response && response.encoded) {
-                            window.location.href = currentUrl + '/' + response.encoded;
-                        } else {
-                            window.location.href = currentUrl;
-                        }
-                    }, 'json');
-                }
-            });
-
-            // propagation inverse (btn back)
-            const parts = window.location.pathname.split('/');
-            const lastPart = parts[parts.length - 1];
-            if (lastPart !== openFrom && lastPart !== '') {
-                $.post('item/decode_filter_service', {encoded_filter: lastPart}, function (response) {
-                    if (response && response.decoded && $searchInput.length) {
-                        $searchInput.val(response.decoded.trim());
-                        setTimeout(() => {
-                            $searchInput.trigger('input');
-                        }, 50);
-                    }
-                }, 'json');
-            }
+            }, 'json');
+        }
     }
 
     $(initItemSearch);
