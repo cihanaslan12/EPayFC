@@ -567,60 +567,60 @@ class ControllerItem extends Controller
     {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception("Veuillez vous connecter pour ajouter un item");
-        } else {
-            $user_id = $user->get_id();
-            $title = '';
-            $description = '';
-            $duration = 7;
-            $starting_bid = 0.0;
-            $instant_purchase_price = 0.0;
-            $direct_sale_price = 0.0;
-            $instant_or_direct = 0.0;
-            $selected_category_ids = [];
-            $errors = [];
-
-            if (isset($_POST['save'])) {
-                $title = $_POST['title'];
-                $description = $_POST['description'];
-                $duration = $_POST['duration'];
-                $starting_bid = (float)$_POST['start_bid'];
-                $instant_purchase_price = (float)$_POST['inst_purch_price'];
-                $direct_sale_price = (float)$_POST['dir_sale_price'];
-                $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
-
-                $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
-                if ($category_error = Category::validate_item_categories($selected_category_ids)) {
-                    $errors['categories'] = $category_error;
-                }
-                if (empty($errors)) {
-                    if ($direct_sale_price && !$instant_purchase_price)
-                        $instant_or_direct = $direct_sale_price;
-                    else if ($instant_purchase_price && !$direct_sale_price)
-                        $instant_or_direct = $instant_purchase_price;
-                    $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                    Category::set_for_item($new_item_id, $selected_category_ids);
-                    $this->redirect_to_open($new_item_id, 'my_items', null);
-                }
-            }
-            $add_item = [
-                'user' => $user,
-                'show_back' => true,
-                'page_title' => "Add item",
-                'show_save' => true,
-                'title' => $title,
-                'description' => $description,
-                'duration' => $duration,
-                'starting_bid' => $starting_bid,
-                'instant_purchase_price' => $instant_purchase_price,
-                'direct_sale_price' => $direct_sale_price,
-                'categories' => Category::get_all_by_priority(),
-                'selected_category_ids' => $selected_category_ids,
-                'errors' => $errors,
-            ];
-
-            (new View("add_edit_item"))->show($add_item);
+            $this->redirect("user", "login");
+            return;
         }
+        $user_id = $user->get_id();
+        $title = '';
+        $description = '';
+        $duration = 7;
+        $starting_bid = 0.0;
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
+        $selected_category_ids = [];
+        $errors = [];
+
+        if (isset($_POST['save'])) {
+            $title = $_POST['title'];
+            $description = $_POST['description'];
+            $duration = $_POST['duration'];
+            $starting_bid = (float)$_POST['start_bid'];
+            $instant_purchase_price = (float)$_POST['inst_purch_price'];
+            $direct_sale_price = (float)$_POST['dir_sale_price'];
+            $selected_category_ids = Category::normalize_ids($_POST['categories'] ?? []);
+
+            $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price);
+            if ($category_error = Category::validate_item_categories($selected_category_ids)) {
+                $errors['categories'] = $category_error;
+            }
+            if (empty($errors)) {
+                if ($direct_sale_price && !$instant_purchase_price)
+                    $instant_or_direct = $direct_sale_price;
+                else if ($instant_purchase_price && !$direct_sale_price)
+                    $instant_or_direct = $instant_purchase_price;
+                $new_item_id = Item::insert_into_db($user_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
+                Category::set_for_item($new_item_id, $selected_category_ids);
+                $this->redirect_to_open($new_item_id, 'my_items', null);
+            }
+        }
+        $add_item = [
+            'user' => $user,
+            'show_back' => true,
+            'page_title' => "Add item",
+            'show_save' => true,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'categories' => Category::get_all_by_priority(),
+            'selected_category_ids' => $selected_category_ids,
+            'errors' => $errors,
+        ];
+
+        (new View("add_edit_item"))->show($add_item);
     }
 
     public function edit(): void
@@ -805,7 +805,7 @@ class ControllerItem extends Controller
     public function purchases(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            $this->redirect("main", "login");
+            $this->redirect("user", "login");
             return;
         }
 
@@ -819,7 +819,7 @@ class ControllerItem extends Controller
             "user" => $user,
             "purchases" => $purchases,
             "show_back" => true,
-            'back_url' => 'user/profile',
+            "back_url" => 'user/profile',
             "page_title" => "Purchases",
             "show_save" => false,
             "stats" => $stats

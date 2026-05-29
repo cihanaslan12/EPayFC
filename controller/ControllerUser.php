@@ -150,7 +150,8 @@ class ControllerUser extends Controller {
     public function change_password(): void {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception ("Vous en pouvez pas modifier le mot de passe sans vous connecter!");
+            $this->redirect("user", "login");
+            return;
         }
         $current_password = '';
         $new_password = '';
