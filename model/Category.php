@@ -160,4 +160,167 @@ class Category extends Model
 
         return (int)$row['count_categories'] === count($category_ids);
     }
+
+    public static function get_by_id(int $id): Category|false
+    {
+        $sql = "SELECT c.id, c.name, c.priority,
+                   COUNT(ic.item) AS item_count
+            FROM categories c
+            LEFT JOIN item_categories ic ON ic.category = c.id
+            WHERE c.id = :id
+            GROUP BY c.id, c.name, c.priority";
+
+        $query = self::execute($sql, ['id' => $id]);
+        $row = $query->fetch();
+
+        return $row ? self::from_row($row) : false;
+    }
+
+    public static function validate_name(string $name, ?int $excluded_id = null): array
+    {
+        $errors = [];
+        $name = trim($name);
+
+        $min = (int) Configuration::get('CATEGORY_NAME_MIN_LENGTH', '3');
+        $max = (int) Configuration::get('CATEGORY_NAME_MAX_LENGTH', '25');
+
+        if ($name === '') {
+            $errors[] = "Category name is required.";
+        } elseif (strlen($name) < $min || strlen($name) > $max) {
+            $errors[] = "Category name must contain between $min and $max characters.";
+        }
+
+        if ($name !== '' && self::name_exists($name, $excluded_id)) {
+            $errors[] = "This category already exists.";
+        }
+
+        return $errors;
+    }
+
+    private static function name_exists(string $name, ?int $excluded_id = null): bool
+    {
+        $sql = "SELECT id FROM categories WHERE name = :name";
+        $params = ['name' => trim($name)];
+
+        if ($excluded_id !== null) {
+            $sql .= " AND id != :id";
+            $params['id'] = $excluded_id;
+        }
+
+        $query = self::execute($sql, $params);
+        return (bool)$query->fetch();
+    }
+
+    public static function create(string $name): int
+    {
+        $priority = self::get_next_priority();
+
+        $sql = "INSERT INTO categories (name, priority)
+            VALUES (:name, :priority)";
+
+        self::execute($sql, [
+            'name' => trim($name),
+            'priority' => $priority
+        ]);
+
+        return self::lastInsertId();
+    }
+
+    public static function update_name(int $id, string $name): void
+    {
+        $sql = "UPDATE categories
+            SET name = :name
+            WHERE id = :id";
+
+        self::execute($sql, [
+            'id' => $id,
+            'name' => trim($name)
+        ]);
+    }
+
+    public static function delete_by_id(int $id): void
+    {
+        $category = self::get_by_id($id);
+
+        if (!$category) {
+            return;
+        }
+
+        if ((int)$category->get_item_count() > 0) {
+            throw new Exception("Cannot delete a category that contains items.");
+        }
+
+        $sql = "DELETE FROM categories WHERE id = :id";
+        self::execute($sql, ['id' => $id]);
+    }
+
+    public static function move_up(int $id): void
+    {
+        self::swap_with_neighbor($id, 'up');
+    }
+
+    public static function move_down(int $id): void
+    {
+        self::swap_with_neighbor($id, 'down');
+    }
+
+    private static function get_next_priority(): int
+    {
+        $query = self::execute(
+            "SELECT COALESCE(MAX(priority), 0) + 1 AS next_priority FROM categories",
+            []
+        );
+
+        $row = $query->fetch();
+        return (int)$row['next_priority'];
+    }
+
+    private static function swap_with_neighbor(int $id, string $direction): void
+    {
+        $category = self::get_by_id($id);
+
+        if (!$category) {
+            return;
+        }
+
+        if ($direction === 'up') {
+            $sql = "SELECT id, priority
+                FROM categories
+                WHERE priority < :priority
+                ORDER BY priority DESC
+                LIMIT 1";
+        } else {
+            $sql = "SELECT id, priority
+                FROM categories
+                WHERE priority > :priority
+                ORDER BY priority ASC
+                LIMIT 1";
+        }
+
+        $query = self::execute($sql, ['priority' => $category->get_priority()]);
+        $neighbor = $query->fetch();
+
+        if (!$neighbor) {
+            return;
+        }
+
+        $current_id = (int)$category->get_id();
+        $current_priority = (int)$category->get_priority();
+        $neighbor_id = (int)$neighbor['id'];
+        $neighbor_priority = (int)$neighbor['priority'];
+
+        self::execute("UPDATE categories SET priority = -1 WHERE id = :id", [
+            'id' => $current_id
+        ]);
+
+        self::execute("UPDATE categories SET priority = :priority WHERE id = :id", [
+            'id' => $neighbor_id,
+            'priority' => $current_priority
+        ]);
+
+        self::execute("UPDATE categories SET priority = :priority WHERE id = :id", [
+            'id' => $current_id,
+            'priority' => $neighbor_priority
+        ]);
+    }
 }
