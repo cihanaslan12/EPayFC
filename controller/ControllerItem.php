@@ -754,6 +754,9 @@ class ControllerItem extends Controller
             $total = $user->get_my_sold_items_total();
             $average = $user->get_average_ticket();
             $loyal = $user->get_loyal_bidder();
+            usort($sales, function(Item $a, Item $b) {
+                return strcmp($b->get_finish_time(), $a->get_finish_time());
+            });
             (new View("sales"))->show([
                 'user' => $user,
                 'show_back' => true,
@@ -778,7 +781,9 @@ class ControllerItem extends Controller
         $purchases = Item::get_purchases($user);
 
         $stats = Item::get_purchase_stats($user);
-
+        usort($purchases, function(Item $a, Item $b) {
+            return strcmp($b->get_finish_time(), $a->get_finish_time());
+        });
         (new View("purchases"))->show([
             "user" => $user,
             "purchases" => $purchases,
