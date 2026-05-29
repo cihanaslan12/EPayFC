@@ -590,11 +590,22 @@ class Item extends Model
         if ($duration_error = Functions::duration_error($duration, $duration_min, $duration_max)) {
             $errors['duration'] = $duration_error;
         }
-        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
-            $errors['price'] = $price_error;
+        if (($starting_bid > 0 || $instant_purchase_price > 0) && $direct_sale_price > 0) {
+            $errors['direct_sale_price'] = 'Cannot create both auction and direct sale.';
         }
-        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
-            $errors['auction'] = $auction_error;
+
+        if ($starting_bid <= 0 && $direct_sale_price <= 0) {
+            if ($instant_purchase_price > 0) {
+                $errors['instant_purchase_price'] = 'Instant purchase price requires a starting bid.';
+            } else {
+                $message = 'Starting Bid or Sale Price must be provided.';
+                $errors['starting_bid'] = $message;
+                $errors['direct_sale_price'] = $message;
+            }
+        }
+
+        if ($starting_bid > 0 && $instant_purchase_price > 0 && $starting_bid >= $instant_purchase_price) {
+            $errors['instant_purchase_price'] = 'Buy now price must be greater than the starting bid.';
         }
         return $errors;
     }

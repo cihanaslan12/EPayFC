@@ -58,12 +58,7 @@
                 <div class="card-header">Sale Type</div>
                 <div class="card-body">
                     <div id="sale-type-rule-group" class="mb-3">
-                        <div id="sale-type-rule-error" class="text-danger small">
-                            <?php
-                            if (isset($errors['price'])) echo "<div>".$errors['price']."</div>";
-                            if (isset($errors['auction'])) echo "<div>".$errors['auction']."</div>";
-                            ?>
-                        </div>
+                        <div id="sale-type-rule-error" class="text-danger small"></div>
                     </div>
 
                 <div class="auction-div">
@@ -85,7 +80,9 @@
                                         placeholder="e.g., 50.00">
                                 <span class="input-group-text">€</span>
                             </div>
-                            <div id="starting-bid-error" class="text-danger small"></div>
+                            <div id="starting-bid-error" class="text-danger small">
+                                <?php if (isset($errors['starting_bid'])) echo "<div>".$errors['starting_bid']."</div>" ?>
+                            </div>
                         </div>
 
                         <div id="instant-purchase-group" class="mb-3">
@@ -102,7 +99,9 @@
                                         placeholder="e.g., 200.00">
                                 <span class="input-group-text">€</span>
                             </div>
-                            <div id="instant-purchase-error" class="text-danger small"></div>
+                            <div id="instant-purchase-error" class="text-danger small">
+                                <?php if (isset($errors['instant_purchase_price'])) echo "<div>".$errors['instant_purchase_price']."</div>" ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -126,7 +125,9 @@
                                         placeholder="e.g., 150.00">
                                 <span class="input-group-text">€</span>
                             </div>
-                            <div id="direct-sale-error" class="text-danger small"></div>
+                            <div id="direct-sale-error" class="text-danger small">
+                                <?php if (isset($errors['direct_sale_price'])) echo "<div>".$errors['direct_sale_price']."</div>" ?>
+                            </div>
                         </div>
                     </div>
                 </div>
