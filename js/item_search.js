@@ -86,6 +86,20 @@
         `;
     }
 
+    function getOpenUrl(baseUrl, encodedFilter) {
+        return encodedFilter ? `${baseUrl}/${encodedFilter}` : baseUrl;
+    }
+
+    function updateItemLinks(encodedFilter) {
+        $('.item-card-link').each(function () {
+            const $link = $(this);
+            const baseUrl = $link.attr('data-base-url') || $link.attr('href');
+
+            $link.attr('data-base-url', baseUrl);
+            $link.attr('href', getOpenUrl(baseUrl, encodedFilter));
+        });
+    }
+
     function buildItemCard(item, openFrom) {
         const thumbnail = item.thumbnail || 'img/item_placeholder/item_placeholder.jpg';
         const baseUrl = `item/open/${item.id}/${encodeURIComponent(openFrom)}`;
@@ -125,7 +139,7 @@
         `;
     }
 
-    function renderSections(sections, openFrom) {
+    function renderSections(sections, openFrom, encodedFilter) {
         const $sectionsContainer = $('#item-search-sections');
         const $emptyMessage = $('#item-search-empty');
 
@@ -157,6 +171,7 @@
         });
 
         $sectionsContainer.html(html);
+        updateItemLinks(encodedFilter || '');
         $emptyMessage.toggleClass('d-none', hasItems);
     }
 
@@ -165,10 +180,6 @@
             query: ($('#item-search-input').val() || '').trim(),
             category: parseInt($('#item-category-filter').val() || '0', 10)
         };
-    }
-
-    function isEmptyFilterState(state) {
-        return state.query === '' && state.category === 0;
     }
 
     function runSearch(searchUrl, openFrom) {
@@ -184,7 +195,7 @@
             }
         })
             .done(function (response) {
-                renderSections(response.sections || [], openFrom);
+                renderSections(response.sections || [], openFrom, response.encoded_filter || '');
             })
             .fail(function () {
                 console.error('Item search request failed.');
@@ -240,28 +251,7 @@
         $searchInput.on('input', scheduleSearch);
         $categoryFilter.on('change', scheduleSearch);
 
-        $(document).on('click', '.item-card-link', function (e) {
-            e.preventDefault();
 
-            const $link = $(this);
-            const baseUrl = $link.attr('data-base-url') || $link.attr('href');
-            const state = getCurrentFilterState();
-
-            if (isEmptyFilterState(state)) {
-                window.location.href = baseUrl;
-                return;
-            }
-
-            $.post('item/encode_filter_service', state, function (response) {
-                if (response && response.encoded) {
-                    window.location.href = baseUrl + '/' + response.encoded;
-                } else {
-                    window.location.href = baseUrl;
-                }
-            }, 'json').fail(function () {
-                window.location.href = baseUrl;
-            });
-        });
 
         if (initialFilter !== '') {
             $.post('item/decode_filter_service', {encoded_filter: initialFilter}, function (response) {

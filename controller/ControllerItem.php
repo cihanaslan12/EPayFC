@@ -394,7 +394,17 @@ class ControllerItem extends Controller
             ];
         }
 
-        $this->json_response(['sections' => $sections]);
+        $encoded_filter = ($query === '' && $category_id === 0)
+            ? ''
+            : Functions::url_safe_encode([
+                'query' => $query,
+                'category' => $category_id
+            ]);
+
+        $this->json_response([
+            'sections' => $sections,
+            'encoded_filter' => $encoded_filter
+        ]);
     }
 
     public function search_my_items(): void
@@ -422,7 +432,17 @@ class ControllerItem extends Controller
             ]
         ];
 
-        $this->json_response(['sections' => $sections]);
+        $encoded_filter = ($query === '' && $category_id === 0)
+            ? ''
+            : Functions::url_safe_encode([
+                'query' => $query,
+                'category' => $category_id
+            ]);
+
+        $this->json_response([
+            'sections' => $sections,
+            'encoded_filter' => $encoded_filter
+        ]);
     }
 
 
