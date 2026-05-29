@@ -53,6 +53,14 @@
         $error.html(messages.map(msg => `<div>${escapeHtml(msg)}</div>`).join(''));
     }
 
+    function setPriceRuleError(inputSelector, groupSelector, errorSelector, messages, show) {
+        if (!show || messages.length === 0) {
+            return;
+        }
+
+        setFieldInvalid($(inputSelector), $(groupSelector), $(errorSelector), messages);
+    }
+
     function updateSaveButtonState() {
         const hasInvalidField =
             !fieldState.title.valid ||
@@ -316,7 +324,11 @@
     function validateSaleTypeRules(forceFeedback = false) {
         const showFeedback = fieldState.saleType.touched || forceFeedback;
         const prices = getCurrentPriceValues();
-        const errors = [];
+        const errorsByField = {
+            startingBid: [],
+            instantPurchase: [],
+            directSale: []
+        };
 
         const individualFieldsValid =
             prices.startingBid.valid &&
@@ -329,24 +341,35 @@
 
         if (individualFieldsValid) {
             if (!hasStartingBid && !hasDirectSale) {
-                errors.push('Renseigne soit un starting bid, soit un sale price.');
+                const message = 'Renseigne soit un starting bid, soit un sale price.';
+                errorsByField.startingBid.push(message);
+                errorsByField.directSale.push(message);
             }
 
             if (hasDirectSale && (hasStartingBid || hasInstantPurchase)) {
-                errors.push('Tu ne peux pas combiner enchère et vente directe.');
+                errorsByField.directSale.push('Tu ne peux pas combiner enchère et vente directe.');
             }
 
             if (hasInstantPurchase && !hasStartingBid) {
-                errors.push('Le prix d’achat immédiat de l’enchère nécessite un starting bid.');
+                errorsByField.instantPurchase.push('Le prix d’achat immédiat de l’enchère nécessite un starting bid.');
             }
 
             if (hasStartingBid && hasInstantPurchase && prices.instantPurchase.value <= prices.startingBid.value) {
-                errors.push('Le prix d’achat immédiat doit être supérieur au starting bid.');
+                errorsByField.instantPurchase.push('Le prix d’achat immédiat doit être supérieur au starting bid.');
             }
         }
 
-        fieldState.saleType.valid = individualFieldsValid && errors.length === 0;
-        setRuleError(errors, showFeedback);
+        const hasRuleErrors = Object.values(errorsByField).some(messages => messages.length > 0);
+
+        fieldState.saleType.valid = individualFieldsValid && !hasRuleErrors;
+        setRuleError([], false);
+
+        if (individualFieldsValid) {
+            setPriceRuleError('#starting_bid', '#starting-bid-group', '#starting-bid-error', errorsByField.startingBid, showFeedback);
+            setPriceRuleError('#instant_purchase_price', '#instant-purchase-group', '#instant-purchase-error', errorsByField.instantPurchase, showFeedback);
+            setPriceRuleError('#direct_sale_price', '#direct-sale-group', '#direct-sale-error', errorsByField.directSale, showFeedback);
+        }
+
         updateSaveButtonState();
     }
 

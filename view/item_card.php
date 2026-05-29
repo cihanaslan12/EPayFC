@@ -1,4 +1,6 @@
-<a href="item/open/<?= $item->get_id() ?>/<?= urlencode($open_from ?? 'browse') ?>" class="text-decoration-none">
+<a href="item/open/<?= $item->get_id() ?>/<?= urlencode($open_from ?? 'browse') ?>"
+   data-base-url="item/open/<?= $item->get_id() ?>/<?= urlencode($open_from ?? 'browse') ?>"
+   class="text-decoration-none item-card-link">
     <div class="card">
         <div class="position-relative">
             <?php

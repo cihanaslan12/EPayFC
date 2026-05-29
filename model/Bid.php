@@ -16,6 +16,35 @@ class Bid extends Model {
     public function get_amount(): string { return $this->amount; }
     public function get_owner_id(): int { return $this->owner_id; }
 
+    private static function is_duplicate_primary_key_exception(Throwable $e): bool {
+        $previous = $e->getPrevious();
+
+        if ($previous instanceof PDOException) {
+            $errorInfo = $previous->errorInfo ?? [];
+            return $previous->getCode() === "23000" && (($errorInfo[1] ?? null) == 1062);
+        }
+
+        return str_contains($e->getMessage(), "Duplicate entry");
+    }
+
+    private static function same_bid_already_exists(User $user, Item $item, string $created_at, string $amount): bool {
+        $sql = "SELECT COUNT(*)
+            FROM bids
+            WHERE owner = :owner
+              AND item = :item
+              AND created_at = :created_at
+              AND amount = :amount";
+
+        $query = self::execute($sql, [
+            "owner" => $user->get_id(),
+            "item" => $item->get_id(),
+            "created_at" => $created_at,
+            "amount" => $amount
+        ]);
+
+        return (int)$query->fetchColumn() > 0;
+    }
+
 
     public static function get_by_item(int $item_id): array {
         $sql = "SELECT b.owner, u.pseudo, b.item, b.created_at, b.amount
@@ -97,14 +126,30 @@ class Bid extends Model {
             }
         }
 
+        $formattedAmount = number_format($amountF, 2, '.', '');
+
         $sql = "INSERT INTO bids(owner, item, created_at, amount)
-            VALUES(:owner, :item, :created_at, :amount)";
-        self::execute($sql, [
-            "owner" => $user->get_id(),
-            "item" => $item->get_id(),
-            "created_at" => $now,
-            "amount" => number_format($amountF, 2, '.', '')
-        ]);
+    VALUES(:owner, :item, :created_at, :amount)";
+
+        try {
+            self::execute($sql, [
+                "owner" => $user->get_id(),
+                "item" => $item->get_id(),
+                "created_at" => $now,
+                "amount" => $formattedAmount
+            ]);
+        } catch (Throwable $e) {
+            if (self::is_duplicate_primary_key_exception($e)) {
+                if (self::same_bid_already_exists($user, $item, $now, $formattedAmount)) {
+                    return true;
+                }
+
+                $errors["bid"] = "A bid was already submitted at this time. Please try again.";
+                return false;
+            }
+
+            throw $e;
+        }
 
         return true;
     }
@@ -149,13 +194,27 @@ class Bid extends Model {
         }
 
         $sql = "INSERT INTO bids(owner, item, created_at, amount)
-            VALUES(:owner, :item, :created_at, :amount)";
-        self::execute($sql, [
-            "owner" => $user->get_id(),
-            "item" => $item->get_id(),
-            "created_at" => $now,
-            "amount" => $amount
-        ]);
+    VALUES(:owner, :item, :created_at, :amount)";
+
+        try {
+            self::execute($sql, [
+                "owner" => $user->get_id(),
+                "item" => $item->get_id(),
+                "created_at" => $now,
+                "amount" => $amount
+            ]);
+        } catch (Throwable $e) {
+            if (self::is_duplicate_primary_key_exception($e)) {
+                if (self::same_bid_already_exists($user, $item, $now, $amount)) {
+                    return true;
+                }
+
+                $errors["buy_now"] = "A purchase was already submitted at this time. Please try again.";
+                return false;
+            }
+
+            throw $e;
+        }
 
         return true;
     }

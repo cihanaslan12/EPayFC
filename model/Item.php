@@ -3,6 +3,7 @@
 require_once "framework/Model.php";
 require_once "model/ItemPicture.php";
 require_once "model/Bid.php";
+require_once "model/Category.php";
 require_once "utils/AppTime.php";
 require_once "utils/Uploader.php";
 require_once "utils/Functions.php";
@@ -267,6 +268,13 @@ class Item extends Model
         OR COALESCE($itemAlias.description, '') LIKE :search_description
         OR $userAlias.pseudo LIKE :search_pseudo
         OR $userAlias.full_name LIKE :search_full_name
+        OR EXISTS (
+            SELECT 1
+            FROM item_categories ic_search
+            JOIN categories c_search ON c_search.id = ic_search.category
+            WHERE ic_search.item = $itemAlias.id
+              AND c_search.name LIKE :search_category
+        )
     )";
     }
 
@@ -277,109 +285,181 @@ class Item extends Model
             'search_title' => $pattern,
             'search_description' => $pattern,
             'search_pseudo' => $pattern,
-            'search_full_name' => $pattern
+            'search_full_name' => $pattern,
+            'search_category' => $pattern
         ];
     }
 
-    public static function search_participating_items(User $user, string $query): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-            FROM v_items_status vis
-            JOIN bids b ON b.item = vis.id
-            JOIN users u ON u.id = vis.owner
-            WHERE b.owner = :id
-              AND (
-                    vis.not_purchased_direct_sale = 1
-                 OR (vis.is_auction = 1 AND vis.end_at > :now
-                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+    private static function get_category_filter_clause(int $category_id, string $itemAlias = 'vis'): string
+    {
+        if ($category_id <= 0) {
+            return '';
+        }
 
-        return self::fetch_items($sql, $user, self::get_search_params($query));
+        return " AND EXISTS (
+        SELECT 1
+        FROM item_categories ic_filter
+        WHERE ic_filter.item = $itemAlias.id
+          AND ic_filter.category = :category_id
+    )";
     }
 
-    public static function search_other_available_items(User $user, string $query): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-            FROM v_items_status vis
-            JOIN users u ON u.id = vis.owner
-            WHERE vis.owner != :id
-              AND vis.id NOT IN (
-                    SELECT item
-                    FROM bids
-                    WHERE owner = :id
-              )
-              AND (
-                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
-                 OR (vis.is_auction = 1 AND vis.end_at > :now
-                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+    private static function get_category_filter_params(int $category_id): array
+    {
+        if ($category_id <= 0) {
+            return [];
+        }
 
-        return self::fetch_items($sql, $user, self::get_search_params($query));
+        return ['category_id' => $category_id];
     }
 
-    public static function search_available_items_for_guest(string $query): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-            FROM v_items_status vis
-            JOIN users u ON u.id = vis.owner
-            WHERE vis.end_at > :now
-              AND (
-                    vis.not_purchased_direct_sale = 1
-                 OR (vis.is_auction = 1
-                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+    public static function search_participating_items(User $user, string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
 
-        return self::fetch_items($sql, null, self::get_search_params($query));
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        FROM v_items_status vis
+        JOIN bids b ON b.item = vis.id
+        JOIN users u ON u.id = vis.owner
+        WHERE b.owner = :id
+          AND (
+                vis.not_purchased_direct_sale = 1
+             OR (vis.is_auction = 1 AND vis.end_at > :now
+                 AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
+
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, $user, $params);
     }
 
-    public static function search_my_active_items(User $user, string $query): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-            FROM v_items_status vis
-            JOIN users u ON u.id = vis.owner
-            WHERE vis.owner = :id
-              AND (
-                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
-                 OR (vis.is_auction = 1 AND vis.end_at > :now
-                     AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+    public static function search_other_available_items(User $user, string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
 
-        return self::fetch_items($sql, $user, self::get_search_params($query));
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        FROM v_items_status vis
+        JOIN users u ON u.id = vis.owner
+        WHERE vis.owner != :id
+          AND vis.id NOT IN (
+                SELECT item
+                FROM bids
+                WHERE owner = :id
+          )
+          AND (
+                (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+             OR (vis.is_auction = 1 AND vis.end_at > :now
+                 AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
+
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, $user, $params);
     }
 
-    public static function search_my_closed_unsold_items(User $user, string $query): array {
-        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
-            FROM v_items_status vis
-            JOIN users u ON u.id = vis.owner
-            WHERE vis.owner = :id
-              AND (
-                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
-                 OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+    public static function search_available_items_for_guest(string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
 
-        return self::fetch_items($sql, $user, self::get_search_params($query));
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        FROM v_items_status vis
+        JOIN users u ON u.id = vis.owner
+        WHERE vis.end_at > :now
+          AND (
+                vis.not_purchased_direct_sale = 1
+             OR (vis.is_auction = 1
+                 AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
+
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, null, $params);
     }
 
-    public static function search_my_sold_items(User $user, string $query): array {
+    public static function search_my_active_items(User $user, string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
+
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        FROM v_items_status vis
+        JOIN users u ON u.id = vis.owner
+        WHERE vis.owner = :id
+          AND (
+                (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at > :now)
+             OR (vis.is_auction = 1 AND vis.end_at > :now
+                 AND (NOT vis.has_buy_now OR NOT vis.buy_now_reached))
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
+
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, $user, $params);
+    }
+
+    public static function search_my_closed_unsold_items(User $user, string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
+
+        $sql = "SELECT DISTINCT vis.*, GREATEST(TIMESTAMPDIFF(SECOND, :now, vis.end_at), 0) as secs_left
+        FROM v_items_status vis
+        JOIN users u ON u.id = vis.owner
+        WHERE vis.owner = :id
+          AND (
+                (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 1 AND vis.end_at <= :now)
+             OR (vis.is_auction = 1 AND vis.end_at <= :now AND vis.has_bids = 0)
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
+
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, $user, $params);
+    }
+
+    public static function search_my_sold_items(User $user, string $query, int $category_id = 0): array {
+        $category_clause = self::get_category_filter_clause($category_id);
+
         $sql = "SELECT DISTINCT vis.*, 0 as secs_left
-            FROM v_items_status vis
-            JOIN users u ON u.id = vis.owner
-            WHERE vis.owner = :id
-              AND (
-                    (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
-                 OR (vis.is_auction = 1 AND vis.has_bids = 1
-                     AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
-              )
-              AND " . self::get_search_clause('vis', 'u') . "
-            ORDER BY vis.end_at ASC";
+        FROM v_items_status vis
+        JOIN users u ON u.id = vis.owner
+        WHERE vis.owner = :id
+          AND (
+                (vis.is_direct_sale = 1 AND vis.not_purchased_direct_sale = 0)
+             OR (vis.is_auction = 1 AND vis.has_bids = 1
+                 AND (vis.end_at <= :now OR vis.buy_now_reached = 1))
+          )
+          AND " . self::get_search_clause('vis', 'u') . "
+          $category_clause
+        ORDER BY vis.end_at ASC";
 
-        return self::fetch_items($sql, $user, self::get_search_params($query));
+        $params = array_merge(
+            self::get_search_params($query),
+            self::get_category_filter_params($category_id)
+        );
+
+        return self::fetch_items($sql, $user, $params);
     }
 
     private static function fetch_items(string $sql, ?User $user, array $extra_params = []): array {
@@ -590,20 +670,40 @@ class Item extends Model
         if ($duration_error = Functions::duration_error($duration, $duration_min, $duration_max)) {
             $errors['duration'] = $duration_error;
         }
-        if ($price_error = Functions::auction_or_direct($starting_bid, $instant_purchase_price, $direct_sale_price)) {
-            $errors['price'] = $price_error;
+        if (($starting_bid > 0 || $instant_purchase_price > 0) && $direct_sale_price > 0) {
+            $errors['direct_sale_price'] = 'Cannot create both auction and direct sale.';
         }
-        if ($auction_error = Functions::auction_error($starting_bid, $instant_purchase_price)) {
-            $errors['auction'] = $auction_error;
+
+        if ($starting_bid <= 0 && $direct_sale_price <= 0) {
+            if ($instant_purchase_price > 0) {
+                $errors['instant_purchase_price'] = 'Instant purchase price requires a starting bid.';
+            } else {
+                $message = 'Starting Bid or Sale Price must be provided.';
+                $errors['starting_bid'] = $message;
+                $errors['direct_sale_price'] = $message;
+            }
+        }
+
+        if ($starting_bid > 0 && $instant_purchase_price > 0 && $starting_bid >= $instant_purchase_price) {
+            $errors['instant_purchase_price'] = 'Buy now price must be greater than the starting bid.';
         }
         return $errors;
     }
 
     public static function insert_into_db(int $user_id, string $title, string $description, int $duration, float $starting_bid, float $instant_or_direct): int {
         $sql = "INSERT INTO items (title, description, duration_days, starting_bid, buy_now_price, owner, created_at) 
-                        VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :user_id, NOW())" ;
-        self::execute($sql, ['title' => $title, 'description' => $description, 'duration' => $duration, 'starting_bid' => $starting_bid,
-            'buy_now_price' => $instant_or_direct, 'user_id' => $user_id]);
+            VALUES (:title, :description, :duration, :starting_bid, :buy_now_price, :user_id, :created_at)";
+
+        self::execute($sql, [
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'buy_now_price' => $instant_or_direct,
+            'user_id' => $user_id,
+            'created_at' => AppTime::get_current_datetime()
+        ]);
+
         return self::lastInsertId();
     }
 
@@ -621,6 +721,7 @@ class Item extends Model
     public function delete_item_with_dependencies(): void {
         $this->delete_bids_dependencies();
         $this->delete_pictures_dependencies();
+        $this->delete_categories_dependencies();
         $this->delete_item();
         $this->delete_uploads();
     }
@@ -631,6 +732,10 @@ class Item extends Model
 
     private function delete_pictures_dependencies(): void {
         ItemPicture::delete_all_pictures_for($this->get_id());
+    }
+
+    private function delete_categories_dependencies(): void {
+        Category::delete_all_for_item((int)$this->get_id());
     }
 
     private function delete_item(): void {

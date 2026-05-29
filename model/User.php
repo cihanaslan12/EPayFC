@@ -259,14 +259,77 @@ class User extends Model {
         return ((int)$q->fetchColumn()) > 0;
     }
 
-    public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
-        if (!Uploader::check_extension($original_name)) {
-            $errors["picture"] = "Unsupported image format: JPG, PNG, GIF, WebP.";
+    private static function resize_image(GdImage $original, int $max_width, int $max_height): GdImage|false {
+        $original_width = imagesx($original);
+        $original_height = imagesy($original);
+
+        if ($original_width <= 0 || $original_height <= 0) {
             return false;
         }
 
-        $size_ok = Uploader::check_size(filesize($tmp_path));
-        if (!$size_ok) {
+        $ratio = min($max_width / $original_width, $max_height / $original_height, 1);
+        $new_width = max(1, (int)round($original_width * $ratio));
+        $new_height = max(1, (int)round($original_height * $ratio));
+
+        $resized = imagecreatetruecolor($new_width, $new_height);
+        if (!$resized) {
+            return false;
+        }
+
+        $white = imagecolorallocate($resized, 255, 255, 255);
+        imagefill($resized, 0, 0, $white);
+
+        imagecopyresampled(
+            $resized,
+            $original,
+            0,
+            0,
+            0,
+            0,
+            $new_width,
+            $new_height,
+            $original_width,
+            $original_height
+        );
+
+        return $resized;
+    }
+
+    private static function delete_picture_files(?string $relative_path): void {
+        if (empty($relative_path)) {
+            return;
+        }
+
+        $absolute_path = getcwd() . DIRECTORY_SEPARATOR . $relative_path;
+
+        $thumbnail_path = preg_replace('/(\.[^.]+)$/', '_thumbnail$1', $absolute_path);
+
+        foreach (array_unique([$absolute_path, $thumbnail_path]) as $path) {
+            if ($path && is_file($path)) {
+                unlink($path);
+            }
+        }
+    }
+
+    private static function create_profile_picture_base_name(string $original_name): string {
+        $base_name = pathinfo($original_name, PATHINFO_FILENAME);
+        $base_name = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base_name);
+        $base_name = trim($base_name, '_');
+
+        if ($base_name === '') {
+            $base_name = 'profile';
+        }
+
+        return $base_name . '_' . uniqid('', true);
+    }
+
+    public static function update_profile_picture(int $user_id, string $tmp_path, string $original_name, array &$errors): bool {
+        if (!Uploader::check_extension($original_name)) {
+            $errors["picture"] = "Unsupported image format: JPG, JPEG, PNG, GIF, WebP.";
+            return false;
+        }
+
+        if (!is_file($tmp_path) || !Uploader::check_size(filesize($tmp_path))) {
             $errors["picture"] = "Image size is max 5MB.";
             return false;
         }
@@ -277,60 +340,79 @@ class User extends Model {
             return false;
         }
 
-        $config = parse_ini_file(__DIR__ . '/../config/dev.ini');
-        $max_w = (int)$config["MAX_THUMB_WIDTH"];
-        $max_h = (int)$config["MAX_THUMB_HEIGHT"];
+        $main = self::resize_image(
+            $original,
+            (int)Configuration::get("MAX_IMG_WIDTH"),
+            (int)Configuration::get("MAX_IMG_HEIGHT")
+        );
 
-        $ow = imagesx($original);
-        $oh = imagesy($original);
+        $thumbnail = self::resize_image(
+            $original,
+            (int)Configuration::get("MAX_THUMB_WIDTH"),
+            (int)Configuration::get("MAX_THUMB_HEIGHT")
+        );
 
-        $ratio = min($max_w / $ow, $max_h / $oh);
-        $ratio = ($ratio < 1) ? $ratio : 1;
+        if (!$main || !$thumbnail) {
+            imagedestroy($original);
+            if ($main) imagedestroy($main);
+            if ($thumbnail) imagedestroy($thumbnail);
 
-        $nw = (int)round($ow * $ratio);
-        $nh = (int)round($oh * $ratio);
-
-        $new_img = imagecreatetruecolor($nw, $nh);
-        imagecopyresampled($new_img, $original, 0, 0, 0, 0, $nw, $nh, $ow, $oh);
+            $errors["picture"] = "Could not resize the image.";
+            return false;
+        }
 
         $dir = "uploads/users/$user_id/";
-        if (!file_exists($dir)) {
+        if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
-        $path = $dir . "profile.jpg";
 
-        imagejpeg($new_img, $path, 85);
+        $file_base = self::create_profile_picture_base_name($original_name);
+        $path = $dir . $file_base . ".jpg";
+        $thumbnail_path = $dir . $file_base . "_thumbnail.jpg";
+
+        $main_saved = imagejpeg($main, $path, 85);
+        $thumbnail_saved = imagejpeg($thumbnail, $thumbnail_path, 75);
 
         imagedestroy($original);
-        imagedestroy($new_img);
+        imagedestroy($main);
+        imagedestroy($thumbnail);
 
-        self::execute("UPDATE users SET picture_path = :p WHERE id = :id", [
-            "p" => $path,
+        if (!$main_saved || !$thumbnail_saved) {
+            self::delete_picture_files($path);
+            $errors["picture"] = "Could not save the image.";
+            return false;
+        }
+
+        $q = self::execute("SELECT picture_path FROM users WHERE id = :id", [
             "id" => $user_id
         ]);
+        $row = $q->fetch();
+        $old_path = $row["picture_path"] ?? null;
+
+        try {
+            self::execute("UPDATE users SET picture_path = :p WHERE id = :id", [
+                "p" => $path,
+                "id" => $user_id
+            ]);
+        } catch (Throwable $e) {
+            self::delete_picture_files($path);
+            throw $e;
+        }
+
+        if ($old_path !== null && $old_path !== $path) {
+            self::delete_picture_files($old_path);
+        }
 
         return true;
     }
 
     public static function delete_profile_picture(int $user_id): void {
-        $q = self::execute("SELECT picture_path FROM users WHERE id = :id", ["id" => $user_id]);
+        $q = self::execute("SELECT picture_path FROM users WHERE id = :id", [
+            "id" => $user_id
+        ]);
         $row = $q->fetch();
 
-        if ($row && !empty($row["picture_path"])) {
-            $relativePath = $row["picture_path"];
-
-            $absolutePath = __DIR__ . "/../" . $relativePath;
-
-            $thumbnailPath = preg_replace('/\.jpg$/', '_thumbnail.jpg', $absolutePath);
-
-            if (file_exists($absolutePath)) {
-                unlink($absolutePath);
-            }
-
-            if ($thumbnailPath && file_exists($thumbnailPath)) {
-                unlink($thumbnailPath);
-            }
-        }
+        self::delete_picture_files($row["picture_path"] ?? null);
 
         self::execute("UPDATE users SET picture_path = NULL WHERE id = :id", [
             "id" => $user_id

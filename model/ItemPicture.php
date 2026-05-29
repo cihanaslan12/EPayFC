@@ -85,8 +85,6 @@ class ItemPicture extends Model {
     }
 
     public static function add_pictures(string $upload_image, string $name, int $item_id): void {
-        $config = parse_ini_file(__DIR__.'/../config/dev.ini');
-
         $original_image = Uploader::create_image_from($upload_image, $name);
         if(!$original_image) {
             return;
@@ -95,27 +93,28 @@ class ItemPicture extends Model {
         $original_width = imagesx($original_image);
         $original_height = imagesy($original_image);
 
-        $max_img_width = $config['MAX_IMG_WIDTH'];
-        $max_img_height = $config['MAX_IMG_HEIGHT'];
-        $max_thumb_width = $config['MAX_THUMB_WIDTH'];
-        $max_thumb_height = $config['MAX_THUMB_HEIGHT'];
+        $max_img_width = (int)Configuration::get('MAX_IMG_WIDTH');
+        $max_img_height = (int)Configuration::get('MAX_IMG_HEIGHT');
+        $max_thumb_width = (int)Configuration::get('MAX_THUMB_WIDTH');
+        $max_thumb_height = (int)Configuration::get('MAX_THUMB_HEIGHT');
 
-        $calculate_img_ratio = min($max_img_width / $original_width, $max_img_height / $original_height);
-        $calculate_thumb_ratio = min($max_thumb_width / $original_width, $max_thumb_height / $original_height);
+        $ratio_width = $original_width / $max_img_width;
+        $ratio_height = $original_height / $max_img_height;
 
-        $img_ratio = ($calculate_img_ratio < 1) ? $calculate_img_ratio : 1;
-        $thumb_ratio = ($calculate_thumb_ratio < 1) ? $calculate_thumb_ratio : 1;
+        if ($ratio_width > $ratio_height) {
+            $new_image = imagescale($original_image, $max_img_width, -1);
+        } else {
+            $new_image = imagescale($original_image, -1, $max_img_height);
+        }
 
-        $new_img_width = round($original_width * $img_ratio);
-        $new_img_height = round($original_height * $img_ratio);
-        $new_thumb_width = round($original_width * $thumb_ratio);
-        $new_thumb_height = round($original_height * $thumb_ratio);
+        $thumb_ratio_width = imagesx($new_image) / $max_thumb_width;
+        $thumb_ratio_height = imagesx($new_image) / $max_thumb_height;
 
-        $new_image = imagecreatetruecolor($new_img_width, $new_img_height);
-        $new_thumbnail = imagecreatetruecolor($new_thumb_width, $new_thumb_height);
-
-        imagecopyresampled($new_image, $original_image, 0, 0, 0, 0, $new_img_width, $new_img_height, $original_width, $original_height);
-        imagecopyresampled($new_thumbnail, $original_image, 0, 0, 0, 0, $new_thumb_width, $new_thumb_height, $original_width, $original_height);
+        if ($thumb_ratio_width > $thumb_ratio_height) {
+            $new_thumbnail = imagescale($new_image, $max_thumb_width, -1);
+        } else {
+            $new_thumbnail = imagescale($new_image, -1, $max_thumb_height);
+        }
 
         $img_path = self::create_new_picture_name($item_id);
         $thumb_path = self::create_new_thumbnail_name($img_path);
