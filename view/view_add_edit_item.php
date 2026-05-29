@@ -133,6 +133,47 @@
                 </div>
                 </div>
             </div>
+            <div class="card mb-2 bg-dark text-white border-secondary" id="categories-card">
+                <div class="card-header text-white fw-bold" style="background-color: #4f6380;">
+                    Categories
+                </div>
+
+                <div class="card-body bg-dark text-white">
+                    <p class="small text-white-50 mb-3">Choose up to 3 categories.</p>
+
+                    <div id="categories-error" class="text-danger small mb-2">
+                        <?php if (isset($errors['categories'])) echo "<div>" . htmlspecialchars($errors['categories']) . "</div>"; ?>
+                    </div>
+
+                    <?php if (!empty($categories)): ?>
+                        <div class="row g-2">
+                            <?php foreach ($categories as $category): ?>
+                                <?php $category_id = (int)$category->get_id(); ?>
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="form-check rounded border px-3 py-2"
+                                         style="background-color: #252424; border-color: #6c757d !important;">
+
+                                        <input
+                                                class="form-check-input category-checkbox"
+                                                type="checkbox"
+                                                name="categories[]"
+                                                id="category-<?= $category_id ?>"
+                                                value="<?= $category_id ?>"
+                                                <?= in_array($category_id, $selected_category_ids ?? [], true) ? 'checked' : '' ?>>
+
+                                        <label class="form-check-label text-white ms-1" for="category-<?= $category_id ?>">
+                                            <?= htmlspecialchars($category->get_name()) ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="small text-white-50">No category available.</div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
         </form>
     </main>
@@ -157,9 +198,26 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" tabindex="-1" id="categoryLimitModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">Category limit</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You can select up to 3 categories for one item.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
     <script src="js/modal.js"></script>
     <script src="<?= Configuration::get("web_root") ?>js/item_form_validation.js"></script>
+    <script src="<?= Configuration::get("web_root") ?>js/item_categories.js"></script>
 </body>

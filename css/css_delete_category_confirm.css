@@ -1,0 +1,39 @@
+body {
+    background-color: #1b263b;
+    color: white;
+    padding-top: 120px;
+    padding-bottom: 170px;
+}
+
+.delete-category-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.delete-category-card {
+    background-color: #252424;
+    border: 1px solid #6c757d;
+}
+
+.delete-category-card .card-body {
+    padding: 40px 24px;
+}
+
+.delete-category-icon {
+    color: #dc3545;
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.delete-category-card .card-title {
+    color: #dc3545;
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.delete-category-card p {
+    color: white;
+    font-size: 1rem;
+}
