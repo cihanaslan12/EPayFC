@@ -55,6 +55,7 @@ class ControllerCategory extends Controller
     public function add(): void
     {
         $user = $this->get_admin_or_stop();
+        $this->require_post();
 
         $name = trim($_POST['category_name'] ?? '');
         $name_errors = Category::validate_name($name);
@@ -74,6 +75,7 @@ class ControllerCategory extends Controller
     public function update(): void
     {
         $user = $this->get_admin_or_stop();
+        $this->require_post();
 
         $id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
         $category = Category::get_by_id($id);
@@ -102,6 +104,7 @@ class ControllerCategory extends Controller
     public function move_up(): void
     {
         $this->get_admin_or_stop();
+        $this->require_post();
 
         $id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
         Category::move_up($id);
@@ -112,6 +115,7 @@ class ControllerCategory extends Controller
     public function move_down(): void
     {
         $this->get_admin_or_stop();
+        $this->require_post();
 
         $id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
         Category::move_down($id);
@@ -162,6 +166,20 @@ class ControllerCategory extends Controller
         exit;
     }
 
+    private function require_post(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect("category", "manage_categories");
+        }
+    }
+
+    private function require_post_json(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json_response(['success' => false, 'error' => 'Invalid request method.'], 405);
+        }
+    }
+
     private function get_admin_or_stop_json(): User
     {
         $user = $this->get_user_or_false();
@@ -189,6 +207,7 @@ class ControllerCategory extends Controller
 
     public function add_service(): void
     {
+        $this->require_post_json();
         $this->get_admin_or_stop_json();
 
         $name = trim($_POST['name'] ?? '');
@@ -209,6 +228,7 @@ class ControllerCategory extends Controller
 
     public function update_service(): void
     {
+        $this->require_post_json();
         $this->get_admin_or_stop_json();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -237,6 +257,7 @@ class ControllerCategory extends Controller
 
     public function delete_service(): void
     {
+        $this->require_post_json();
         $this->get_admin_or_stop_json();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -260,6 +281,7 @@ class ControllerCategory extends Controller
 
     public function reorder_service(): void
     {
+        $this->require_post_json();
         $this->get_admin_or_stop_json();
 
         $order = $_POST['order'] ?? [];
