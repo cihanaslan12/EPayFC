@@ -141,6 +141,8 @@ class ControllerItem extends Controller
             return;
         }
 
+        $this->require_post();
+
         $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
         if ($id <= 0) {
             http_response_code(404);
@@ -179,6 +181,8 @@ class ControllerItem extends Controller
             $this->redirect("user", "login");
             return;
         }
+
+        $this->require_post();
 
         $id = isset($_GET["param1"]) ? intval($_GET["param1"]) : 0;
         if ($id <= 0) {
@@ -267,6 +271,17 @@ class ControllerItem extends Controller
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function require_post(bool $json = false): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            if ($json) {
+                $this->json_response(['success' => false, 'error' => 'Invalid request method.'], 405);
+            }
+
+            $this->error_response("Invalid request method.", 405);
+        }
     }
 
     private function error_response(string $message, int $status = 403): void
@@ -466,9 +481,7 @@ class ControllerItem extends Controller
             return;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->error_response("Invalid request method.", 405);
-        }
+        $this->require_post();
 
         $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
         $item = $this->get_item_or_error($item_id);
@@ -510,9 +523,7 @@ class ControllerItem extends Controller
             $this->json_response(['success' => false, 'error' => 'Authentication required.'], 401);
         }
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->json_response(['success' => false, 'error' => 'Invalid request method.'], 405);
-        }
+        $this->require_post(true);
 
         $item_id = isset($_POST['item_id']) ? (int)$_POST['item_id'] : 0;
         $ordered_paths = $_POST['ordered_paths'] ?? [];
@@ -593,86 +604,86 @@ class ControllerItem extends Controller
     {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception('Veuillez vous connecter pour modifier vos items');
-        } else {
-            $user_id = $user->get_id();
+            $this->redirect("user", "login");
+            return;
+        }
 
-            $item_id = $_GET['param1'];
-            $item = Item::get_by_id($item_id);
-            if (!$item) {
-                throw new Exception("cet item n'existe pas");
-            }
+        $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
+        $item = $this->get_item_or_error($item_id);
+        $this->require_item_manager($user, $item);
 
-            $from = $_GET['param2'];
-            $encoded_filter = $_GET['param3'] ?? '';
+        $from = $_GET['param2'] ?? 'my_items';
+        $encoded_filter = $_GET['param3'] ?? '';
 
-            if ($user_id == $item->get_owner()) {
-                if ($item->get_has_bids() == 0) {
-                    $title = $item->get_title();
-                    $description = $item->get_description();
-                    $duration = $item->get_duration_days();
-                    $starting_bid = $item->get_starting_bid();
+        $title = $item->get_title();
+        $description = $item->get_description();
+        $duration = $item->get_duration_days();
+        $starting_bid = $item->get_starting_bid();
 
-                    $instant_purchase_price = 0.0;
-                    $direct_sale_price = 0.0;
-                    $instant_or_direct = 0.0;
+        $instant_purchase_price = 0.0;
+        $direct_sale_price = 0.0;
+        $instant_or_direct = 0.0;
 
-                    $buy_now_price = $item->get_buy_now_price();
-                    $is_auction = $item->get_is_auction();
-                    $is_direct_sale = $item->get_is_direct_sale();
-                    if ($buy_now_price > 0) {
-                        if ($is_auction === 1) {
-                            $instant_purchase_price = $buy_now_price;
-                        } else if ($is_direct_sale === 1) {
-                            $direct_sale_price = $buy_now_price;
-                        }
-                    }
-                    $errors = [];
-
-                    if (isset($_POST['save'])) {
-                        $title = $_POST['title'];
-                        $description = $_POST['description'];
-                        $duration = $_POST['duration'];
-                        $starting_bid = (float)$_POST['start_bid'];
-                        $instant_purchase_price = (float)$_POST['inst_purch_price'];
-                        $direct_sale_price = (float)$_POST['dir_sale_price'];
-
-                        $errors = Item::validations($user_id, $title, $description, $duration, $starting_bid, $instant_purchase_price, $direct_sale_price, (int)$item_id);
-                        if (empty($errors)) {
-                            if ($direct_sale_price && !$instant_purchase_price)
-                                $instant_or_direct = $direct_sale_price;
-                            else if ($instant_purchase_price && !$direct_sale_price)
-                                $instant_or_direct = $instant_purchase_price;
-                            Item::update_into_db($item_id, $title, $description, $duration, $starting_bid, $instant_or_direct);
-                            $this->redirect_to_open($item_id, $from, $encoded_filter);
-                        }
-                    }
-
-                    $edit_item = [
-                        'user' => $user,
-                        'show_back' => true,
-                        'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
-                        'from' => $from,
-                        'back_filter' => $encoded_filter,
-                        'page_title' => "Edit item",
-                        'show_save' => true,
-                        'item' => $item,
-                        'title' => $title,
-                        'description' => $description,
-                        'duration' => $duration,
-                        'starting_bid' => $starting_bid,
-                        'instant_purchase_price' => $instant_purchase_price,
-                        'direct_sale_price' => $direct_sale_price,
-                        'errors' => $errors,
-                    ];
-                    (new View("add_edit_item"))->show($edit_item);
-                } else {
-                    throw new Exception("L'item n'est pas modifiable");
-                }
-            } else {
-                throw new Exception("Impossible de modifier un item qui ne vous appartient pas");
+        $buy_now_price = $item->get_buy_now_price();
+        if ($buy_now_price > 0) {
+            if ($item->get_is_auction() === 1) {
+                $instant_purchase_price = $buy_now_price;
+            } else if ($item->get_is_direct_sale() === 1) {
+                $direct_sale_price = $buy_now_price;
             }
         }
+
+        $errors = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+            $title = $_POST['title'] ?? '';
+            $description = $_POST['description'] ?? '';
+            $duration = $_POST['duration'] ?? '';
+            $starting_bid = (float)($_POST['start_bid'] ?? 0);
+            $instant_purchase_price = (float)($_POST['inst_purch_price'] ?? 0);
+            $direct_sale_price = (float)($_POST['dir_sale_price'] ?? 0);
+
+            $errors = Item::validations(
+                $user->get_id(),
+                $title,
+                $description,
+                $duration,
+                $starting_bid,
+                $instant_purchase_price,
+                $direct_sale_price,
+                $item_id
+            );
+
+            if (empty($errors)) {
+                if ($direct_sale_price && !$instant_purchase_price) {
+                    $instant_or_direct = $direct_sale_price;
+                } else if ($instant_purchase_price && !$direct_sale_price) {
+                    $instant_or_direct = $instant_purchase_price;
+                }
+
+                Item::update_into_db($item_id, $title, $description, (int)$duration, $starting_bid, $instant_or_direct);
+                $this->redirect_to_open($item_id, $from, $encoded_filter);
+                return;
+            }
+        }
+
+        (new View("add_edit_item"))->show([
+            'user' => $user,
+            'show_back' => true,
+            'back_url' => 'item/open/' . $item_id . '/' . $from . ($encoded_filter !== '' ? '/' . $encoded_filter : ''),
+            'from' => $from,
+            'back_filter' => $encoded_filter,
+            'page_title' => "Edit item",
+            'show_save' => true,
+            'item' => $item,
+            'title' => $title,
+            'description' => $description,
+            'duration' => $duration,
+            'starting_bid' => $starting_bid,
+            'instant_purchase_price' => $instant_purchase_price,
+            'direct_sale_price' => $direct_sale_price,
+            'errors' => $errors,
+        ]);
     }
 
     public function validation_config(): void {
@@ -819,19 +830,21 @@ class ControllerItem extends Controller
         die();
     }
 
-    public function get_pictures_service() {
-        $item_id = '';
-        if (isset($_GET['param1'])) {
-            $item_id = $_GET['param1'];
-        }
+    public function get_pictures_service(): void
+    {
+        $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
         $item = Item::get_by_id($item_id);
-        $pictures = $item->get_item_pictures();
+
+        if (!$item) {
+            $this->json_response(['error' => 'Item not found.'], 404);
+        }
+
         $pictures_paths = [];
-        foreach ($pictures as $picture) {
+        foreach ($item->get_item_pictures() as $picture) {
             $pictures_paths[] = $picture->get_picture_path();
         }
-        header('Content-Type: application/json');
-        echo json_encode($pictures_paths);
+
+        $this->json_response($pictures_paths);
     }
 
     public function encode_filter_service() : void {
