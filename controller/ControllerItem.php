@@ -462,25 +462,45 @@ class ControllerItem extends Controller
     {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception("Veuillez vous connecter...");
-        } else {
-            $item_id = $_POST['item'];
-            $priority = $_POST['priority'];
-            $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
-            $from = $_GET['param2'] ?? '';
-            $encoded_filter = $_GET['param3'] ?? '';
-
-            if ($picture) {
-                if (isset($_POST['btn-left'])) {
-                    $picture->priority_minus();
-                } else if (isset($_POST['btn-right'])) {
-                    $picture->priority_plus();
-                } else if (isset($_POST['btn-delete'])) {
-                    $picture->delete_picture();
-                }
-            }
-            $this->redirect("item", "manage_images", $item_id, $from, $encoded_filter);
+            $this->redirect("user", "login");
+            return;
         }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->error_response("Invalid request method.", 405);
+        }
+
+        $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
+        $item = $this->get_item_or_error($item_id);
+        $this->require_item_manager($user, $item);
+
+        $posted_item_id = isset($_POST['item']) ? (int)$_POST['item'] : 0;
+        if ($posted_item_id !== $item_id) {
+            $this->error_response("Invalid item.", 400);
+        }
+
+        $priority = isset($_POST['priority']) ? (int)$_POST['priority'] : 0;
+        if ($priority <= 0) {
+            $this->error_response("Invalid picture.", 400);
+        }
+
+        $picture = ItemPicture::get_by_item_and_priority($item_id, $priority);
+        if (!$picture) {
+            $this->error_response("Picture not found.", 404);
+        }
+
+        $from = $_GET['param2'] ?? '';
+        $encoded_filter = $_GET['param3'] ?? '';
+
+        if (isset($_POST['btn-left'])) {
+            $picture->priority_minus();
+        } else if (isset($_POST['btn-right'])) {
+            $picture->priority_plus();
+        } else if (isset($_POST['btn-delete'])) {
+            $picture->delete_picture();
+        }
+
+        $this->redirect("item", "manage_images", (string)$item_id, $from, $encoded_filter);
     }
 
     public function reorder_pictures(): void
@@ -488,6 +508,10 @@ class ControllerItem extends Controller
         $user = $this->get_user_or_false();
         if (!$user) {
             $this->json_response(['success' => false, 'error' => 'Authentication required.'], 401);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json_response(['success' => false, 'error' => 'Invalid request method.'], 405);
         }
 
         $item_id = isset($_POST['item_id']) ? (int)$_POST['item_id'] : 0;
@@ -498,15 +522,17 @@ class ControllerItem extends Controller
             $this->json_response(['success' => false, 'error' => 'Item not found.'], 404);
         }
 
-        if ($item->get_owner() !== $user->get_id()) {
-            $this->json_response(['success' => false, 'error' => 'Forbidden.'], 403);
-        }
+        $this->json_require_item_manager($user, $item);
 
         if (!is_array($ordered_paths) || empty($ordered_paths)) {
             $this->json_response(['success' => false, 'error' => 'Invalid image order.'], 400);
         }
 
-        ItemPicture::reorder_for_item($item_id, $ordered_paths);
+        try {
+            ItemPicture::reorder_for_item($item_id, $ordered_paths);
+        } catch (Throwable $e) {
+            $this->json_response(['success' => false, 'error' => 'Invalid image order.'], 400);
+        }
 
         $this->json_response(['success' => true]);
     }
@@ -687,20 +713,25 @@ class ControllerItem extends Controller
         ]);
     }
 
-    public function delete(): void {
+    public function delete(): void
+    {
         $user = $this->get_user_or_false();
         if (!$user) {
-            throw new Exception("Veuillez vous connecter pour delete un item");
-        } else {
-            $item_id = $_GET['param1'];
-            $item = Item::get_by_id($item_id);
-            (new View("delete_confirm"))->show(['item' => $item]);
-
-            if (isset($_POST['delete'])) {
-                $item->delete_item_with_dependencies();
-                $this->redirect("item", "my_items");
-            }
+            $this->redirect("user", "login");
+            return;
         }
+
+        $item_id = isset($_GET['param1']) ? (int)$_GET['param1'] : 0;
+        $item = $this->get_item_or_error($item_id);
+        $this->require_item_manager($user, $item);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+            $item->delete_item_with_dependencies();
+            $this->redirect("item", "my_items");
+            return;
+        }
+
+        (new View("delete_confirm"))->show(['item' => $item]);
     }
 
     public function sales(): void {
