@@ -1,0 +1,43 @@
+body {
+    background-color: #1b263b;
+    color: white;
+    padding-bottom: 140px;
+}
+
+.category-card {
+    background-color: #212121;
+    border: 1px solid #495057;
+}
+
+.category-card .card-header {
+    background-color: #4f6380;
+    color: white;
+    font-weight: bold;
+}
+
+.category-card .card-body {
+    background-color: #212121;
+}
+
+.category-card .form-control {
+    background-color: #252424;
+    border: 1px solid #6c757d;
+    color: white;
+}
+
+.category-card .form-control:focus {
+    background-color: #252424;
+    color: white;
+}
+
+.category-card .form-control::placeholder {
+    color: #adb5bd;
+}
+
+.move-buttons form + form {
+    margin-left: 4px;
+}
+
+.add-row td {
+    border-top: 2px solid #6c757d;
+}
