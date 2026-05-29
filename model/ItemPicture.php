@@ -85,8 +85,6 @@ class ItemPicture extends Model {
     }
 
     public static function add_pictures(string $upload_image, string $name, int $item_id): void {
-        $config = parse_ini_file(__DIR__.'/../config/dev.ini');
-
         $original_image = Uploader::create_image_from($upload_image, $name);
         if(!$original_image) {
             return;
@@ -95,10 +93,10 @@ class ItemPicture extends Model {
         $original_width = imagesx($original_image);
         $original_height = imagesy($original_image);
 
-        $max_img_width = $config['MAX_IMG_WIDTH'];
-        $max_img_height = $config['MAX_IMG_HEIGHT'];
-        $max_thumb_width = $config['MAX_THUMB_WIDTH'];
-        $max_thumb_height = $config['MAX_THUMB_HEIGHT'];
+        $max_img_width = (int)Configuration::get('MAX_IMG_WIDTH');
+        $max_img_height = (int)Configuration::get('MAX_IMG_HEIGHT');
+        $max_thumb_width = (int)Configuration::get('MAX_THUMB_WIDTH');
+        $max_thumb_height = (int)Configuration::get('MAX_THUMB_HEIGHT');
 
         $ratio_width = $original_width / $max_img_width;
         $ratio_height = $original_height / $max_img_height;

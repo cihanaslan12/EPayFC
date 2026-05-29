@@ -300,7 +300,8 @@ class User extends Model {
             return;
         }
 
-        $absolute_path = __DIR__ . "/../" . $relative_path;
+        $absolute_path = getcwd() . DIRECTORY_SEPARATOR . $relative_path;
+
         $thumbnail_path = preg_replace('/(\.[^.]+)$/', '_thumbnail$1', $absolute_path);
 
         foreach (array_unique([$absolute_path, $thumbnail_path]) as $path) {
