@@ -323,4 +323,44 @@ class Category extends Model
             'priority' => $neighbor_priority
         ]);
     }
+
+    public static function reorder_by_ids(array $category_ids): void
+    {
+        $category_ids = self::normalize_ids($category_ids);
+
+        $current_ids = array_map(
+            fn(Category $category) => (int)$category->get_id(),
+            self::get_all_by_priority()
+        );
+
+        $sorted_given_ids = $category_ids;
+        $sorted_current_ids = $current_ids;
+
+        sort($sorted_given_ids);
+        sort($sorted_current_ids);
+
+        if ($sorted_given_ids !== $sorted_current_ids) {
+            throw new Exception("Invalid category order.");
+        }
+
+        foreach ($category_ids as $index => $category_id) {
+            self::execute(
+                "UPDATE categories SET priority = :priority WHERE id = :id",
+                [
+                    'id' => $category_id,
+                    'priority' => -($index + 1)
+                ]
+            );
+        }
+
+        foreach ($category_ids as $index => $category_id) {
+            self::execute(
+                "UPDATE categories SET priority = :priority WHERE id = :id",
+                [
+                    'id' => $category_id,
+                    'priority' => $index + 1
+                ]
+            );
+        }
+    }
 }

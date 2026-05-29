@@ -28,7 +28,99 @@
         </div>
 
         <div class="card-body">
-            <div class="table-responsive">
+            <div id="manage-categories-config"
+                 data-add-url="category/add_service"
+                 data-update-url="category/update_service"
+                 data-delete-url="category/delete_service"
+                 data-reorder-url="category/reorder_service"
+                 data-name-min="<?= (int)Configuration::get('CATEGORY_NAME_MIN_LENGTH', '3') ?>"
+                 data-name-max="<?= (int)Configuration::get('CATEGORY_NAME_MAX_LENGTH', '25') ?>">
+            </div>
+
+            <div id="categories-js" class="d-none">
+
+                <div id="categories-list">
+                    <?php foreach ($categories as $category): ?>
+                        <?php
+                        $category_id = (int)$category->get_id();
+                        $item_count = (int)$category->get_item_count();
+                        ?>
+
+                        <div class="category-js-row"
+                             data-category-id="<?= $category_id ?>"
+                             data-item-count="<?= $item_count ?>">
+                            <div class="category-drag-handle">
+                                <i class="bi bi-grip-vertical"></i>
+                            </div>
+
+                            <div class="category-main">
+                                <div class="category-name-display">
+                                    <?= htmlspecialchars($category->get_name()) ?>
+                                </div>
+
+                                <input type="text"
+                                       class="form-control category-name-input d-none"
+                                       value="<?= htmlspecialchars($category->get_name()) ?>">
+
+                                <div class="category-error text-danger small mt-1"></div>
+                            </div>
+
+                            <div class="category-count">
+                                <span class="badge text-bg-secondary"><?= $item_count ?></span>
+                            </div>
+
+                            <div class="category-actions">
+                                <button type="button" class="btn btn-sm btn-primary edit-category-btn">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <?php if ($item_count === 0): ?>
+                                    <button type="button" class="btn btn-sm btn-danger delete-category-btn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <button type="button" class="btn btn-sm btn-danger" disabled title="Category contains items">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-success" id="show-add-category">
+                        <i class="bi bi-plus"></i> Add category
+                    </button>
+                </div>
+
+                <div class="category-js-row d-none" id="add-category-row">
+                    <div class="category-drag-handle invisible">
+                        <i class="bi bi-grip-vertical"></i>
+                    </div>
+
+                    <div class="category-main">
+                        <input type="text"
+                               class="form-control"
+                               id="new-category-name"
+                               placeholder="New category name">
+                        <div class="category-error text-danger small mt-1"></div>
+                    </div>
+
+                    <div class="category-count">
+                        <span class="badge text-bg-secondary">0</span>
+                    </div>
+
+                    <div class="category-actions">
+                        <button type="button" class="btn btn-sm btn-secondary" id="cancel-add-category">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="table-responsive" id="categories-nojs">
                 <table class="table table-dark table-hover align-middle mb-0">
                     <thead>
                     <tr>
@@ -150,8 +242,41 @@
     </div>
 </main>
 
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete category</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>
+                    Do you really want to delete category
+                    <strong id="delete-category-name"></strong>?
+                </p>
+                <p class="text-white-50 mb-0">This action cannot be undone.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-category">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <footer>
     <?php require 'footer_menu.php'; ?>
 </footer>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+<script src="<?= Configuration::get("web_root") ?>js/manage_categories.js"></script>
 </body>
 </html>

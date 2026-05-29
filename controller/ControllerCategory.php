@@ -153,4 +153,125 @@ class ControllerCategory extends Controller
             'show_save' => false
         ]);
     }
+
+    private function json_response(array $data, int $status = 200): void
+    {
+        http_response_code($status);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+
+    private function get_admin_or_stop_json(): User
+    {
+        $user = $this->get_user_or_false();
+
+        if (!$user) {
+            $this->json_response(['error' => 'Authentication required.'], 401);
+        }
+
+        if ($user->get_role() !== 'admin') {
+            $this->json_response(['error' => 'Forbidden.'], 403);
+        }
+
+        return $user;
+    }
+
+    private function category_to_array(Category $category): array
+    {
+        return [
+            'id' => (int)$category->get_id(),
+            'name' => $category->get_name(),
+            'priority' => (int)$category->get_priority(),
+            'item_count' => (int)$category->get_item_count()
+        ];
+    }
+
+    public function add_service(): void
+    {
+        $this->get_admin_or_stop_json();
+
+        $name = trim($_POST['name'] ?? '');
+        $errors = Category::validate_name($name);
+
+        if (!empty($errors)) {
+            $this->json_response(['success' => false, 'errors' => $errors], 422);
+        }
+
+        $id = Category::create($name);
+        $category = Category::get_by_id($id);
+
+        $this->json_response([
+            'success' => true,
+            'category' => $this->category_to_array($category)
+        ]);
+    }
+
+    public function update_service(): void
+    {
+        $this->get_admin_or_stop_json();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+
+        $category = Category::get_by_id($id);
+
+        if (!$category) {
+            $this->json_response(['success' => false, 'errors' => ['Category not found.']], 404);
+        }
+
+        $errors = Category::validate_name($name, $id);
+
+        if (!empty($errors)) {
+            $this->json_response(['success' => false, 'errors' => $errors], 422);
+        }
+
+        Category::update_name($id, $name);
+        $updated_category = Category::get_by_id($id);
+
+        $this->json_response([
+            'success' => true,
+            'category' => $this->category_to_array($updated_category)
+        ]);
+    }
+
+    public function delete_service(): void
+    {
+        $this->get_admin_or_stop_json();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $category = Category::get_by_id($id);
+
+        if (!$category) {
+            $this->json_response(['success' => false, 'errors' => ['Category not found.']], 404);
+        }
+
+        if ((int)$category->get_item_count() > 0) {
+            $this->json_response([
+                'success' => false,
+                'errors' => ['You cannot delete a category that contains items.']
+            ], 422);
+        }
+
+        Category::delete_by_id($id);
+
+        $this->json_response(['success' => true]);
+    }
+
+    public function reorder_service(): void
+    {
+        $this->get_admin_or_stop_json();
+
+        $order = $_POST['order'] ?? [];
+
+        try {
+            Category::reorder_by_ids($order);
+            $this->json_response(['success' => true]);
+        } catch (Exception $e) {
+            $this->json_response([
+                'success' => false,
+                'errors' => ['Invalid category order.']
+            ], 422);
+        }
+    }
 }
