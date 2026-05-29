@@ -27,7 +27,7 @@ En développement, donnez les permissions d'écriture aux dossiers uploads et da
   * URL : http://infolab.epfc.eu:58332/prwb_2526_c06/
   * Mot de passe : PasswordStudent
 * étudiant Nom Prenom :Aslan Cihan
-  * URL : http://infolab.epfc.eu:58331/prwb/
+  * URL : http://infolab.epfc.eu:58331/prwb_2526_c06/
   * Mot de passe : Sami0603.
 
 ### Liste des fonctionnalités supplémentaires
